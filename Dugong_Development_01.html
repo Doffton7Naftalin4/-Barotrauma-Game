@@ -802,7 +802,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
-    G = { ang: -0.3, cool: 0, ox: roomCx(0), oy: -RH / 2 - 8, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: roomCx(2), oy: RH / 2 + 8, i: 1 }; G3 = { ang: -0.3, cool: 0, ox: roomCx(4), oy: -RH / 2 - 8, i: 2 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0, -1] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
+    G = { ang: -0.3, cool: 0, ox: roomCx(0), oy: -RH / 2 - 36, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: roomCx(2), oy: RH / 2 + 8, i: 1 }; G3 = { ang: -0.3, cool: 0, ox: roomCx(4), oy: -RH / 2 - 36, i: 2 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0, -1] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
     turbo = false; shake = 0; flash = 0; tcool = 0; elapsed = 0; alarmT = 0; fireT = 0; kills = 0; shockT = 0; shockImm = 0; dockT = 0; dockMsg = ''; oreTot = 0; menuS = 0;
     roamT = rand(LV0.roam[0], LV0.roam[1]) * 0.7;
     genWorld(LV0);
@@ -1620,7 +1620,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
   function drawHardpoint(T) { var tx = sx + T.ox, by = sy + T.oy + 7; ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 8, Math.PI, 0); ctx.fill(); ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 2; ctx.strokeRect(tx - 5, by - 5, 10, 3); ctx.fillStyle = '#f0a73c'; ctx.fillRect(tx - 2, by - 2, 4, 2); }
   function drawTur(T, dn) {
-    var tx = sx + T.ox, by = T.i === 2 ? sy + T.oy + 7 : sy + dn * (RH / 2 + 7);
+    var tx = sx + T.ox, by = sy + T.oy + 7;
     ctx.save(); ctx.translate(tx, sy + T.oy); ctx.rotate(T.ang);
     var wq_ = WP[S.subs[S.sub].wp[T.i]]; ctx.fillStyle = '#6a7b86'; ctx.fillRect(0, -wq_.bw / 2, 28 + wq_.bl, wq_.bw); ctx.fillStyle = T.cool > 0 ? '#f0a73c' : '#8fa1ad'; ctx.fillRect(22 + wq_.bl, -wq_.bw / 2 - 1, 8, wq_.bw + 2); ctx.fillStyle = pw.ratio > 0.3 && !pw.short ? '#fff6cf' : '#4a5660'; ctx.beginPath(); ctx.arc(32 + wq_.bl, 0, 2.4, 0, 6.283); ctx.fill(); ctx.restore();
     ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, dn < 0 ? Math.PI : 0, dn < 0 ? 0 : Math.PI); ctx.fill();
@@ -1650,6 +1650,19 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#46555f'; rr(sx + 6 - 17, y0 - 19, 34, 8, 3); ctx.fill(); ctx.fillStyle = dockT > 0 ? '#4fe0b6' : '#f0a73c'; ctx.fillRect(sx + 6 - 12, y0 - 20, 24, 2);
     ctx.fillStyle = 'rgba(79,170,200,0.55)'; ctx.beginPath(); ctx.moveTo(x0 + wt - 6, y0 + 6); ctx.quadraticCurveTo(x0 + wt + 24, y0 + 10, x0 + wt + 26, sy); ctx.quadraticCurveTo(x0 + wt + 24, y0 + RH - 10, x0 + wt - 6, y0 + RH - 6); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = '#2a3a44'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + wt + 8, y0 + 8); ctx.lineTo(x0 + wt + 8, y0 + RH - 8); ctx.stroke();
+    /* Three-deck Dugong silhouette: compact upper and lower modules around the existing playable mid-deck. */
+    var ux = x0 + 42, uw = wt - 78, uy = y0 - 36, ly = y0 + RH + 6;
+    ctx.fillStyle = '#344752'; ctx.strokeStyle = '#71838d'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(ux + 8, uy); ctx.lineTo(ux + uw - 28, uy); ctx.lineTo(ux + uw, uy + 9); ctx.lineTo(ux + uw - 8, uy + 30); ctx.lineTo(ux + 18, uy + 30); ctx.lineTo(ux, uy + 20); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#172b35'; ctx.fillRect(ux + 22, uy + 9, 34, 12); ctx.fillRect(ux + 68, uy + 9, 34, 12); ctx.fillRect(ux + 114, uy + 9, 34, 12); ctx.fillRect(ux + 160, uy + 9, 34, 12);
+    ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(ux + 12, uy + 25); ctx.lineTo(ux + uw - 18, uy + 25); ctx.stroke();
+    ctx.fillStyle = '#2b3e49'; ctx.strokeStyle = '#71838d'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0 + 22, ly); ctx.lineTo(x0 + wt - 82, ly); ctx.lineTo(x0 + wt - 60, ly + 12); ctx.lineTo(x0 + wt - 70, ly + 34); ctx.lineTo(x0 + 40, ly + 34); ctx.lineTo(x0 + 14, ly + 22); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#172b35'; ctx.fillRect(x0 + 55, ly + 10, 36, 12); ctx.fillRect(x0 + 105, ly + 10, 36, 12); ctx.fillRect(x0 + 155, ly + 10, 36, 12); ctx.fillRect(x0 + 205, ly + 10, 36, 12);
+    ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x0 + 32, ly + 29); ctx.lineTo(x0 + wt - 82, ly + 29); ctx.stroke();
+    /* Narrow inter-deck trunks; visual guides only until vertical movement and deck-specific systems are implemented. */
+    ctx.fillStyle = '#253944'; ctx.fillRect(x0 + 92, uy + 30, 12, y0 - (uy + 30)); ctx.fillRect(x0 + 92, y0 + RH + 6, 12, 4); ctx.fillRect(x0 + 92, y0 + RH + 10, 12, 24);
+    ctx.strokeStyle = '#71838d'; ctx.lineWidth = 1; ctx.strokeRect(x0 + 92, uy + 30, 12, y0 - (uy + 30)); ctx.strokeRect(x0 + 92, y0 + RH + 10, 12, 24);
     drawTur(G, -1); drawTur(G2, 1); if (S.subs[S.sub].wp.length > 2) { if (S.subs[S.sub].wp[2] >= 0) drawTur(G3, -1); else drawHardpoint(G3); }
   }
 
