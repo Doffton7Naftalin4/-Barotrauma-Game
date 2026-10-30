@@ -75,6 +75,7 @@ function draw(){ctx.clearRect(0,0,W,H);const cy=H*.52;
 let grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#061521');grad.addColorStop(.55,'#0a2b40');grad.addColorStop(1,'#061b2b');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
 ctx.strokeStyle='#1b4960';ctx.lineWidth=1;for(let i=0;i<12;i++){let y=(i*57+((state.depth*.2)%57))%H;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
 ctx.fillStyle='#6da7b5';ctx.globalAlpha=.18;ctx.fillRect(0,cy+105,W,H-cy-105);ctx.globalAlpha=1;
+ctx.save();ctx.translate(W/2,H/2);ctx.scale(scale,scale);ctx.translate(-W/2,-H/2);
 const boatW=590,boatH=190,bx=W/2-boatW/2,by=cy-boatH/2;
 ctx.save();ctx.translate(bx,by);
 ctx.fillStyle='#263e49';ctx.strokeStyle='#a7c5ce';ctx.lineWidth=3;
@@ -101,6 +102,7 @@ const px=bx+state.player.x,py=by+126;ctx.fillStyle='#e2bd82';ctx.beginPath();ctx
 ctx.fillStyle='#d9edf2';ctx.font='12px system-ui';ctx.fillText('ПЕРСОНАЖ',px,py+28);
 ctx.fillStyle='#a4c4ce';ctx.font='11px system-ui';ctx.textAlign='left';ctx.fillText('ОКЕАН / ТЕСТОВАЯ ЗОНА',14,H-16);
 ctx.fillStyle='#c3d9df';ctx.fillText('Глубина '+Math.round(state.depth)+' м',W-120,22);
+ctx.restore();
 }
 function ui(){const water=state.water.reduce((a,b)=>a+b,0)/4;const set=(id,v)=>$(id).textContent=v;const bar=(id,v)=>$(id).style.width=clamp(v,0,100)+'%';
 set('depth','Глубина: '+Math.round(state.depth)+' м');set('speed','Скорость: '+Math.round(Math.abs(state.vx))+' узл.');set('reactorVal',Math.round(state.reactor)+'%');bar('reactorBar',state.reactor);set('powerVal',Math.round(state.reactor)+'%');set('loadVal',(42+(state.engine?18:0)+(state.pump?12:0))+'%');
