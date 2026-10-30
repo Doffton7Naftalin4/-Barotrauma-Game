@@ -1618,7 +1618,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.restore();
   }
 
-  function drawHardpoint(T) { var tx = sx + T.ox, by = sy + dn * (RH / 2 + 7); ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 8, Math.PI, 0); ctx.fill(); ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 2; ctx.strokeRect(tx - 5, by - 5, 10, 3); ctx.fillStyle = '#f0a73c'; ctx.fillRect(tx - 2, by - 2, 4, 2); }
+  function drawHardpoint(T) { var tx = sx + T.ox, by = sy + T.oy + 7; ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 8, Math.PI, 0); ctx.fill(); ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 2; ctx.strokeRect(tx - 5, by - 5, 10, 3); ctx.fillStyle = '#f0a73c'; ctx.fillRect(tx - 2, by - 2, 4, 2); }
   function drawTur(T, dn) {
     var tx = sx + T.ox, by = sy + T.oy + 7;
     ctx.save(); ctx.translate(tx, sy + T.oy); ctx.rotate(T.ang);
@@ -1628,29 +1628,155 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function drawSubShell() {
     var x0 = sx - HL, y0 = sy - RH / 2, wt = NR * RW, i;
     var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (w[0] < 0.5 ? 1 : 0))) * 11;
+
+    // Engine pods and propellers at the stern.
     for (i = -1; i <= 1; i += 2) {
       var ny = sy + i * 24;
-      ctx.fillStyle = '#2f3d46'; rr(x0 - 26, ny - 8, 30, 16, 5); ctx.fill(); ctx.strokeStyle = '#5f717c'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x0 - 29, ny - pa * 0.8); ctx.lineTo(x0 - 29, ny + pa * 0.8); ctx.stroke();
+      ctx.fillStyle = '#263741';
+      rr(x0 - 34, ny - 10, 38, 20, 7); ctx.fill();
+      ctx.strokeStyle = '#71838d'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = '#40525d';
+      ctx.beginPath(); ctx.arc(x0 - 34, ny, 8, 0, 6.283); ctx.fill();
+      ctx.strokeStyle = '#a2b2bb'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x0 - 39, ny - pa * 0.8); ctx.lineTo(x0 - 39, ny + pa * 0.8); ctx.stroke();
     }
-    var lg = ctx.createLinearGradient(x0 + wt + 20, 0, x0 + wt + 280, 0);
-    lg.addColorStop(0, 'rgba(255,246,207,0.18)'); lg.addColorStop(1, 'rgba(255,246,207,0)');
-    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(x0 + wt + 22, sy - 3); ctx.lineTo(x0 + wt + 280, sy - 80); ctx.lineTo(x0 + wt + 280, sy + 80); ctx.lineTo(x0 + wt + 22, sy + 3); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#3a4a54'; ctx.beginPath(); ctx.moveTo(x0 - 4, y0 - 7); ctx.lineTo(x0 - 30, y0 - 22); ctx.lineTo(x0 + 24, y0 - 7); ctx.fill();
-    rr(x0 + 40, y0 + RH + 6, 46, 7, 3); ctx.fill(); rr(x0 + wt - 120, y0 + RH + 6, 46, 7, 3); ctx.fill();
-    var g = ctx.createLinearGradient(0, y0 - 8, 0, y0 + RH + 8);
-    g.addColorStop(0, SUBS[S.sub].c0); g.addColorStop(1, SUBS[S.sub].c1);
-    ctx.fillStyle = g; ctx.strokeStyle = '#6f838f'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x0 - 6, y0 - 7); ctx.lineTo(x0 + wt - 20, y0 - 7);
-    ctx.quadraticCurveTo(x0 + wt + 30, y0 - 8, x0 + wt + 30, sy);
-    ctx.quadraticCurveTo(x0 + wt + 30, y0 + RH + 8, x0 + wt - 20, y0 + RH + 7); ctx.lineTo(x0 - 6, y0 + RH + 7);
-    ctx.quadraticCurveTo(x0 - 18, y0 + RH + 3, x0 - 18, sy); ctx.quadraticCurveTo(x0 - 18, y0 - 3, x0 - 6, y0 - 7); ctx.closePath(); ctx.fill(); ctx.stroke();
-    rr(x0 + 110, y0 - 13, 150, 9, 4); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = SUBS[S.sub].ac; ctx.fillRect(x0 + 118, y0 - 12, 134, 2); ctx.fillRect(x0 - 2, y0 + RH + 1, wt - 6, 3);
-    ctx.fillStyle = '#46555f'; rr(sx + 6 - 17, y0 - 19, 34, 8, 3); ctx.fill(); ctx.fillStyle = dockT > 0 ? '#4fe0b6' : '#f0a73c'; ctx.fillRect(sx + 6 - 12, y0 - 20, 24, 2);
-    ctx.fillStyle = 'rgba(79,170,200,0.55)'; ctx.beginPath(); ctx.moveTo(x0 + wt - 6, y0 + 6); ctx.quadraticCurveTo(x0 + wt + 24, y0 + 10, x0 + wt + 26, sy); ctx.quadraticCurveTo(x0 + wt + 24, y0 + RH - 10, x0 + wt - 6, y0 + RH - 6); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#2a3a44'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + wt + 8, y0 + 8); ctx.lineTo(x0 + wt + 8, y0 + RH - 8); ctx.stroke();
-    drawTur(G, -1); drawTur(G2, 1);
+
+    // Forward searchlight.
+    var lg = ctx.createLinearGradient(x0 + wt + 18, 0, x0 + wt + 270, 0);
+    lg.addColorStop(0, 'rgba(255,246,207,0.2)');
+    lg.addColorStop(1, 'rgba(255,246,207,0)');
+    ctx.fillStyle = lg;
+    ctx.beginPath();
+    ctx.moveTo(x0 + wt + 18, sy - 4);
+    ctx.lineTo(x0 + wt + 270, sy - 78);
+    ctx.lineTo(x0 + wt + 270, sy + 78);
+    ctx.lineTo(x0 + wt + 18, sy + 4);
+    ctx.closePath(); ctx.fill();
+
+    // One continuous pressure hull: raised dorsal section, central deck and
+    // deep lower keel are joined into a single silhouette, not bolt-on boxes.
+    var hull = ctx.createLinearGradient(0, sy - 76, 0, sy + 108);
+    hull.addColorStop(0, '#71828b');
+    hull.addColorStop(0.28, SUBS[S.sub].c0);
+    hull.addColorStop(0.68, SUBS[S.sub].c1);
+    hull.addColorStop(1, '#263640');
+    ctx.fillStyle = hull;
+    ctx.strokeStyle = '#9aaab2';
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x0 - 25, sy - 3);
+    ctx.quadraticCurveTo(x0 - 34, sy - 31, x0 - 5, sy - 48);
+    ctx.lineTo(x0 + 34, sy - 69);
+    ctx.quadraticCurveTo(x0 + 58, sy - 82, x0 + 91, sy - 78);
+    ctx.lineTo(x0 + wt - 104, sy - 66);
+    ctx.quadraticCurveTo(x0 + wt - 48, sy - 58, x0 + wt - 12, sy - 28);
+    ctx.quadraticCurveTo(x0 + wt + 37, sy - 5, x0 + wt + 34, sy + 17);
+    ctx.quadraticCurveTo(x0 + wt + 30, sy + 42, x0 + wt - 23, sy + 59);
+    ctx.lineTo(x0 + wt - 112, sy + 91);
+    ctx.quadraticCurveTo(x0 + wt - 154, sy + 108, x0 + wt - 201, sy + 103);
+    ctx.lineTo(x0 + 139, sy + 88);
+    ctx.quadraticCurveTo(x0 + 79, sy + 78, x0 + 31, sy + 54);
+    ctx.lineTo(x0 - 12, sy + 31);
+    ctx.quadraticCurveTo(x0 - 38, sy + 17, x0 - 25, sy - 3);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // Reinforced upper shoulder and dorsal armor seam.
+    ctx.strokeStyle = '#c0cbd0'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 24, sy - 53);
+    ctx.quadraticCurveTo(x0 + 74, sy - 78, x0 + 119, sy - 72);
+    ctx.lineTo(x0 + wt - 111, sy - 59);
+    ctx.quadraticCurveTo(x0 + wt - 60, sy - 51, x0 + wt - 18, sy - 25);
+    ctx.stroke();
+
+    // The upper hull is shaped into the main shell, with narrow armored
+    // viewports rather than a separate rectangular superstructure.
+    for (i = 0; i < 5; i++) {
+      var wx = x0 + 126 + i * 51;
+      var wy = sy - 57 + i * 1.5;
+      ctx.fillStyle = '#142b36';
+      rr(wx, wy, 29, 9, 3); ctx.fill();
+      ctx.strokeStyle = '#a4b7c0'; ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(117,205,220,0.42)';
+      ctx.fillRect(wx + 4, wy + 2, 18, 2);
+    }
+
+    // Dorsal access hatch and its sloped protective collar.
+    ctx.fillStyle = '#344852';
+    ctx.beginPath();
+    ctx.moveTo(x0 + 187, sy - 62);
+    ctx.lineTo(x0 + 199, sy - 76);
+    ctx.lineTo(x0 + 245, sy - 74);
+    ctx.lineTo(x0 + 257, sy - 57);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#a0afb7'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#172a34';
+    rr(x0 + 207, sy - 73, 29, 8, 3); ctx.fill();
+    ctx.strokeStyle = '#8b9ca5'; ctx.lineWidth = 1; ctx.stroke();
+
+    // Lower armored belly and continuous keel contour.
+    ctx.strokeStyle = '#1c2b34'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x0 + 56, sy + 58);
+    ctx.quadraticCurveTo(x0 + 112, sy + 86, x0 + 165, sy + 91);
+    ctx.lineTo(x0 + wt - 171, sy + 104);
+    ctx.quadraticCurveTo(x0 + wt - 120, sy + 106, x0 + wt - 79, sy + 83);
+    ctx.stroke();
+    ctx.strokeStyle = '#81929b'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 65, sy + 60);
+    ctx.quadraticCurveTo(x0 + 116, sy + 81, x0 + 166, sy + 85);
+    ctx.lineTo(x0 + wt - 171, sy + 97);
+    ctx.quadraticCurveTo(x0 + wt - 123, sy + 99, x0 + wt - 83, sy + 80);
+    ctx.stroke();
+
+    // Recessed lower-deck panels follow the hull's taper.
+    for (i = 0; i < 4; i++) {
+      var px = x0 + 126 + i * 65;
+      var py = sy + 72 + (i > 2 ? -5 : 0);
+      ctx.fillStyle = 'rgba(16,29,37,0.55)';
+      rr(px, py, 42, 12, 3); ctx.fill();
+      ctx.strokeStyle = 'rgba(139,158,168,0.65)';
+      ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#73858e';
+      ctx.fillRect(px + 7, py + 3, 27, 2);
+    }
+
+    // Hull ribs, fasteners and bow armor.
+    ctx.strokeStyle = 'rgba(20,34,43,0.7)';
+    ctx.lineWidth = 2;
+    for (i = 0; i < 5; i++) {
+      var rx = x0 + 82 + i * 67;
+      ctx.beginPath();
+      ctx.moveTo(rx, sy - 46 + i * 1.4);
+      ctx.lineTo(rx + 8, sy - 29);
+      ctx.stroke();
+      ctx.fillStyle = '#b2c0c6';
+      ctx.beginPath(); ctx.arc(rx + 2, sy - 34, 1.7, 0, 6.283); ctx.fill();
+    }
+    ctx.fillStyle = '#40545f';
+    ctx.beginPath();
+    ctx.moveTo(x0 + wt - 46, sy - 21);
+    ctx.quadraticCurveTo(x0 + wt + 25, sy - 2, x0 + wt + 19, sy + 17);
+    ctx.quadraticCurveTo(x0 + wt + 10, sy + 35, x0 + wt - 48, sy + 51);
+    ctx.lineTo(x0 + wt - 24, sy + 18);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#899ba4'; ctx.lineWidth = 1.5; ctx.stroke();
+
+    // Docking hardware on the dorsal side.
+    ctx.fillStyle = '#465963';
+    rr(sx + 6 - 21, sy - 73, 42, 10, 4); ctx.fill();
+    ctx.strokeStyle = '#9aabb4'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = dockT > 0 ? '#4fe0b6' : '#f0a73c';
+    ctx.fillRect(sx + 6 - 13, sy - 75, 26, 2);
+
+    // The existing five-room interior remains the gameplay deck. Weapon
+    // mounts stay at their established coordinates and are drawn last.
+    drawTur(G, -1);
+    drawTur(G2, 1);
     if (S.subs[S.sub].wp.length > 2) {
       if (S.subs[S.sub].wp[2] >= 0) drawTur(G3, -1);
       else drawHardpoint(G3);
