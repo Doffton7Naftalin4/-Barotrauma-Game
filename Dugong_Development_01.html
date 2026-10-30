@@ -1618,7 +1618,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.restore();
   }
 
-  function drawHardpoint(T) { var tx = sx + T.ox, by = sy + T.oy + 7; ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 8, Math.PI, 0); ctx.fill(); ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 2; ctx.strokeRect(tx - 5, by - 5, 10, 3); ctx.fillStyle = '#f0a73c'; ctx.fillRect(tx - 2, by - 2, 4, 2); }
+  function drawHardpoint(T) { var tx = sx + T.ox, by = sy + dn * (RH / 2 + 7); ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 8, Math.PI, 0); ctx.fill(); ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 2; ctx.strokeRect(tx - 5, by - 5, 10, 3); ctx.fillStyle = '#f0a73c'; ctx.fillRect(tx - 2, by - 2, 4, 2); }
   function drawTur(T, dn) {
     var tx = sx + T.ox, by = sy + T.oy + 7;
     ctx.save(); ctx.translate(tx, sy + T.oy); ctx.rotate(T.ang);
@@ -1626,111 +1626,43 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, dn < 0 ? Math.PI : 0, dn < 0 ? 0 : Math.PI); ctx.fill();
   }
   function drawSubShell() {
-    var x0 = sx - HL, y0 = sy - RH / 2, wt = NR * RW;
-    var top = sy - 91, midTop = sy - RH / 2, midBot = sy + RH / 2;
-    var lowTop = sy + 49, lowBot = sy + 105;
+    var x0 = sx - HL, y0 = sy - RH / 2, wt = NR * RW, i;
     var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (w[0] < 0.5 ? 1 : 0))) * 11;
-
-    /* Дюгонь: три связанные, но различимые палубы. */
-    /* Наружные силовые кили и кормовые/носовые обводы. */
-    ctx.fillStyle = '#263943'; ctx.strokeStyle = '#71838d'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x0 + 8, sy - 34); ctx.lineTo(x0 + 26, sy - 91);
-    ctx.lineTo(x0 + wt - 52, sy - 91); ctx.lineTo(x0 + wt + 12, sy - 62);
-    ctx.lineTo(x0 + wt + 30, sy - 8); ctx.lineTo(x0 + wt + 30, sy + 30);
-    ctx.lineTo(x0 + wt - 12, sy + 105); ctx.lineTo(x0 + 48, sy + 105);
-    ctx.lineTo(x0 + 6, sy + 66); ctx.lineTo(x0 - 18, sy + 10); ctx.closePath();
-    ctx.fill(); ctx.stroke();
-
-    /* Верхняя палуба — отдельный вытянутый жилой/командный модуль. */
-    ctx.fillStyle = '#344b57'; ctx.strokeStyle = '#8a9aa3'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x0 + 34, top + 10); ctx.lineTo(x0 + 58, top);
-    ctx.lineTo(x0 + wt - 68, top); ctx.lineTo(x0 + wt - 28, top + 14);
-    ctx.lineTo(x0 + wt - 42, sy - 52); ctx.lineTo(x0 + 54, sy - 52);
-    ctx.lineTo(x0 + 24, sy - 67); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#1a303b';
-    ctx.fillRect(x0 + 65, top + 15, 74, 25);
-    ctx.fillRect(x0 + 151, top + 15, 74, 25);
-    ctx.fillRect(x0 + 237, top + 15, 74, 25);
-    ctx.fillRect(x0 + 323, top + 15, 48, 25);
-    ctx.strokeStyle = '#7f929c'; ctx.lineWidth = 1;
-    for (var ui = 0; ui < 4; ui++) {
-      var ux = x0 + 65 + ui * 86;
-      ctx.strokeRect(ux, top + 15, ui === 3 ? 48 : 74, 25);
-      ctx.fillStyle = 'rgba(120,205,220,0.34)'; ctx.fillRect(ux + 5, top + 19, ui === 3 ? 38 : 64, 3);
+    for (i = -1; i <= 1; i += 2) {
+      var ny = sy + i * 24;
+      ctx.fillStyle = '#2f3d46'; rr(x0 - 26, ny - 8, 30, 16, 5); ctx.fill(); ctx.strokeStyle = '#5f717c'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x0 - 29, ny - pa * 0.8); ctx.lineTo(x0 - 29, ny + pa * 0.8); ctx.stroke();
     }
-    ctx.strokeStyle = '#9aaab2'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x0 + 44, sy - 57); ctx.lineTo(x0 + wt - 54, sy - 57); ctx.stroke();
-    ctx.fillStyle = '#253b46';
-    ctx.fillRect(x0 + 82, sy - 52, 54, 8); ctx.fillRect(x0 + 278, sy - 52, 54, 8);
-
-    /* Средняя палуба — сохраняет исходные пять игровых отсеков. */
-    var g = ctx.createLinearGradient(0, midTop - 8, 0, midBot + 8);
+    var lg = ctx.createLinearGradient(x0 + wt + 20, 0, x0 + wt + 280, 0);
+    lg.addColorStop(0, 'rgba(255,246,207,0.18)'); lg.addColorStop(1, 'rgba(255,246,207,0)');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(x0 + wt + 22, sy - 3); ctx.lineTo(x0 + wt + 280, sy - 80); ctx.lineTo(x0 + wt + 280, sy + 80); ctx.lineTo(x0 + wt + 22, sy + 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#3a4a54'; ctx.beginPath(); ctx.moveTo(x0 - 4, y0 - 7); ctx.lineTo(x0 - 30, y0 - 22); ctx.lineTo(x0 + 24, y0 - 7); ctx.fill();
+    rr(x0 + 40, y0 + RH + 6, 46, 7, 3); ctx.fill(); rr(x0 + wt - 120, y0 + RH + 6, 46, 7, 3); ctx.fill();
+    var g = ctx.createLinearGradient(0, y0 - 8, 0, y0 + RH + 8);
     g.addColorStop(0, SUBS[S.sub].c0); g.addColorStop(1, SUBS[S.sub].c1);
-    ctx.fillStyle = g; ctx.strokeStyle = '#8a9aa3'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x0 - 6, midTop - 7); ctx.lineTo(x0 + wt - 20, midTop - 7);
-    ctx.quadraticCurveTo(x0 + wt + 30, midTop - 8, x0 + wt + 30, sy);
-    ctx.quadraticCurveTo(x0 + wt + 30, midBot + 8, x0 + wt - 20, midBot + 7);
-    ctx.lineTo(x0 - 6, midBot + 7); ctx.quadraticCurveTo(x0 - 18, midBot + 3, x0 - 18, sy);
-    ctx.quadraticCurveTo(x0 - 18, midTop - 3, x0 - 6, midTop - 7); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = SUBS[S.sub].ac;
-    ctx.fillRect(x0 + 118, midTop - 12, 134, 3);
-    ctx.fillRect(x0 - 2, midBot + 1, wt - 6, 4);
-    rr(x0 + 110, midTop - 18, 150, 9, 4); ctx.fill(); ctx.stroke();
-
-    /* Нижняя палуба — машинно-технический модуль с собственной формой корпуса. */
-    ctx.fillStyle = '#2c414c'; ctx.strokeStyle = '#82939c'; ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x0 + 18, lowTop + 8); ctx.lineTo(x0 + 52, lowTop);
-    ctx.lineTo(x0 + wt - 72, lowTop); ctx.lineTo(x0 + wt - 30, lowTop + 17);
-    ctx.lineTo(x0 + wt - 54, lowBot - 7); ctx.lineTo(x0 + wt - 82, lowBot);
-    ctx.lineTo(x0 + 60, lowBot); ctx.lineTo(x0 + 26, lowBot - 18); ctx.closePath();
-    ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#172d37';
-    ctx.fillRect(x0 + 68, lowTop + 15, 62, 25);
-    ctx.fillRect(x0 + 143, lowTop + 15, 62, 25);
-    ctx.fillRect(x0 + 218, lowTop + 15, 62, 25);
-    ctx.fillRect(x0 + 293, lowTop + 15, 62, 25);
-    ctx.strokeStyle = '#82949d'; ctx.lineWidth = 1;
-    for (var li = 0; li < 4; li++) {
-      var lx = x0 + 68 + li * 75;
-      ctx.strokeRect(lx, lowTop + 15, 62, 25);
-      ctx.fillStyle = 'rgba(120,205,220,0.22)'; ctx.fillRect(lx + 5, lowTop + 19, 52, 3);
-    }
-    ctx.strokeStyle = '#9aaab2'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x0 + 48, lowBot - 8); ctx.lineTo(x0 + wt - 76, lowBot - 8); ctx.stroke();
-
-    /* Две усиленные вертикальные шахты реально связывают уровни по силуэту. */
-    for (var si = 0; si < 2; si++) {
-      var sxh = x0 + (si === 0 ? 92 : wt - 112);
-      ctx.fillStyle = '#1b303a'; ctx.fillRect(sxh, sy - 52, 18, 104);
-      ctx.strokeStyle = '#718690'; ctx.lineWidth = 2; ctx.strokeRect(sxh, sy - 52, 18, 104);
-      ctx.fillStyle = '#536a76';
-      for (var stp = 0; stp < 5; stp++) ctx.fillRect(sxh + 3, sy - 39 + stp * 18, 12, 3);
-      ctx.fillStyle = '#172b35'; ctx.fillRect(sxh + 3, sy - 88, 12, 36); ctx.fillRect(sxh + 3, sy + 52, 12, 48);
-    }
-
-    /* Внешние детали корпуса: киль, иллюминаторы, световые полосы и движители. */
-    ctx.fillStyle = '#172a34'; ctx.fillRect(x0 + 44, sy - 3, wt - 82, 5);
-    ctx.fillStyle = '#8dd5df';
-    for (var wi = 0; wi < 5; wi++) {
-      ctx.globalAlpha = 0.48 + Math.sin(t * 2 + wi) * 0.08;
-      ctx.fillRect(x0 + 56 + wi * 78, sy + 39, 22, 3);
-    }
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = '#40545f'; rr(x0 - 26, sy - 32, 30, 16, 5); ctx.fill(); rr(x0 - 26, sy + 16, 30, 16, 5); ctx.fill();
-    ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.moveTo(x0 - 29, sy - 32 - pa * 0.45); ctx.lineTo(x0 - 29, sy - 32 + pa * 0.45); ctx.moveTo(x0 - 29, sy + 16 - pa * 0.45); ctx.lineTo(x0 - 29, sy + 16 + pa * 0.45); ctx.stroke();
-    ctx.fillStyle = '#46555f'; rr(sx - 17, sy - 18, 34, 8, 3); ctx.fill();
-    ctx.fillStyle = dockT > 0 ? '#4fe0b6' : '#f0a73c'; ctx.fillRect(sx - 12, sy - 19, 24, 2);
-    ctx.fillStyle = 'rgba(79,170,200,0.55)';
-    ctx.beginPath(); ctx.moveTo(x0 + wt - 6, sy - 30); ctx.quadraticCurveTo(x0 + wt + 24, sy - 18, x0 + wt + 26, sy); ctx.quadraticCurveTo(x0 + wt + 24, sy + 22, x0 + wt - 6, sy + 30); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#2a3a44'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + wt + 8, sy - 25); ctx.lineTo(x0 + wt + 8, sy + 25); ctx.stroke();
-
-    /* Оружейные точки: две верхние и центральная под килем. */
+    ctx.fillStyle = g; ctx.strokeStyle = '#6f838f'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0 - 6, y0 - 7); ctx.lineTo(x0 + wt - 20, y0 - 7);
+    ctx.quadraticCurveTo(x0 + wt + 30, y0 - 8, x0 + wt + 30, sy);
+    ctx.quadraticCurveTo(x0 + wt + 30, y0 + RH + 8, x0 + wt - 20, y0 + RH + 7); ctx.lineTo(x0 - 6, y0 + RH + 7);
+    ctx.quadraticCurveTo(x0 - 18, y0 + RH + 3, x0 - 18, sy); ctx.quadraticCurveTo(x0 - 18, y0 - 3, x0 - 6, y0 - 7); ctx.closePath(); ctx.fill(); ctx.stroke();
+    rr(x0 + 110, y0 - 13, 150, 9, 4); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = SUBS[S.sub].ac; ctx.fillRect(x0 + 118, y0 - 12, 134, 2); ctx.fillRect(x0 - 2, y0 + RH + 1, wt - 6, 3);
+    ctx.fillStyle = '#46555f'; rr(sx + 6 - 17, y0 - 19, 34, 8, 3); ctx.fill(); ctx.fillStyle = dockT > 0 ? '#4fe0b6' : '#f0a73c'; ctx.fillRect(sx + 6 - 12, y0 - 20, 24, 2);
+    ctx.fillStyle = 'rgba(79,170,200,0.55)'; ctx.beginPath(); ctx.moveTo(x0 + wt - 6, y0 + 6); ctx.quadraticCurveTo(x0 + wt + 24, y0 + 10, x0 + wt + 26, sy); ctx.quadraticCurveTo(x0 + wt + 24, y0 + RH - 10, x0 + wt - 6, y0 + RH - 6); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#2a3a44'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + wt + 8, y0 + 8); ctx.lineTo(x0 + wt + 8, y0 + RH - 8); ctx.stroke();
     drawTur(G, -1); drawTur(G2, 1);
-    if (S.subs[S.sub].wp.length > 2) { if (S.subs[S.sub].wp[2] >= 0) drawTur(G3, -1); else drawHardpoint(G3); }
+    if (S.subs[S.sub].wp.length > 2) {
+      if (S.subs[S.sub].wp[2] >= 0) drawTur(G3, -1);
+      else drawHardpoint(G3);
+    }
+  }
+
+  function drawHardpoint(T) {
+    var tx = sx + T.ox, by = sy - (RH / 2 + 7);
+    ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#263943'; ctx.fillRect(tx - 7, sy + T.oy - 5, 14, 10);
+    ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 2; ctx.strokeRect(tx - 7, sy + T.oy - 5, 14, 10);
+    ctx.fillStyle = '#172a34'; ctx.fillRect(tx - 3, sy + T.oy - 2, 6, 4);
   }
 
   function drawInterior() {
