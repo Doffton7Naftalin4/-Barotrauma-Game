@@ -486,10 +486,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function mkSell(k) { return { t: SELLP[k][0], r: sellCnt(k) + ' шт. · ' + SELLP[k][1] + ' кр', d: 'Пробел — продать 1, Q — продать все. Берётся со склада лодки, затем из рюкзака.', ok: sellCnt(k) > 0, f: function (all) { var n = sellCnt(k); if (n <= 0) return 'Нечего продавать'; if (!all) n = 1; for (var q = 0; q < n; q++) sellOne(k); S.cr += n * SELLP[k][1]; sfx.pick(); return '+' + n * SELLP[k][1] + ' кр'; } }; }
   function mkBuy(b) { return { t: b[0], r: b[1] + ' кр · ' + (b[2] ? b[2] + ' ед.' : ''), d: b[4], ok: S.cr >= b[1], f: function () { var c = b[5] && b[5](); if (c) return c; if (S.cr < b[1]) return 'Не хватает кредитов'; if (stored() + b[2] > capSub()) return 'Склад лодки полон (' + Math.ceil(stored()) + '/' + capSub() + ')'; S.cr -= b[1]; b[3](); sfx.pick(); return 'Куплено: ' + b[0]; } }; }
   function mkWp(m, w) {
-    var W_ = WP[w], slots = S.subs[S.sub].wp, ins = slots[m] === w, label = m === 0 ? 'Верхняя' : m === 1 ? 'Нижняя' : 'Дополнительная';
-    return { t: label + ': ' + W_.n, r: ins ? 'установлено' : W_.price ? W_.price + ' кр' : 'бесплатно', ok: !ins && slots.length > m && slots[m] !== undefined && S.cr >= W_.price,
+    var W_ = WP[w], slots = S.subs[S.sub].wp, ins = slots[m] === w, label = m === 0 ? 'Верхняя' : m === 1 ? 'Нижняя' : 'Дополнительная', cost = m === 2 ? Math.max(W_.price, 120) : W_.price;
+    return { t: label + ': ' + W_.n, r: ins ? 'установлено' : cost ? cost + ' кр' : 'бесплатно', ok: !ins && slots.length > m && slots[m] !== undefined && S.cr >= cost,
       d: 'Урон ' + W_.dmg + (W_.pel > 1 ? '×' + W_.pel : '') + ' · перезарядка ' + W_.cd + ' с · дальность ~' + Math.round(W_.sp * W_.life / 10) + ' м. ' + W_.d + (m === 2 ? ' Дополнительная позиция Дюгоня.' : m === 0 ? ' Верхнее орудие бьёт вверх.' : ' Нижнее орудие бьёт вниз.'),
-      f: function () { if (slots.length <= m || slots[m] === undefined) return 'На этой лодке нет такой позиции'; if (ins) return 'Уже установлено'; if (S.cr < W_.price) return 'Не хватает кредитов'; S.cr -= W_.price; slots[m] = w; (m === 0 ? G : m === 1 ? G2 : G3).cool = 0; sfx.pick(); return 'Установлено: ' + W_.n; } };
+      f: function () { if (slots.length <= m || slots[m] === undefined) return 'На этой лодке нет такой позиции'; if (ins) return 'Уже установлено'; if (S.cr < cost) return 'Не хватает кредитов'; S.cr -= cost; slots[m] = w; (m === 0 ? G : m === 1 ? G2 : G3).cool = 0; sfx.pick(); return 'Установлено: ' + W_.n; } };
   }
   function mkSub(id) {
     var B = SUBS[id], own = S.subs[id], cur = S.sub === id, wpl = own ? own.wp : B.wp;
