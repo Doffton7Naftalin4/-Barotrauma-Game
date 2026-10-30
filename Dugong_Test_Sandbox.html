@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Barotrauma — Dugong Test Sandbox</title>
+<style>
+:root{color-scheme:dark;--bg:#07131d;--panel:#102432;--line:#315365;--cyan:#67d8e8;--muted:#9bb4c1;--red:#ef6c67;--green:#78d6a2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e5f1f5;font:14px system-ui,Segoe UI,sans-serif;overflow:hidden}
+#app{height:100dvh;display:grid;grid-template-rows:auto 1fr auto;gap:8px;padding:8px}
+header,.panel,footer{background:linear-gradient(180deg,#122a39,#0b1d29);border:1px solid var(--line);border-radius:10px}
+header{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;gap:10px;flex-wrap:wrap}
+h1{font-size:16px;margin:0;letter-spacing:.04em}small,.muted{color:var(--muted)}
+#main{min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:8px}
+#viewport{position:relative;min-width:0;min-height:0;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#06121c}
+canvas{width:100%;height:100%;display:block}
+#overlay{position:absolute;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.pill{background:#071923d9;border:1px solid #456879;border-radius:6px;padding:5px 8px;font-size:12px}
+#side{overflow:auto;padding:10px;display:flex;flex-direction:column;gap:10px}
+.panel{padding:10px}.panel h2{font-size:13px;margin:0 0 8px;color:var(--cyan);text-transform:uppercase;letter-spacing:.07em}
+.stat{display:flex;justify-content:space-between;gap:8px;margin:6px 0;font-size:12px}
+.track{height:7px;background:#07131d;border:1px solid #345061;border-radius:8px;overflow:hidden;margin-top:3px}.fill{height:100%;background:var(--green);width:50%}
+button{background:#18394b;color:#eaf8fc;border:1px solid #4a7184;border-radius:7px;padding:7px 9px;font:inherit;cursor:pointer}
+button:hover{background:#24536a}button:active{transform:translateY(1px)}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.controls button{font-size:12px}
+footer{padding:7px 10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+#notice{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:#071923e8;border:1px solid #527486;padding:7px 12px;border-radius:7px;white-space:nowrap;pointer-events:none}
+@media(max-width:760px){#main{grid-template-columns:1fr;grid-template-rows:minmax(220px,1fr) 180px}#side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}.panel{padding:7px}#app{padding:5px;gap:5px}footer{font-size:10px}}
+</style>
+</head>
+<body>
+<div id="app">
+<header><div><h1>ДЮГОНЬ / ТЕСТОВАЯ ПЕСОЧНИЦА</h1><small>Изолированная сборка · без процедурного мира · один игрок</small></div><div><button id="pauseBtn">Пауза</button> <button id="resetBtn">Перезапуск</button></div></header>
+<div id="main">
+<div id="viewport"><canvas id="game"></canvas><div id="overlay"><span class="pill" id="depth">Глубина: 0 м</span><span class="pill" id="speed">Скорость: 0</span><span class="pill" id="crew">Экипаж: 1</span></div><div id="notice">W/S — ход · A/D — персонаж · E — взаимодействие · Пробел — турель</div></div>
+<aside id="side">
+<section class="panel"><h2>Энергосистема</h2><div class="stat"><span>Реактор</span><b id="reactorVal">100%</b></div><div class="track"><div class="fill" id="reactorBar"></div></div><div class="stat"><span>Выработка</span><b id="powerVal">100%</b></div><div class="stat"><span>Потребление</span><b id="loadVal">42%</b></div><div class="controls"><button id="reactorDown">− мощность</button><button id="reactorUp">+ мощность</button></div></section>
+<section class="panel"><h2>Движение и балласт</h2><div class="stat"><span>Двигатель</span><b id="engineVal">Включён</b></div><div class="stat"><span>Балласт</span><b id="ballastVal">50%</b></div><div class="track"><div class="fill" id="ballastBar"></div></div><div class="controls"><button id="ballastUp">Заполнить</button><button id="ballastDown">Осушить</button></div><div class="controls"><button id="engineToggle">Двигатель: ВКЛ</button><button id="trimBtn">Стабилизировать</button></div></section>
+<section class="panel"><h2>Корпус и отсеки</h2><div class="stat"><span>Прочность корпуса</span><b id="hullVal">100%</b></div><div class="track"><div class="fill" id="hullBar"></div></div><div class="stat"><span>Вода на борту</span><b id="waterVal">0%</b></div><div class="track"><div class="fill" id="waterBar"></div></div><div class="stat"><span>Протечки</span><b id="leakVal">0</b></div><div class="controls"><button id="leakBtn">Создать пробоину</button><button id="repairBtn">Ремонт корпуса</button><button id="pumpBtn">Насос: ВКЛ</button><button id="doorBtn">Переборки: АВТО</button></div></section>
+<section class="panel"><h2>Вооружение</h2><div class="stat"><span>Носовая турель</span><b id="ammoVal">Боезапас: ∞</b></div><div class="stat"><span>Состояние</span><b id="turretVal">Готова</b></div><div class="controls"><button id="turretToggle">Турель: ВКЛ</button><button id="fireBtn">Огонь / Пробел</button></div></section>
+<section class="panel"><h2>Испытания</h2><div class="controls"><button id="damageBtn">Повредить отсек</button><button id="floodBtn">Аварийное затопление</button><button id="clearBtn">Устранить аварии</button></div><small>Кнопки предназначены для быстрой проверки систем.</small></section>
+</aside></div>
+<footer><span>Управление: W/S — тяга · A/D — ходьба · E — дверь/панель · Пробел — выстрел · Колесо — масштаб</span><span id="status">Системы штатны</span></footer>
+</div>
+<script>
+(()=>{
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+let W=0,H=0,scale=1,paused=false,last=0,keys={},shots=[],particles=[],noticeTimer=0;
+const state={x:0,y:0,vx:0,vy:0,depth:0,ballast:50,reactor:100,hull:100,water:[0,0,0,0],leaks:[],engine:true,pump:true,doors:true,turret:true,ammo:Infinity,player:{x:0,y:0,room:1,health:100},facing:1,fireCd:0,shotCount:0};
+const rooms=[{name:'Носовой отсек',x:0,w:145,kind:'weapon'},{name:'Жилой отсек',x:145,w:150,kind:'living'},{name:'Реакторная',x:295,w:130,kind:'reactor'},{name:'Машинное',x:425,w:165,kind:'engine'}];
+function resize(){const r=canvas.getBoundingClientRect();const d=Math.min(devicePixelRatio||1,2);canvas.width=Math.max(1,r.width*d);canvas.height=Math.max(1,r.height*d);W=r.width;H=r.height;ctx.setTransform(d,0,0,d,0,0)}addEventListener('resize',resize);resize();
+function reset(){Object.assign(state,{x:0,y:0,vx:0,vy:0,depth:0,ballast:50,reactor:100,hull:100,water:[0,0,0,0],leaks:[],engine:true,pump:true,doors:true,turret:true,player:{x:220,y:0,room:1,health:100},facing:1,fireCd:0,shotCount:0});shots=[];particles=[];paused=false;$('pauseBtn').textContent='Пауза';notify('Дюгонь готов к испытаниям');}
+function notify(t){$('notice').textContent=t;$('notice').style.display='block';noticeTimer=3}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function fire(){if(!state.turret||state.fireCd>0||paused)return;state.fireCd=.35;state.shotCount++;shots.push({x:W/2-260+590,y:H/2-8,vx:600,life:1});for(let i=0;i<8;i++)particles.push({x:W/2+330,y:H/2-10,vx:Math.random()*150,vy:(Math.random()-.5)*90,life:.5});}
+function addLeak(){if(state.leaks.length>=4){notify('Все тестовые пробоины уже созданы');return}const room=Math.floor(Math.random()*4);state.leaks.push({room,rate:4+Math.random()*4});state.hull=clamp(state.hull-5,0,100);notify('Пробоина: '+rooms[room].name)}
+function update(dt){if(paused)return;
+const thrust=(keys.KeyW?1:0)-(keys.KeyS?1:0);if(state.engine){state.vx+=thrust*75*dt;state.vx*=Math.pow(.985,dt*60)}else state.vx*=Math.pow(.94,dt*60);
+state.vx=clamp(state.vx,-95,160);state.x+=state.vx*dt;
+const ballastForce=(state.ballast-50)/50;state.vy+=ballastForce*48*dt;state.vy*=Math.pow(.985,dt*60);state.vy=clamp(state.vy,-60,60);state.y+=state.vy*dt;state.depth=clamp(100+state.y,0,3000);
+if(keys.KeyA){state.player.x-=100*dt;state.facing=-1}if(keys.KeyD){state.player.x+=100*dt;state.facing=1}state.player.x=clamp(state.player.x,25,565);
+if(keys.Space)fire();state.fireCd=Math.max(0,state.fireCd-dt);
+state.leaks.forEach(l=>{state.water[l.room]=clamp(state.water[l.room]+l.rate*dt,0,100)});
+if(state.pump){let pumpRate=state.reactor>5?7:2;state.water=state.water.map(v=>clamp(v-pumpRate*dt,0,100))}
+const total=state.water.reduce((a,b)=>a+b,0)/4;
+if(total>65){state.vy+=8*dt;state.hull=clamp(state.hull-.3*dt,0,100)}
+state.reactor=clamp(state.reactor-(.025+(state.engine? .012:0)+(state.pump?.008:0))*dt*60,0,100);
+if(state.reactor<=0){state.engine=false;state.pump=false}
+shots=shots.filter(s=>(s.x+=s.vx*dt,s.life-=dt,s.life>0&&s.x<W+30));
+particles=particles.filter(p=>(p.x+=p.vx*dt,p.y+=p.vy*dt,p.life-=dt,p.life>0));
+}
+function draw(){ctx.clearRect(0,0,W,H);const cy=H*.52;
+let grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,'#061521');grad.addColorStop(.55,'#0a2b40');grad.addColorStop(1,'#061b2b');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+ctx.strokeStyle='#1b4960';ctx.lineWidth=1;for(let i=0;i<12;i++){let y=(i*57+((state.depth*.2)%57))%H;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ctx.fillStyle='#6da7b5';ctx.globalAlpha=.18;ctx.fillRect(0,cy+105,W,H-cy-105);ctx.globalAlpha=1;
+const boatW=590,boatH=190,bx=W/2-boatW/2,by=cy-boatH/2;
+ctx.save();ctx.translate(bx,by);
+ctx.fillStyle='#263e49';ctx.strokeStyle='#a7c5ce';ctx.lineWidth=3;
+ctx.beginPath();ctx.moveTo(0,40);ctx.lineTo(35,12);ctx.lineTo(540,12);ctx.lineTo(590,65);ctx.lineTo(570,160);ctx.lineTo(45,160);ctx.lineTo(5,120);ctx.closePath();ctx.fill();ctx.stroke();
+ctx.fillStyle='#152d39';ctx.fillRect(20,38,550,112);
+rooms.forEach((r,i)=>{let x=20+r.x;ctx.strokeStyle='#86a8b4';ctx.lineWidth=2;ctx.strokeRect(x,38,r.w,112);ctx.fillStyle='#d7edf2';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(r.name,x+r.w/2,30);
+ctx.fillStyle='#102633';ctx.fillRect(x+5,45,r.w-10,98);
+let waterH=state.water[i]*.9;ctx.fillStyle='#287f9e';ctx.globalAlpha=.8;ctx.fillRect(x+6,143-waterH,r.w-12,waterH);ctx.globalAlpha=1;
+if(i===0){ctx.fillStyle='#738f99';ctx.fillRect(x+45,70,48,10);ctx.fillRect(x+75,65,8,20);ctx.fillStyle='#b5d2d9';ctx.fillRect(x+95,78,20,5)}
+if(i===1){ctx.fillStyle='#738f99';ctx.fillRect(x+22,105,75,13);ctx.fillRect(x+30,90,8,15);ctx.fillRect(x+82,90,8,15)}
+if(i===2){ctx.fillStyle='#d28c48';ctx.fillRect(x+47,65,35,48);ctx.fillStyle='#ffd38a';ctx.fillRect(x+55,72,19,34)}
+if(i===3){ctx.fillStyle='#688c99';ctx.fillRect(x+45,85,80,24);ctx.fillStyle='#a6d4dc';ctx.fillRect(x+54,91,62,12)}
+if(state.leaks.some(l=>l.room===i)){ctx.fillStyle='#f0786e';ctx.beginPath();ctx.arc(x+r.w/2,42,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f0786e';ctx.beginPath();ctx.moveTo(x+r.w/2,48);ctx.lineTo(x+r.w/2-4,60);ctx.stroke()}
+});
+ctx.fillStyle='#899fa6';ctx.fillRect(40,-2,70,15);ctx.fillStyle='#b5d1d8';ctx.fillRect(50,-9,45,10);
+ctx.fillStyle='#657e88';ctx.fillRect(0,70,20,30);ctx.fillRect(570,65,20,40);
+ctx.restore();
+// turret and projectiles
+ctx.fillStyle=state.turret?'#c1d4d9':'#53636a';ctx.fillRect(bx+55,by-18,35,14);ctx.fillRect(bx+75,by-23,5,8);
+shots.forEach(s=>{ctx.fillStyle='#ffe3a0';ctx.fillRect(s.x,s.y,15,3)});
+particles.forEach(p=>{ctx.globalAlpha=clamp(p.life*2,0,1);ctx.fillStyle='#ffd28c';ctx.fillRect(p.x,p.y,3,3)});ctx.globalAlpha=1;
+// character
+const px=bx+state.player.x,py=by+126;ctx.fillStyle='#e2bd82';ctx.beginPath();ctx.arc(px,py-18,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#4f9aab';ctx.fillRect(px-5,py-12,10,18);ctx.strokeStyle='#d9e8e9';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(px-2,py+5);ctx.lineTo(px-5,py+13);ctx.moveTo(px+2,py+5);ctx.lineTo(px+5,py+13);ctx.stroke();
+ctx.fillStyle='#d9edf2';ctx.font='12px system-ui';ctx.fillText('ПЕРСОНАЖ',px,py+28);
+ctx.fillStyle='#a4c4ce';ctx.font='11px system-ui';ctx.textAlign='left';ctx.fillText('ОКЕАН / ТЕСТОВАЯ ЗОНА',14,H-16);
+ctx.fillStyle='#c3d9df';ctx.fillText('Глубина '+Math.round(state.depth)+' м',W-120,22);
+}
+function ui(){const water=state.water.reduce((a,b)=>a+b,0)/4;const set=(id,v)=>$(id).textContent=v;const bar=(id,v)=>$(id).style.width=clamp(v,0,100)+'%';
+set('depth','Глубина: '+Math.round(state.depth)+' м');set('speed','Скорость: '+Math.round(Math.abs(state.vx))+' узл.');set('reactorVal',Math.round(state.reactor)+'%');bar('reactorBar',state.reactor);set('powerVal',Math.round(state.reactor)+'%');set('loadVal',(42+(state.engine?18:0)+(state.pump?12:0))+'%');
+set('ballastVal',Math.round(state.ballast)+'%');bar('ballastBar',state.ballast);set('engineVal',state.engine?'Включён':'Отключён');$('engineToggle').textContent='Двигатель: '+(state.engine?'ВКЛ':'ВЫКЛ');
+set('hullVal',Math.round(state.hull)+'%');bar('hullBar',state.hull);set('waterVal',Math.round(water)+'%');bar('waterBar',water);set('leakVal',state.leaks.length);$('pumpBtn').textContent='Насос: '+(state.pump?'ВКЛ':'ВЫКЛ');$('doorBtn').textContent='Переборки: '+(state.doors?'АВТО':'ОТКРЫТЫ');$('turretToggle').textContent='Турель: '+(state.turret?'ВКЛ':'ВЫКЛ');set('turretVal',state.turret?'Готова':'Отключена');set('status',state.hull<35?'КРИТИЧЕСКИЕ ПОВРЕЖДЕНИЯ':water>40?'ЗАТОПЛЕНИЕ ОТСЕКОВ':state.reactor<15?'НИЗКИЙ ЗАРЯД РЕАКТОРА':'Системы штатны')}
+function loop(t){const dt=Math.min((t-last)/1000||0,.04);last=t;if(noticeTimer>0&&(noticeTimer-=dt)<=0)$('notice').style.display='none';update(dt);draw();ui();requestAnimationFrame(loop)}
+addEventListener('keydown',e=>{keys[e.code]=true;if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();if(e.code==='KeyE') {state.doors=!state.doors;notify('Переборки '+(state.doors?'в автоматическом режиме':'открыты'))}});
+addEventListener('keyup',e=>keys[e.code]=false);
+canvas.addEventListener('wheel',e=>{scale=clamp(scale+(e.deltaY<0?.1:-.1),.7,1.4);notify('Масштаб камеры: '+Math.round(scale*100)+'%')},{passive:true});
+$('pauseBtn').onclick=()=>{paused=!paused;$('pauseBtn').textContent=paused?'Продолжить':'Пауза';notify(paused?'Испытание приостановлено':'Испытание продолжается')};
+$('resetBtn').onclick=reset;$('reactorDown').onclick=()=>state.reactor=clamp(state.reactor-10,0,100);$('reactorUp').onclick=()=>state.reactor=clamp(state.reactor+10,0,100);
+$('ballastUp').onclick=()=>state.ballast=clamp(state.ballast+10,0,100);$('ballastDown').onclick=()=>state.ballast=clamp(state.ballast-10,0,100);
+$('engineToggle').onclick=()=>state.engine=!state.engine;$('trimBtn').onclick=()=>{state.ballast=50;state.vy=0;notify('Балласт стабилизирован')};
+$('leakBtn').onclick=addLeak;$('repairBtn').onclick=()=>{state.hull=clamp(state.hull+20,0,100);state.leaks=[];notify('Корпус частично восстановлен')};
+$('pumpBtn').onclick=()=>state.pump=!state.pump;$('doorBtn').onclick=()=>state.doors=!state.doors;
+$('turretToggle').onclick=()=>state.turret=!state.turret;$('fireBtn').onclick=fire;
+$('damageBtn').onclick=()=>{state.hull=clamp(state.hull-15,0,100);addLeak()};$('floodBtn').onclick=()=>{state.water=state.water.map(v=>clamp(v+45,0,100));notify('Аварийное затопление смоделировано')};
+$('clearBtn').onclick=()=>{state.leaks=[];state.water=[0,0,0,0];state.hull=100;state.reactor=100;state.pump=true;state.engine=true;notify('Аварии устранены')};
+reset();requestAnimationFrame(loop);
+})();
+</script>
+</body></html>
