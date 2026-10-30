@@ -173,7 +173,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     { n: 'Дробовик', dmg: 1, cd: 1.0, sp: 520, life: 0.55, pel: 5, spr: 0.5, r: 2.5, c: '#fff2c4', bw: 7, bl: -6, price: 120, d: 'Веер из 5 зарядов, бьёт только вблизи.' }
   ];
   var SUBS = [
-    { n: 'Базовая', cap: 40, carry: 8, harp: 10, wp: [0, 0], spd: 1, fr: 1, arm: 0, c0: '#5a6e7a', c1: '#232f37', ac: '#d98a2b', cr: 0, d: '«Дюгонь» — базовая исследовательская подлодка с двумя штатными пушками и дополнительной свободной позицией.' },
+    { n: 'Дюгонь', cap: 40, carry: 8, harp: 10, wp: [0, 0, -1], spd: 1, fr: 1, arm: 0, c0: '#5a6e7a', c1: '#232f37', ac: '#d98a2b', cr: 0, d: '«Дюгонь» — базовая исследовательская подлодка с двумя штатными пушками и дополнительной свободной позицией.' },
     { n: 'Барсук', cap: 34, carry: 8, harp: 10, wp: [2, 0], spd: 0.95, fr: 1.1, arm: 0.3, c0: '#6b7560', c1: '#2a3126', ac: '#b9b24a', cr: 3, d: 'Бронированная: -30% урона. Верхнее орудие тяжёлое.' },
     { n: 'Тифон', cap: 22, carry: 6, harp: 10, wp: [1, 1], spd: 1.3, fr: 1, arm: 0, c0: '#5a6d86', c1: '#1f2b3a', ac: '#4fb6e0', cr: 5, d: 'Скоростная: ход +30%, две скорострельные пушки, но тесный склад.' },
     { n: 'Фура', cap: 100, carry: 14, harp: 20, wp: [3, 0], spd: 0.85, fr: 1.15, arm: 0, c0: '#7a6a58', c1: '#322a22', ac: '#e0703a', cr: 4, d: 'Грузовая: огромный склад и рюкзак, до 20 гарпунов, ход -15%, слабое вооружение.' }
@@ -486,10 +486,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function mkSell(k) { return { t: SELLP[k][0], r: sellCnt(k) + ' шт. · ' + SELLP[k][1] + ' кр', d: 'Пробел — продать 1, Q — продать все. Берётся со склада лодки, затем из рюкзака.', ok: sellCnt(k) > 0, f: function (all) { var n = sellCnt(k); if (n <= 0) return 'Нечего продавать'; if (!all) n = 1; for (var q = 0; q < n; q++) sellOne(k); S.cr += n * SELLP[k][1]; sfx.pick(); return '+' + n * SELLP[k][1] + ' кр'; } }; }
   function mkBuy(b) { return { t: b[0], r: b[1] + ' кр · ' + (b[2] ? b[2] + ' ед.' : ''), d: b[4], ok: S.cr >= b[1], f: function () { var c = b[5] && b[5](); if (c) return c; if (S.cr < b[1]) return 'Не хватает кредитов'; if (stored() + b[2] > capSub()) return 'Склад лодки полон (' + Math.ceil(stored()) + '/' + capSub() + ')'; S.cr -= b[1]; b[3](); sfx.pick(); return 'Куплено: ' + b[0]; } }; }
   function mkWp(m, w) {
-    var W_ = WP[w], ins = S.subs[S.sub].wp[m] === w;
-    return { t: (m ? 'Нижняя: ' : 'Верхняя: ') + W_.n, r: ins ? 'установлено' : W_.price ? W_.price + ' кр' : 'бесплатно', ok: !ins && S.cr >= W_.price,
-      d: 'Урон ' + W_.dmg + (W_.pel > 1 ? '×' + W_.pel : '') + ' · перезарядка ' + W_.cd + ' с · дальность ~' + Math.round(W_.sp * W_.life / 10) + ' м. ' + W_.d + ' Верхнее орудие бьёт вверх, нижнее вниз.',
-      f: function () { if (ins) return 'Уже установлено'; if (S.cr < W_.price) return 'Не хватает кредитов'; S.cr -= W_.price; S.subs[S.sub].wp[m] = w; (m ? G2 : G).cool = 0; sfx.pick(); return 'Установлено: ' + W_.n; } };
+    var W_ = WP[w], slots = S.subs[S.sub].wp, ins = slots[m] === w, label = m === 0 ? 'Верхняя' : m === 1 ? 'Нижняя' : 'Дополнительная';
+    return { t: label + ': ' + W_.n, r: ins ? 'установлено' : W_.price ? W_.price + ' кр' : 'бесплатно', ok: !ins && slots.length > m && slots[m] !== undefined && S.cr >= W_.price,
+      d: 'Урон ' + W_.dmg + (W_.pel > 1 ? '×' + W_.pel : '') + ' · перезарядка ' + W_.cd + ' с · дальность ~' + Math.round(W_.sp * W_.life / 10) + ' м. ' + W_.d + (m === 2 ? ' Дополнительная позиция Дюгоня.' : m === 0 ? ' Верхнее орудие бьёт вверх.' : ' Нижнее орудие бьёт вниз.'),
+      f: function () { if (slots.length <= m || slots[m] === undefined) return 'На этой лодке нет такой позиции'; if (ins) return 'Уже установлено'; if (S.cr < W_.price) return 'Не хватает кредитов'; S.cr -= W_.price; slots[m] = w; (m === 0 ? G : m === 1 ? G2 : G3).cool = 0; sfx.pick(); return 'Установлено: ' + W_.n; } };
   }
   function mkSub(id) {
     var B = SUBS[id], own = S.subs[id], cur = S.sub === id, wpl = own ? own.wp : B.wp;
@@ -503,7 +503,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         if (need > 0) return bought + 'Склад мал: освободите ' + Math.ceil(need) + ' ед. и выберите её снова';
         S.subs[S.sub].hull = hull; S.sub = id; hull = S.subs[id].hull;
         if (over) { D.ammo -= over; S.harp += over; }
-        leaks = []; fires = []; w = [0, 0, 0, 0, 0]; G.cool = 0; G2.cool = 0; sfx.door();
+        leaks = []; fires = []; w = [0, 0, 0, 0, 0]; G.cool = 0; G2.cool = 0; G3.cool = 0; Gs = 0; sfx.door();
         return bought + 'Вы на лодке «' + B.n + '»';
       } };
   }
@@ -511,7 +511,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var L_ = [], k, m, w_;
     if (shop.tab === 0) for (k = 0; k < 5; k++) L_.push(mkSell(k));
     else if (shop.tab === 1) BUY.forEach(function (b) { L_.push(mkBuy(b)); });
-    else if (shop.tab === 2) for (m = 0; m < 2; m++) for (w_ = 0; w_ < WP.length; w_++) L_.push(mkWp(m, w_));
+    else if (shop.tab === 2) for (m = 0; m < S.subs[S.sub].wp.length; m++) for (w_ = 0; w_ < WP.length; w_++) L_.push(mkWp(m, w_));
     else for (k = 0; k < SUBS.length; k++) L_.push(mkSub(k));
     return L_;
   }
@@ -549,7 +549,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.font = '500 12px ' + DISP; ctx.fillStyle = '#7a97a3'; ctx.fillText('W/S выбор · A/D вкладка · Пробел действие · Q продать всё · E выйти', 116, 408);
   }
   function outAt(x, y, r) { for (var i = 0; i < outposts.length; i++) if (Math.hypot(x - outposts[i].door.x, y - outposts[i].door.y) < r) return outposts[i]; return null; }
-  function arcT(T) { return T.oy < 0 ? [-3.04, -0.1] : [0.1, 3.04]; }
+  function arcT(T) { return T.i === 2 ? [-3.04, 3.04] : T.oy < 0 ? [-3.04, -0.1] : [0.1, 3.04]; }
   function clampArc(T) { var r = arcT(T); T.ang = clamp(T.ang, r[0], r[1]); }
   function inHull(x, y) { return x > sx - HL - 18 && x < sx + HL + 28 && y > sy - RH / 2 - 6 && y < sy + RH / 2 + 6; }
   function hurtP(n, k) { P.hp -= n; if (k && Math.random() < (k === 't' ? 0.8 : 0.35)) { P.dis[k] = Math.min(1, P.dis[k] + (k === 't' ? 0.5 : 0.4)); toast(k === 't' ? 'Отравление! Нужен антидот (H)' : 'Рана заражена! Нужен антибиотик (H)'); } flash = Math.max(flash, 0.22); shake = Math.min(0.5, shake + 0.15); sfx.hit(); }
@@ -789,7 +789,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   /* ---------- state ---------- */
   var state = 'menu', overT = 0, t = 0, lossText = '', cur = 0, unlocked = 1, bests = [0, 0, 0, 0, 0, 0, 0];
   try { var sv = JSON.parse(localStorage.getItem('pg_save') || 'null'); if (sv) { unlocked = clamp(sv.u | 0, 1, 7); if (sv.b) bests = sv.b.concat([0, 0, 0, 0, 0, 0, 0]).slice(0, 7); } } catch (e) {}
-  var sx, sy, svx, svy, hull, w, doors, leaks, fires, mons, shots, parts, P, R, pw, G, G2, Gs, S, cargoGot, crates = [], sites = [], plants = [], turbo;
+  var sx, sy, svx, svy, hull, w, doors, leaks, fires, mons, shots, parts, P, R, pw, G, G2, G3, Gs, S, cargoGot, crates = [], sites = [], plants = [], turbo;
   var shake, flash, tcool, spawnT, bruteT, elapsed, camX, camY, alarmT, fireT, kills, hint, alarmList, pods, nest, tremorT, tremorMsg, podsGot, snow = [];
   for (var si = 0; si < 60; si++) snow.push({ x: Math.random() * W, y: Math.random() * H, z: 0.3 + Math.random() * 0.7 });
 
@@ -802,7 +802,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
-    G = { ang: -0.3, cool: 0, ox: roomCx(3), oy: -RH / 2 - 8, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: roomCx(2), oy: RH / 2 + 8, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
+    G = { ang: -0.3, cool: 0, ox: roomCx(3), oy: -RH / 2 - 8, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: roomCx(2), oy: RH / 2 + 8, i: 1 }; G3 = { ang: -0.3, cool: 0, ox: roomCx(4), oy: -RH / 2 - 8, i: 2 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0, -1] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
     turbo = false; shake = 0; flash = 0; tcool = 0; elapsed = 0; alarmT = 0; fireT = 0; kills = 0; shockT = 0; shockImm = 0; dockT = 0; dockMsg = ''; oreTot = 0; menuS = 0;
     roamT = rand(LV0.roam[0], LV0.roam[1]) * 0.7;
     genWorld(LV0);
@@ -895,8 +895,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (PR.e) { P.seat = null; exited = true; }
       else if (P.seat === 'helm') { hIn.x = K.right - K.left; hIn.y = K.down - K.up; hint = 'WASD — курс · E — встать'; }
       else if (P.seat === 'gun') {
-        if (PR.q) Gs = 1 - Gs; var GT = Gs ? G2 : G; GT.ang += (K.down - K.up) * 1.8 * dt; clampArc(GT);
-        hint = (Gs ? 'Нижняя' : 'Верхняя') + ' пушка · W/S — поворот · Q — сменить пушку · Пробел — огонь · E — встать';
+        if (PR.q) { for (var gi = 1; gi <= 3; gi++) { var nextGun = (Gs + gi) % 3; if (S.subs[S.sub].wp[nextGun] >= 0) { Gs = nextGun; break; } } } var GT = Gs === 0 ? G : Gs === 1 ? G2 : G3; GT.ang += (K.down - K.up) * 1.8 * dt; clampArc(GT);
+        hint = (Gs === 0 ? 'Верхняя' : Gs === 1 ? 'Нижняя' : 'Дополнительная') + ' пушка · W/S — поворот · Q — сменить · Пробел — огонь · E — встать';
         if ((PR.space || K.space) && pw.ratio > 0.25) {
           fireG(GT, false);
           
@@ -1006,7 +1006,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (P.o2 <= 0) { P.o2 = 0; P.hp -= 25 * dt; }
 
     /* gun & shots */
-    G.cool -= dt; G2.cool -= dt; autoGun(G, 0, dt); autoGun(G2, 1, dt);
+    G.cool -= dt; G2.cool -= dt; G3.cool -= dt; autoGun(G, 0, dt); autoGun(G2, 1, dt); if (S.subs[S.sub].wp[2] >= 0) autoGun(G3, 2, dt);
     for (var s = shots.length - 1; s >= 0; s--) {
       var sh = shots[s]; sh.x += sh.vx * dt; sh.y += sh.vy * dt; sh.life -= dt;
       var dead = sh.life <= 0; if (!dead && sh.own && inHull(sh.x, sh.y)) dead = true; if (!dead && solidAt(sh.x, sh.y)) { dead = true; hitIce(sh.x, sh.y, sh.dmg); }
@@ -1111,7 +1111,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function fireG(T, auto) {
-    if (T.cool > 0) return;
+    if (T.cool > 0 || S.subs[S.sub].wp[T.i] == null || S.subs[S.sub].wp[T.i] < 0) return;
     var wp = WP[S.subs[S.sub].wp[T.i]], mx = sx + T.ox + Math.cos(T.ang) * 26, my = sy + T.oy + Math.sin(T.ang) * 26;
     if (inHull(mx, my)) return;
     for (var q = 0; q < wp.pel; q++) {
@@ -1618,8 +1618,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.restore();
   }
 
+  function drawHardpoint(T) { var tx = sx + T.ox, by = sy + T.oy + 7; ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 8, Math.PI, 0); ctx.fill(); ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 2; ctx.strokeRect(tx - 5, by - 5, 10, 3); ctx.fillStyle = '#f0a73c'; ctx.fillRect(tx - 2, by - 2, 4, 2); }
   function drawTur(T, dn) {
-    var tx = sx + T.ox, by = sy + dn * (RH / 2 + 7);
+    var tx = sx + T.ox, by = T.i === 2 ? sy + T.oy + 7 : sy + dn * (RH / 2 + 7);
     ctx.save(); ctx.translate(tx, sy + T.oy); ctx.rotate(T.ang);
     var wq_ = WP[S.subs[S.sub].wp[T.i]]; ctx.fillStyle = '#6a7b86'; ctx.fillRect(0, -wq_.bw / 2, 28 + wq_.bl, wq_.bw); ctx.fillStyle = T.cool > 0 ? '#f0a73c' : '#8fa1ad'; ctx.fillRect(22 + wq_.bl, -wq_.bw / 2 - 1, 8, wq_.bw + 2); ctx.fillStyle = pw.ratio > 0.3 && !pw.short ? '#fff6cf' : '#4a5660'; ctx.beginPath(); ctx.arc(32 + wq_.bl, 0, 2.4, 0, 6.283); ctx.fill(); ctx.restore();
     ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, dn < 0 ? Math.PI : 0, dn < 0 ? 0 : Math.PI); ctx.fill();
@@ -1649,7 +1650,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#46555f'; rr(sx + 6 - 17, y0 - 19, 34, 8, 3); ctx.fill(); ctx.fillStyle = dockT > 0 ? '#4fe0b6' : '#f0a73c'; ctx.fillRect(sx + 6 - 12, y0 - 20, 24, 2);
     ctx.fillStyle = 'rgba(79,170,200,0.55)'; ctx.beginPath(); ctx.moveTo(x0 + wt - 6, y0 + 6); ctx.quadraticCurveTo(x0 + wt + 24, y0 + 10, x0 + wt + 26, sy); ctx.quadraticCurveTo(x0 + wt + 24, y0 + RH - 10, x0 + wt - 6, y0 + RH - 6); ctx.closePath(); ctx.fill();
     ctx.strokeStyle = '#2a3a44'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + wt + 8, y0 + 8); ctx.lineTo(x0 + wt + 8, y0 + RH - 8); ctx.stroke();
-    drawTur(G, -1); drawTur(G2, 1);
+    drawTur(G, -1); drawTur(G2, 1); if (S.subs[S.sub].wp.length > 2) { if (S.subs[S.sub].wp[2] >= 0) drawTur(G3, -1); else drawHardpoint(G3); }
   }
 
   function drawInterior() {
