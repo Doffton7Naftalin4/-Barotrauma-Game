@@ -1233,8 +1233,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       for (i = 0; i < plants.length; i++) if (!plants[i].got) { c.fillStyle = PLC[plants[i].k]; c.beginPath(); c.arc(plants[i].x, plants[i].y, 14, 0, 6.283); c.fill(); }
       for (i = 0; i < crates.length; i++) if (!crates[i].got) { c.fillStyle = '#f0a73c'; c.beginPath(); c.arc(crates[i].x, crates[i].y, 17, 0, 6.283); c.fill(); }
       for (i = 0; i < bcrates.length; i++) if (!bcrates[i].got) { c.fillStyle = '#5fd0ff'; c.beginPath(); c.arc(bcrates[i].x, bcrates[i].y, 17, 0, 6.283); c.fill(); }
-      for (i = 0; i < mons.length; i++) { var mo = mons[i]; if (Math.hypot(mo.x - sx - 6, mo.y - sy) > (beaconUp ? 1100 : 520)) continue; c.fillStyle = '#ff4a3a'; c.beginPath(); c.arc(mo.x, mo.y, MT[mo.type].r * 0.9 + 4, 0, 6.283); c.fill(); }
-      c.globalCompositeOperation = 'destination-in'; var mg = c.createRadialGradient(sx + 6, sy, 150, sx + 6, sy, beaconUp ? 1300 : 650); mg.addColorStop(0, 'rgba(0,0,0,1)'); mg.addColorStop(1, 'rgba(0,0,0,0)');
+      for (i = 0; i < mons.length; i++) { var mo = mons[i]; if (Math.hypot(mo.x - sx - 6, mo.y - sy) > (beaconUp ? 1700 : 850)) continue; c.fillStyle = '#ff4a3a'; c.beginPath(); c.arc(mo.x, mo.y, MT[mo.type].r * 0.9 + 4, 0, 6.283); c.fill(); }
+      c.globalCompositeOperation = 'destination-in'; var mg = c.createRadialGradient(sx + 6, sy, 150, sx + 6, sy, beaconUp ? 2000 : 1000); mg.addColorStop(0, 'rgba(0,0,0,1)'); mg.addColorStop(1, 'rgba(0,0,0,0)');
       c.fillStyle = mg; c.fillRect(sbx - 20, sby - 20, W + 100, H + 100); c.globalCompositeOperation = 'source-over';
     } else {
       ctx.strokeStyle = 'rgba(79,224,182,0.1)'; ctx.lineWidth = 10; ctx.stroke(pth);
@@ -1784,7 +1784,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (pw.ratio < 0.3 || pw.short) {
       ctx.fillStyle = '#ff5a47'; ctx.font = '700 12px ' + DISP; ctx.textAlign = 'center'; ctx.fillText('НЕТ ПИТАНИЯ', cx, cy + 4); ctx.textAlign = 'left'; return;
     }
-    var R_ = beaconUp ? 720 : 360, a, rad;
+    var R_ = beaconUp ? 1400 : 700, a, rad;
     ctx.fillStyle = 'rgba(79,224,182,0.85)';
     for (a = 0; a < 6.283; a += Math.PI / 20) {
       for (rad = 16; rad <= R_; rad += 14) {
