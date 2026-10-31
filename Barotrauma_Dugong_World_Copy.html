@@ -892,13 +892,13 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   var state = 'menu', overT = 0, t = 0, lossText = '', cur = 0, unlocked = 1, bests = [0, 0, 0, 0, 0, 0, 0];
   try { var sv = JSON.parse(localStorage.getItem('pg_save') || 'null'); if (sv) { unlocked = clamp(sv.u | 0, 1, 7); if (sv.b) bests = sv.b.concat([0, 0, 0, 0, 0, 0, 0]).slice(0, 7); } } catch (e) {}
   var sx, sy, svx, svy, hull, w, doors, leaks, fires, mons, shots, parts, P, R, pw, G, G2, Gs, S, cargoGot, crates = [], sites = [], plants = [], turbo;
-  var shake, flash, tcool, spawnT, bruteT, elapsed, camX, camY, alarmT, fireT, kills, hint, alarmList, pods, nest, tremorT, tremorMsg, podsGot, snow = [];
+  var shake, flash, tcool, spawnT, bruteT, elapsed, camX, camY, alarmT, fireT, kills, hint, alarmList, pods, nest, tremorT, tremorMsg, podsGot, snow = [], dugongFlood = [];
   for (var si = 0; si < 60; si++) snow.push({ x: Math.random() * W, y: Math.random() * H, z: 0.3 + Math.random() * 0.7 });
 
   function reset() {
     var LV0 = LEVELS[cur]; GOAL = LV0.goal;
     sx = 0; sy = 0; svx = 0; svy = 0; hull = 100;
-    w = [0, 0, 0, 0, 0]; doors = [1, 1, 1, 1];
+    w = [0, 0, 0, 0, 0]; dugongFlood = [0,0,0,0,0,0,0,0,0,0,0]; doors = [1, 1, 1, 1];
     leaks = []; fires = []; shots = []; spits = []; parts = [];
     P = { dis: { t: 0, i: 0, b: 0 }, lx: 0, deck: 1, face: 1, hp: 100, o2: 100, seat: null, work: 0, step: 0, out: false };
     deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
@@ -957,52 +957,35 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function roomOf(lx) { return clamp(Math.floor((lx + HL) / RW), 0, NR - 1); }
   function roomCx(i) { return -HL + i * RW + RW / 2; }
   function hurt(n) { hull -= n * (1 - 0.2 * S.hu - SUBS[S.sub].arm); shake = Math.min(0.7, shake + 0.25); flash = 0.2; }
-  var DUGONG_DAMAGE_SPOTS = [
-    { deck: 1, x: -167 }, /* machine room */
-    { deck: 2, x: -93 },  /* reactor */
-    { deck: 2, x: -16 },  /* electrical / pumps */
-    { deck: 1, x: 158 },  /* armory */
-    { deck: 1, x: -86 }   /* command */
+  /* Eleven independent pressure compartments; legacy volumes are mirrored below. */
+  var DUGONG_ROOM_SPECS=[
+    {id:'airlock',deck:0,room:0,x:-50.4},{id:'engine',deck:1,room:0,x:-167},
+    {id:'command',deck:1,room:1,x:-86},{id:'diving_suits',deck:1,room:2,x:-10},
+    {id:'medical',deck:1,room:3,x:67},{id:'armory',deck:1,room:4,x:158},
+    {id:'ballast_aft',deck:2,room:0,x:-173},{id:'reactor',deck:2,room:1,x:-93},
+    {id:'electrical',deck:2,room:2,x:-16},{id:'oxygen',deck:2,room:3,x:63},
+    {id:'ballast_fore',deck:2,room:4,x:165}
   ];
-  function dugongDamageSpot(room) { return DUGONG_DAMAGE_SPOTS[clamp(room | 0, 0, DUGONG_DAMAGE_SPOTS.length - 1)]; }
-  function dugongWaterRoomAt(deck, lx) {
-    var roomIndex = dugongRoomAt(deck, lx);
-    for (var i = 0; i < DUGONG_DAMAGE_SPOTS.length; i++) {
-      var spot = DUGONG_DAMAGE_SPOTS[i];
-      if (spot.deck === deck && dugongRoomAt(deck, spot.x) === roomIndex) return i;
-    }
-    return -1;
+  var DUGONG_LEGACY_FLOOD_MAP=[1,7,8,5,2],DUGONG_DAMAGE_SPOTS=DUGONG_ROOM_SPECS;
+  function dugongFloodIndex(deck,ri){for(var i=0;i<DUGONG_ROOM_SPECS.length;i++){var q=DUGONG_ROOM_SPECS[i];if(q.deck===deck&&q.room===ri)return i;}return -1;}
+  function dugongRoomSpecAt(deck,lx){var ri=dugongRoomAt(deck,lx);for(var i=0;i<DUGONG_ROOM_SPECS.length;i++){var q=DUGONG_ROOM_SPECS[i];if(q.deck===deck&&q.room===ri)return q;}return null;}
+  function dugongDamageSpot(room){return DUGONG_ROOM_SPECS[DUGONG_LEGACY_FLOOD_MAP[clamp(room|0,0,4)]];}
+  function dugongWaterRoomAt(deck,lx){var q=dugongRoomSpecAt(deck,lx);return q?DUGONG_ROOM_SPECS.indexOf(q):-1;}
+  function dugongEffectY(deck,top){var row=DUGONG_DECK_LAYOUT[deck];return row.y+(top?3:row.h-5);}
+  function syncLegacyWater(){for(var i=0;i<5;i++)w[i]=dugongFlood[DUGONG_LEGACY_FLOOD_MAP[i]]||0;}
+  function addLeak(room,size,lx,top,deckHint){
+    if(leaks.length>=14)return;var isTop=top==null?Math.random()<0.5:!!top;
+    var targetDeck=deckHint==null?(isTop?1:2):clamp(deckHint|0,0,2);
+    var spec=lx!=null&&isFinite(lx)?dugongRoomSpecAt(targetDeck,lx):null;
+    if(!spec)spec=deckHint==null?dugongDamageSpot(room):DUGONG_ROOM_SPECS.filter(function(q){return q.deck===targetDeck;})[0];
+    if(!spec)return;var wi=DUGONG_ROOM_SPECS.indexOf(spec);
+    var leak={room:spec.room,waterRoom:wi,deck:spec.deck,lx:spec.x,y:dugongEffectY(spec.deck,isTop),size:size,top:isTop};
+    leaks.push(leak);return leak;
   }
-  function dugongEffectY(deck, top) {
-    var row = DUGONG_DECK_LAYOUT[deck];
-    return row.y + (top ? 3 : row.h - 5);
-  }
-  function addLeak(room, size, lx, top) {
-    if (leaks.length >= 14) return;
-    var isTop = top == null ? Math.random() < 0.5 : top;
-    var spot = dugongDamageSpot(room);
-    /* When a hit supplies a real hull x-coordinate, select the nearest
-       compartment on the struck side instead of reusing the old room index. */
-    if (lx != null && isFinite(lx)) {
-      var targetDeck = isTop ? 1 : 2, bestDistance = 1e9;
-      for (var si = 0; si < DUGONG_DAMAGE_SPOTS.length; si++) {
-        var candidate = DUGONG_DAMAGE_SPOTS[si];
-        if (candidate.deck !== targetDeck) continue;
-        var distance = Math.abs(candidate.x - lx);
-        if (distance < bestDistance) { bestDistance = distance; spot = candidate; }
-      }
-    }
-    var deck = spot.deck, x = spot.x, waterRoom = DUGONG_DAMAGE_SPOTS.indexOf(spot);
-    var leak = { room: roomOf(x), waterRoom: waterRoom, deck: deck, lx: x,
-      y: dugongEffectY(deck, isTop), size: size, top: isTop };
-    leaks.push(leak); return leak;
-  }
-  function addFire(room, lx) {
-    var n = 0; for (var i = 0; i < fires.length; i++) if (fires[i].waterRoom === room) n++;
-    if (n >= 3) return;
-    var spot = dugongDamageSpot(room), deck = spot.deck, x = spot.x;
-    fires.push({ room: roomOf(x), waterRoom: room, deck: deck, lx: x,
-      y: dugongEffectY(deck, false), hp: 1 });
+  function addFire(room,lx,deckHint){
+    var spec=deckHint==null?dugongDamageSpot(room):dugongRoomSpecAt(deckHint,lx==null?0:lx);if(!spec)return;
+    var wi=DUGONG_ROOM_SPECS.indexOf(spec),n=0;for(var i=0;i<fires.length;i++)if(fires[i].waterRoom===wi)n++;
+    if(n>=3)return;fires.push({room:spec.room,waterRoom:wi,deck:spec.deck,lx:spec.x,y:dugongEffectY(spec.deck,false),hp:1});
   }
 
   /* particles */
@@ -1055,7 +1038,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
     if (!P.seat && !P.out) {
       var deck = clamp(P.deck == null ? 1 : P.deck, 0, 2), row = DUGONG_DECK_LAYOUT[deck];
-      var dir = K.right - K.left, spd = 72 * (waterRoom >= 0 && w[waterRoom] * RH > 8 ? 0.55 : 1) * (1 - 0.4 * P.dis.b);
+      var dir = K.right - K.left, spd = 72 * (waterRoom >= 0 && dugongFlood[waterRoom] * RH > 8 ? 0.55 : 1) * (1 - 0.4 * P.dis.b);
       var nx = P.lx + dir * spd * dt, k, boundary;
       for (k = 0; k < row.widths.length - 1; k++) {
         boundary = dugongDoorX(deck, k);
@@ -1111,11 +1094,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
 
     /* power */
-    var engOK = w[0] < 0.5, thrust = Math.hypot(hIn.x, hIn.y) * (engOK ? 1 : 0);
+    var engOK = dugongFlood[1] < 0.5, thrust = Math.hypot(hIn.x, hIn.y) * (engOK ? 1 : 0);
     pw.load = 12 + 6 + thrust * 34 + (turbo ? 30 : 9) + (G.cool > 0 || G2.cool > 0 ? 14 : 3);
     var fireInReactor = false;
-    for (var f = 0; f < fires.length; f++) if (fires[f].room === 1) fireInReactor = true;
-    pw.short = w[1] > 0.45;
+    for (var f = 0; f < fires.length; f++) if (fires[f].deck === 2 && fires[f].room === 1) fireInReactor = true;
+    pw.short = dugongFlood[7] > 0.45;
     R.fault = pw.short || fireInReactor;
     if (R.fault) R.auto = false;
     if (R.auto) R.Ft = clamp(pw.load * 1.1 + 4, 0, 100);
@@ -1130,7 +1113,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (R.T > 150) R.melt += dt; else R.melt = Math.max(0, R.melt - dt);
 
     /* sub motion */
-    var totalW = 0; for (var q = 0; q < NR; q++) totalW += w[q];
+    var totalW = 0; for (var q = 0; q < dugongFlood.length; q++) totalW += dugongFlood[q];
     var sM = SUBS[S.sub].spd, tvx = hIn.x * 140 * sM * pw.ratio * (engOK ? 1 : 0), tvy = hIn.y * 110 * sM * pw.ratio * (engOK ? 1 : 0) + totalW * 26;
     svx += (tvx - svx) * 1.2 * dt; svy += (tvy - svy) * 1.2 * dt;
     var nx2 = sx + svx * dt;
@@ -1140,25 +1123,27 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     tcool -= dt;
 
     /* water */
-    for (var li = 0; li < leaks.length; li++) { var L = leaks[li]; w[L.waterRoom] += L.size * 0.10 * dt; L.size = Math.min(1, L.size + 0.006 * dt); }
-    var pumpOn = pw.ratio > 0.3, drain = (turbo ? 0.12 : 0.035) * (w[2] > 0.6 ? 0.3 : 1) * pw.ratio;
-    for (var pi = 0; pi < NR; pi++) if (pumpOn) w[pi] = Math.max(0, w[pi] - drain * dt);
-    if (deckDoors[1][0]) { var flMain = (w[0] - w[4]) * 0.45 * dt; w[0] -= flMain; w[4] += flMain; }
-    if (deckDoors[2][1]) { var flLower = (w[1] - w[2]) * 0.45 * dt; w[1] -= flLower; w[2] += flLower; }
-    for (var wi = 0; wi < NR; wi++) w[wi] = clamp(w[wi], 0, 1);
+    for(var li=0;li<leaks.length;li++){var L=leaks[li];dugongFlood[L.waterRoom]=clamp(dugongFlood[L.waterRoom]+L.size*0.10*dt,0,1);L.size=Math.min(1,L.size+0.006*dt);}
+    var pumpOn=pw.ratio>0.3,drain=(turbo?0.12:0.035)*(dugongFlood[8]>0.6?0.3:1)*pw.ratio;
+    for(var pi=0;pi<dugongFlood.length;pi++)if(pumpOn)dugongFlood[pi]=Math.max(0,dugongFlood[pi]-drain*dt);
+    for(var fd=0;fd<DUGONG_DECK_LAYOUT.length;fd++){var fr=DUGONG_DECK_LAYOUT[fd];for(var fk=0;fk<fr.widths.length-1;fk++)if(deckDoors[fd][fk]){
+      var fa=dugongFloodIndex(fd,fk),fb=dugongFloodIndex(fd,fk+1);if(fa>=0&&fb>=0){var flow=(dugongFlood[fa]-dugongFlood[fb])*0.24*dt;dugongFlood[fa]=clamp(dugongFlood[fa]-flow,0,1);dugongFlood[fb]=clamp(dugongFlood[fb]+flow,0,1);}
+    }}
+    for(var vd=0;vd<2;vd++){var va=dugongFloodIndex(vd,dugongRoomAt(vd,0)),vb=dugongFloodIndex(vd+1,dugongRoomAt(vd+1,0));if(va>=0&&vb>=0){var vf=(dugongFlood[va]-dugongFlood[vb])*0.12*dt;dugongFlood[va]=clamp(dugongFlood[va]-vf,0,1);dugongFlood[vb]=clamp(dugongFlood[vb]+vf,0,1);}}
+    syncLegacyWater();
 
     /* fires */
     for (var fi = fires.length - 1; fi >= 0; fi--) {
       var F = fires[fi];
-      if (w[F.waterRoom] > 0.45) { fires.splice(fi, 1); continue; }
+      if (dugongFlood[F.waterRoom] > 0.45) { fires.splice(fi, 1); continue; }
       F.hp = Math.min(2.5, F.hp + 0.05 * dt);
       if (!P.out && F.deck === P.deck && F.room === roomOf(P.lx) && Math.abs(F.lx - P.lx) < 24) { P.hp -= 18 * dt; P.dis.b = Math.min(1, P.dis.b + 0.6 * dt); flash = Math.max(flash, 0.1); }
-      if (Math.random() < 0.04 * dt) addFire(F.waterRoom);
+      if (Math.random() < 0.04 * dt) addFire(F.waterRoom,F.lx,F.deck);
     }
 
     /* crew */
     var rm = dugongWaterRoomAt(P.deck, P.lx);
-    if (P.out) P.o2 -= 2.1 * dt / (1 + 0.5 * S.tu); else { if (rm >= 0 && w[rm] * RH > 26) P.o2 -= 14 * dt; else { P.o2 = Math.min(100, P.o2 + 30 * dt); if (P.o2 > 30) P.hp = Math.min(100, P.hp + (P.dis.i > 0.05 || P.dis.t > 0.05 ? 0 : 1.5) * dt); } }
+    if (P.out) P.o2 -= 2.1 * dt / (1 + 0.5 * S.tu); else { if (rm >= 0 && dugongFlood[rm] * RH > 26) P.o2 -= 14 * dt; else { P.o2 = Math.min(100, P.o2 + 30 * dt); if (P.o2 > 30) P.hp = Math.min(100, P.hp + (P.dis.i > 0.05 || P.dis.t > 0.05 ? 0 : 1.5) * dt); } }
     var dz = P.dis; dz.t = Math.max(0, dz.t - 0.03 * dt); dz.b = Math.max(0, dz.b - 0.01 * dt); if (dz.i > 0) dz.i = Math.min(1, dz.i + 0.008 * dt);
     P.hp -= (dz.t * 1.6 + dz.i * 1.2 + dz.b * 0.8) * dt;
     if (P.o2 <= 0) { P.o2 = 0; P.hp -= 25 * dt; }
@@ -1788,7 +1773,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var x0 = sx - HL, x1 = sx + HL + 8;
     var upperW = HL * 2 * 0.34, upperX = sx - upperW / 2;
     var mainTop = sy - 30, top = sy - 88, bottom = sy + 88;
-    var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (w[0] < 0.5 ? 1 : 0))) * 8;
+    var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (dugongFlood[1] < 0.5 ? 1 : 0))) * 8;
 
     /* Soft sonar/spotlight cone beyond the bow. */
     var lg = ctx.createLinearGradient(x1 + 4, 0, x1 + 250, 0);
@@ -1986,6 +1971,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       ctx.fillStyle = con.c; ctx.fillRect(sx + con.x - 7, cy - 6, 14, 7);
       ctx.fillStyle = '#a8d2d7'; ctx.fillRect(sx + con.x - 5, cy - 4, 10, 2);
     }
+    /* Restore the animated machinery drawings, mounted to real Dugong rooms. */
+    var mounts=[{p:0,d:1,r:0},{p:4,d:1,r:1},{p:1,d:2,r:1},{p:2,d:2,r:2},{p:3,d:1,r:4}];
+    for(var mi=0;mi<mounts.length;mi++){var m=mounts[mi],row=DUGONG_DECK_LAYOUT[m.d],left=row.x;for(var ri=0;ri<m.r;ri++)left+=row.widths[ri];var rw=row.widths[m.r],sc=Math.min((rw-8)/84,(row.h-6)/84),cx=sx+left+rw/2,fy=sy+row.y+row.h-3;ctx.save();ctx.translate(cx-42*sc,fy-78*sc);ctx.scale(sc,sc);drawProps(m.p,0,0);ctx.restore();}
     ctx.restore();
   }
 
@@ -2072,13 +2060,12 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function drawWater() {
     /* Render the legacy five water volumes inside their mapped Dugong rooms,
        not in the old one-deck rectangle. */
-    for (var i = 0; i < NR; i++) {
-      if (w[i] < 0.01) continue;
-      var spot = dugongDamageSpot(i), row = DUGONG_DECK_LAYOUT[spot.deck];
-      var roomIndex = dugongRoomAt(spot.deck, spot.x), left = row.x;
+    for (var i = 0; i < DUGONG_ROOM_SPECS.length; i++) {
+      var spot = DUGONG_ROOM_SPECS[i], level = dugongFlood[i]; if (level < 0.01) continue;
+      var row = DUGONG_DECK_LAYOUT[spot.deck], roomIndex = spot.room, left = row.x;
       for (var q = 0; q < roomIndex; q++) left += row.widths[q];
       var right = left + row.widths[roomIndex], floor = row.y + row.h - 4;
-      var hgt = w[i] * (row.h - 8), top = floor - hgt;
+      var hgt = level * (row.h - 8), top = floor - hgt;
       var rx = sx + left + 3, rw = right - left - 6;
       ctx.fillStyle = 'rgba(40,120,175,0.5)';
       ctx.beginPath(); ctx.moveTo(rx, sy + floor);
