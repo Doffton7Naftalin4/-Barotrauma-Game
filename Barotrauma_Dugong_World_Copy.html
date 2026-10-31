@@ -1008,7 +1008,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   /* ---------- simulation ---------- */
   function updatePlay(dt) {
     elapsed += dt; if (PR.h) useMed();
-    var hIn = { x: 0, y: 0 }, room = roomOf(P.lx), waterRoom = dugongWaterRoomAt(P.deck, P.lx), exited = false;
+    var hIn = { x: 0, y: 0 }, room = dugongRoomAt(P.deck, P.lx), waterRoom = dugongWaterRoomAt(P.deck, P.lx), exited = false;
     hint = ''; P.work = 0;
 
     if (P.out) dive(dt);
@@ -1049,7 +1049,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       }
       nx = clamp(nx, row.x + 8, row.x + row.widths.reduce(function (a, b) { return a + b; }, 0) - 8);
       if (dir) { P.face = dir; P.step += Math.abs(nx - P.lx) * 0.25; }
-      P.lx = nx; room = roomOf(P.lx); waterRoom = dugongWaterRoomAt(deck, P.lx);
+      P.lx = nx; room = dugongRoomAt(deck, P.lx); waterRoom = dugongWaterRoomAt(deck, P.lx);
 
       /* Ladder transitions: central ladder joins all three decks; the two
          outer floor hatches connect only main deck to their own ballast rooms. */
@@ -1137,7 +1137,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       var F = fires[fi];
       if (dugongFlood[F.waterRoom] > 0.45) { fires.splice(fi, 1); continue; }
       F.hp = Math.min(2.5, F.hp + 0.05 * dt);
-      if (!P.out && F.deck === P.deck && F.room === roomOf(P.lx) && Math.abs(F.lx - P.lx) < 24) { P.hp -= 18 * dt; P.dis.b = Math.min(1, P.dis.b + 0.6 * dt); flash = Math.max(flash, 0.1); }
+      if (!P.out && F.deck === P.deck && F.room === dugongRoomAt(P.deck, P.lx) && Math.abs(F.lx - P.lx) < 24) { P.hp -= 18 * dt; P.dis.b = Math.min(1, P.dis.b + 0.6 * dt); flash = Math.max(flash, 0.1); }
       if (Math.random() < 0.04 * dt) addFire(F.waterRoom,F.lx,F.deck);
     }
 
