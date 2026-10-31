@@ -447,7 +447,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var cr = rr_; if (!nearZones(x, y, cr, diverZones)) { boatZones.push({ x: x, y: y, r: cr }); chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'boat' }); if (Math.random() < 0.04) plantIn(x, y, cr); }
   }
   function tunnel(x, y, a, len, r0, dep, pg) {
-    var st = 50, n = Math.round(len / st), rr_, pi = dep ? 8 : 9, made = 0;
+    var st = 50, n = Math.round(len / st), rr_, pi = dep ? 8 : 9, made = 0, priorDiverZones = diverZones.slice();
     for (var i = 0; i < n; i++) {
       rr_ = Math.max(48, r0 * (1 - i / n * 0.25)) * rand(0.94, 1.06);
       /* Узкое горлышко у входа: лодка не должна проходить в пещеру водолаза. */
@@ -474,7 +474,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
        или у границы тоннель не оставляет круглую комнату в случайной точке. */
     if (made >= 10 && !nearZones(x, y, cr, boatZones) &&
         !nearZonesMargin(x, y, cr, mainZones, 55) &&
-        !nearZonesMargin(x, y, cr, diverZones, 35)) {
+        !nearZonesMargin(x, y, cr, priorDiverZones, 35)) {
       diverZones.push({ x: x, y: y, r: cr });
       oreIn(x, y, Math.max(70, cr), 4 + ((Math.random() * 4) | 0));
       chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'diver' });
