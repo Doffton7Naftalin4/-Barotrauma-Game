@@ -252,7 +252,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function dugongStationAt(deck, lx) {
     var stations = [
-      { deck: 0, x: 0, type: 'hatch', name: 'Шлюз' },
+      { deck: 0, x: -50.4, type: 'hatch', name: 'Шлюз' },
       { deck: 1, x: -167, type: 'fab', name: 'Фабрикатор' },
       { deck: 1, x: -104, type: 'helm', name: 'Управление лодкой' },
       { deck: 1, x: -68, type: 'gun', name: 'Управление орудиями' },
@@ -564,13 +564,13 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function dHit(x, y) { return solidAt(x, y) || solidAt(x + 7, y) || solidAt(x - 7, y) || solidAt(x, y + 8) || solidAt(x, y - 8); }
   function postX(r) { return r === 0 ? -HL + 16 : roomCx(r); }
   function toast(s) { msg = s; msgT = 3.5; }
-  function exitSub() { P.out = true; P.seat = null; D.x = sx; D.y = sy - DUGONG_HULL_TOP - 16; D.vx = D.vy = 0; D.aim = -1.57; D.face = 1; toast('Вы вышли наружу'); }
+  function exitSub() { P.out = true; P.seat = null; D.x = sx + DUGONG_DECK_LAYOUT[0].x - 18; D.y = sy + DUGONG_DECK_LAYOUT[0].y + DUGONG_DECK_LAYOUT[0].h / 2; D.vx = D.vy = 0; D.aim = Math.PI; D.face = -1; toast('Вы вышли через левый шлюз'); }
   function stored() { return S.ore + S.crt * 2 + plN() + S.harp * 0.5 + S.rods + S.cyl + S.med.t + S.med.i + S.med.b + S.med.h; }
   function capSub() { return SUBS[S.sub].cap; }
   function dLoad() { return D.carry + D.cargo * 3 + D.bcargo * 2 + D.pl.t + D.pl.i + D.pl.b; }
   function dCap() { return SUBS[S.sub].carry + 4 * S.bp; }
   function enterSub() {
-    P.out = false; PR.e = 0; P.lx = 0; P.deck = 0; P.face = 1;
+    P.out = false; PR.e = 0; P.lx = -50.4; P.deck = 0; P.face = -1;
     var free = capSub() - stored(), n, got = [];
     n = Math.min(D.carry, Math.max(0, Math.floor(free))); if (n) { S.ore += n; oreTot += n; D.carry -= n; free -= n; got.push('руда ' + n); }
     ['t', 'i', 'b'].forEach(function (k) { var m = Math.min(D.pl[k], Math.max(0, Math.floor(free))); if (m) { S.pl[k] += m; D.pl[k] -= m; free -= m; got.push(PLN[k] + ' ' + m); } });
@@ -1164,7 +1164,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
           hint = 'E — ' + (deckDoors[deck][doorIndex] ? 'закрыть' : 'открыть') + ' переборку';
           if (PR.e && !exited) { deckDoors[deck][doorIndex] = deckDoors[deck][doorIndex] ? 0 : 1; sfx.door(); }
         } else if (station) {
-          hint = station.type === 'hatch' ? 'E — выйти наружу (верхний шлюз)' : 'E — занять пост: ' + station.name;
+          hint = station.type === 'hatch' ? 'E — открыть левую дверь шлюза и выйти в океан' : 'E — занять пост: ' + station.name;
           if (PR.e && !exited) {
             if (station.type === 'hatch') exitSub();
             else { P.seat = station.type; P.lx = station.x; }
@@ -1900,12 +1900,12 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     /* Small, centrally located raised bridge: only the upper deck rises above
        the long pressure hull. */
     ctx.beginPath();
-    ctx.moveTo(upperX - 28, mainTop + 8);
-    ctx.lineTo(upperX - 13, top + 20);
-    ctx.quadraticCurveTo(upperX - 8, top + 5, upperX + 16, top + 5);
+    ctx.moveTo(upperX - 3, mainTop + 8);
+    ctx.lineTo(upperX - 3, top + 20);
+    ctx.quadraticCurveTo(upperX, top + 5, upperX + 16, top + 5);
     ctx.lineTo(upperX + upperW - 18, top + 5);
-    ctx.quadraticCurveTo(upperX + upperW + 8, top + 5, upperX + upperW + 13, top + 20);
-    ctx.lineTo(upperX + upperW + 28, mainTop + 8);
+    ctx.quadraticCurveTo(upperX + upperW + 4, top + 5, upperX + upperW + 4, top + 20);
+    ctx.lineTo(upperX + upperW + 4, mainTop + 8);
     ctx.closePath();
     ctx.fillStyle = '#34494f';
     ctx.fill();
@@ -1984,16 +1984,32 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         }
         rx += rw;
       }
-      /* Closed outer end walls and continuous deck edges. The hull must
-         enclose the end compartments; only internal bulkheads get doorways. */
+      /* Closed outer end walls and continuous deck edges. The airlock alone has a left-side exterior door. */
       var deckRight = deck.x + deck.widths.reduce(function (a,b) { return a+b; },0);
       ctx.strokeStyle = '#9aadb2'; ctx.lineWidth = 3;
+      if(d===1){
+        ctx.fillStyle='#1a2b34';ctx.fillRect(sx+deck.x+2,sy+deck.y-4,deckRight-deck.x-4,7);
+        ctx.fillStyle='#91a29e';ctx.fillRect(sx+deck.x+2,sy+deck.y-4,deckRight-deck.x-4,1.5);
+      }
       ctx.beginPath();
       ctx.moveTo(sx + deck.x, sy + deck.y + 1); ctx.lineTo(sx + deckRight, sy + deck.y + 1);
       ctx.moveTo(sx + deck.x, sy + deck.y + deck.h - 1); ctx.lineTo(sx + deckRight, sy + deck.y + deck.h - 1);
-      ctx.moveTo(sx + deck.x + 1, sy + deck.y + 1); ctx.lineTo(sx + deck.x + 1, sy + deck.y + deck.h - 1);
+      if(d===0){
+        var airDoorY=sy+deck.y+deck.h/2;
+        ctx.moveTo(sx+deck.x+1,sy+deck.y+1);ctx.lineTo(sx+deck.x+1,airDoorY-10);
+        ctx.moveTo(sx+deck.x+1,airDoorY+10);ctx.lineTo(sx+deck.x+1,sy+deck.y+deck.h-1);
+      }else{
+        ctx.moveTo(sx+deck.x+1,sy+deck.y+1);ctx.lineTo(sx+deck.x+1,sy+deck.y+deck.h-1);
+      }
       ctx.moveTo(sx + deckRight - 1, sy + deck.y + 1); ctx.lineTo(sx + deckRight - 1, sy + deck.y + deck.h - 1);
       ctx.stroke();
+      if(d===0){
+        var extDoorX=sx+deck.x,extDoorY=sy+deck.y+deck.h/2;
+        ctx.fillStyle='#07131a';ctx.fillRect(extDoorX-2,extDoorY-10,5,20);
+        ctx.strokeStyle='#c0d0d6';ctx.lineWidth=2;ctx.strokeRect(extDoorX-4,extDoorY-10,8,20);
+        ctx.fillStyle='#b57b35';ctx.fillRect(extDoorX-2,extDoorY-8,3,16);
+        ctx.fillStyle='#26343a';for(var es=0;es<3;es++)ctx.fillRect(extDoorX-2,extDoorY-6+es*5,3,2);
+      }
       /* Internal bulkheads with an 18-unit passage. Closed doors fill only
          the passage; the surrounding wall remains visible as a partition. */
       for (var k = 0; k < deck.widths.length - 1; k++) {
@@ -2040,34 +2056,46 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       }
       ctx.stroke();
     }
-    /* Equipment consoles are drawn where their interaction points live. */
-    var consoles = [
-      { x: -167, deck: 1, c: '#4c7d8d' }, { x: -86, deck: 1, c: '#668b91' },
-      { x: -93, deck: 2, c: '#b56d45' },
-      { x: -16, deck: 2, c: '#4d8990' }, { x: 0, deck: 0, c: '#4c7d8d' }
-    ];
-    for (var ci = 0; ci < consoles.length; ci++) {
-      var con = consoles[ci], cy = sy + DUGONG_DECK_LAYOUT[con.deck].y + 27;
-      ctx.fillStyle = '#172832'; ctx.fillRect(sx + con.x - 9, cy - 8, 18, 14);
-      ctx.fillStyle = con.c; ctx.fillRect(sx + con.x - 7, cy - 6, 14, 7);
-      ctx.fillStyle = '#a8d2d7'; ctx.fillRect(sx + con.x - 5, cy - 4, 10, 2);
+    /* Every machine is drawn against the exact inner rectangle of its assigned room.
+       No shared 84x84 template or global scale is used. */
+    function drawRoomMachine(deckIndex,roomIndex,kind,side){
+      var row=DUGONG_DECK_LAYOUT[deckIndex],left=row.x;
+      for(var q=0;q<roomIndex;q++)left+=row.widths[q];
+      var roomW=row.widths[roomIndex],roomY=row.y,innerX=sx+left+6,innerY=sy+roomY+17;
+      var innerW=roomW-12,innerH=row.h-23,floor=sy+roomY+row.h-5;
+      ctx.save();ctx.beginPath();ctx.rect(innerX,innerY,innerW,innerH);ctx.clip();
+      if(kind==='helm'||kind==='gun'){
+        var cx=sx+left+roomW*(side==='left'?0.31:0.69),w=Math.min(28,innerW*0.43),h=kind==='helm'?22:18;
+        ctx.fillStyle='#172832';rr(cx-w/2,floor-h,w,h,3);ctx.fill();
+        ctx.fillStyle=kind==='helm'?'#668b91':'#4c7d8d';rr(cx-w/2+3,floor-h+3,w-6,8,2);ctx.fill();
+        ctx.fillStyle='#a8d2d7';ctx.fillRect(cx-w/2+5,floor-h+5,w-10,2);
+        ctx.strokeStyle=kind==='helm'?'#9ab4b7':'#6fc4d0';ctx.lineWidth=1.6;ctx.beginPath();
+        if(kind==='helm'){ctx.arc(cx,floor-h-3,7,0,6.283);ctx.moveTo(cx-7,floor-h-3);ctx.lineTo(cx+7,floor-h-3);}
+        else{ctx.strokeRect(cx-7,floor-h-8,14,6);ctx.moveTo(cx-5,floor-h-5);ctx.lineTo(cx+5,floor-h-5);}
+        ctx.stroke();
+      }else if(kind==='engine'){
+        var ew=Math.min(innerW-4,roomW*0.72),eh=Math.min(25,innerH-2),ex=sx+left+(roomW-ew)/2;
+        ctx.fillStyle='#263d49';rr(ex,floor-eh,ew,eh,4);ctx.fill();
+        ctx.strokeStyle='#6a8696';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ex+ew/2,floor-eh/2,Math.min(8,eh*.32),0,6.283);ctx.stroke();
+        ctx.strokeStyle='#f0a73c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ex+5,floor-eh+5);ctx.lineTo(ex+ew-5,floor-eh+5);ctx.stroke();
+      }else if(kind==='reactor'){
+        var rw0=Math.min(innerW-4,roomW*0.62),rh=Math.min(32,innerH-1),rx0=sx+left+(roomW-rw0)/2;
+        ctx.fillStyle='#233744';rr(rx0,floor-rh,rw0,rh,4);ctx.fill();
+        var hot=clamp((R.T-30)/120,0,1);ctx.fillStyle='rgb('+Math.round(60+195*hot)+','+Math.round(200-140*hot)+','+Math.round(180-130*hot)+')';rr(rx0+5,floor-rh+5,rw0-10,rh-10,3);ctx.fill();
+        ctx.strokeStyle='#0b1820';ctx.lineWidth=1;for(var z=1;z<4;z++){ctx.beginPath();ctx.moveTo(rx0+z*rw0/4,floor-rh+5);ctx.lineTo(rx0+z*rw0/4,floor-5);ctx.stroke();}
+      }else if(kind==='pump'){
+        var pw0=Math.min(innerW-4,roomW*0.68),ph=Math.min(25,innerH-2),px0=sx+left+(roomW-pw0)/2;
+        ctx.fillStyle='#263d49';rr(px0,floor-ph,pw0,ph,4);ctx.fill();
+        ctx.strokeStyle=turbo?'#4fe0b6':'#6a8696';ctx.lineWidth=3;ctx.beginPath();ctx.arc(sx+left+roomW/2,floor-ph/2,Math.min(7,ph*.28),0,6.283);ctx.stroke();
+        ctx.fillStyle=turbo?'#4fe0b6':'#1d3a46';ctx.beginPath();ctx.arc(sx+left+roomW/2,floor-ph/2,3,0,6.283);ctx.fill();
+      }
+      ctx.restore();
     }
-    /* Restore the animated machinery drawings, mounted to real Dugong rooms. */
-    var mounts=[
-      {p:0,d:1,r:0},
-      {p:4,d:1,r:1},
-      /* The gun-control console shares the command room with the helm,
-         but is wall-mounted above it so both instruments fit inside the room. */
-      {p:3,d:1,r:1,lift:30},
-      {p:1,d:2,r:1},
-      {p:2,d:2,r:2}
-    ];
-    for(var mi=0;mi<mounts.length;mi++){
-      var m=mounts[mi],row=DUGONG_DECK_LAYOUT[m.d],left=row.x;
-      for(var ri=0;ri<m.r;ri++)left+=row.widths[ri];
-      var rw=row.widths[m.r],sc=0.8,cx=sx+left+rw/2,fy=sy+row.y+row.h-3-(m.lift||0);
-      ctx.save();ctx.translate(cx-42*sc,fy-78*sc);ctx.scale(sc,sc);drawProps(m.p,0,0);ctx.restore();
-    }
+    drawRoomMachine(1,0,'engine');
+    drawRoomMachine(1,1,'helm','left');
+    drawRoomMachine(1,1,'gun','right');
+    drawRoomMachine(2,1,'reactor');
+    drawRoomMachine(2,2,'pump');
     /* Central ladder is drawn last among interior fixtures: neutral grey like
        the ballast ladders, with a hatch at each deck crossing. */
     var ladderTop=sy-66,ladderBottom=sy+78;
