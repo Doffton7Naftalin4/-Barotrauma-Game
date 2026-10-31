@@ -979,9 +979,21 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function addLeak(room, size, lx, top) {
     if (leaks.length >= 14) return;
-    var spot = dugongDamageSpot(room), deck = spot.deck, x = spot.x;
     var isTop = top == null ? Math.random() < 0.5 : top;
-    var leak = { room: roomOf(x), waterRoom: room, deck: deck, lx: x,
+    var spot = dugongDamageSpot(room);
+    /* When a hit supplies a real hull x-coordinate, select the nearest
+       compartment on the struck side instead of reusing the old room index. */
+    if (lx != null && isFinite(lx)) {
+      var targetDeck = isTop ? 1 : 2, bestDistance = 1e9;
+      for (var si = 0; si < DUGONG_DAMAGE_SPOTS.length; si++) {
+        var candidate = DUGONG_DAMAGE_SPOTS[si];
+        if (candidate.deck !== targetDeck) continue;
+        var distance = Math.abs(candidate.x - lx);
+        if (distance < bestDistance) { bestDistance = distance; spot = candidate; }
+      }
+    }
+    var deck = spot.deck, x = spot.x, waterRoom = DUGONG_DAMAGE_SPOTS.indexOf(spot);
+    var leak = { room: roomOf(x), waterRoom: waterRoom, deck: deck, lx: x,
       y: dugongEffectY(deck, isTop), size: size, top: isTop };
     leaks.push(leak); return leak;
   }
