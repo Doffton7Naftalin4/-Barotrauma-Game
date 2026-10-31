@@ -731,7 +731,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function hurtP(n, k) { P.hp -= n; if (k && Math.random() < (k === 't' ? 0.8 : 0.35)) { P.dis[k] = Math.min(1, P.dis[k] + (k === 't' ? 0.5 : 0.4)); toast(k === 't' ? 'Отравление! Нужен антидот (H)' : 'Рана заражена! Нужен антибиотик (H)'); } flash = Math.max(flash, 0.22); shake = Math.min(0.5, shake + 0.15); sfx.hit(); }
   function dive(dt){
-    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;if(l){ax/=l;ay/=l;D.aim=Math.round(Math.atan2(ay,ax)/(Math.PI/4))*(Math.PI/4);if(ax)D.face=ax>0?1:-1;}
+    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action=l?'swim':'idle';D.actionT+=dt;if(l){ax/=l;ay/=l;D.aim=Math.round(Math.atan2(ay,ax)/(Math.PI/4))*(Math.PI/4);if(ax)D.face=ax>0?1:-1;}
     D.vx+=ax*430*dt;D.vy+=ay*430*dt;var drag=Math.exp(-5.8*dt);D.vx*=drag;D.vy*=drag;
     var nx=D.x+D.vx*dt,ny=D.y+D.vy*dt,wallContact=false;
     if(!dHit(nx,D.y))D.x=nx;else{D.vx=0;wallContact=true;}
@@ -742,7 +742,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if(dHit(D.x,D.y)){D.vx=0;D.vy=0;}
     D.cool -= dt;
     if ((PR.space || K.space) && D.cool <= 0) {
-      if (D.ammo > 0) { D.ammo--; D.cool = 0.5; shots.push({ x: D.x + Math.cos(D.aim) * 12, y: D.y + Math.sin(D.aim) * 12, vx: Math.cos(D.aim) * 440 + D.vx * 0.3, vy: Math.sin(D.aim) * 440 + D.vy * 0.3, life: 0.85, dmg: 1 }); D.vx -= Math.cos(D.aim) * 30; D.vy -= Math.sin(D.aim) * 30; sfx.harp(); }
+      if (D.ammo > 0) { D.action='shoot'; D.actionT=0; D.ammo--; D.cool = 0.5; shots.push({ x: D.x + Math.cos(D.aim) * 12, y: D.y + Math.sin(D.aim) * 12, vx: Math.cos(D.aim) * 440 + D.vx * 0.3, vy: Math.sin(D.aim) * 440 + D.vy * 0.3, life: 0.85, dmg: 1 }); D.vx -= Math.cos(D.aim) * 30; D.vy -= Math.sin(D.aim) * 30; sfx.harp(); }
       else { D.cool = 1; toast('Гарпуны кончились — вернитесь на борт'); }
     }
     var tgt = null, bd = 52;
@@ -752,11 +752,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (opn) { hint = 'E — войти в аванпост «' + opn.name + '»'; if (PR.e) openShop(opn); }
     else if (tgt) {
       hint = 'Удерживайте E — добывать руду';
-      if (K.e) { tgt.prog += dt / 1.6; spark(tgt.x, tgt.y, 1); if (Math.random() < 0.25) sfx.weld(); if (tgt.prog >= 1) { if (dLoad() + tgt.v > dCap()) { tgt.prog = 0; toast('Рюкзак полон ' + dLoad() + '/' + dCap() + ': вернитесь на борт'); } else { tgt.got = 1; D.carry += tgt.v; sfx.pick(); spark(tgt.x, tgt.y, 14); toast('+' + tgt.v + ' руды в рюкзаке ' + dLoad() + '/' + dCap()); } } }
+      if (K.e) { D.action='mine'; D.actionT+=dt; tgt.prog += dt / 1.6; spark(tgt.x, tgt.y, 1); if (Math.random() < 0.25) sfx.weld(); if (tgt.prog >= 1) { if (dLoad() + tgt.v > dCap()) { tgt.prog = 0; toast('Рюкзак полон ' + dLoad() + '/' + dCap() + ': вернитесь на борт'); } else { tgt.got = 1; D.carry += tgt.v; sfx.pick(); spark(tgt.x, tgt.y, 14); toast('+' + tgt.v + ' руды в рюкзаке ' + dLoad() + '/' + dCap()); } } }
     } else if (nearH) { hint = 'E — войти в шлюз'; if (PR.e) enterSub(); }
-    else if (ic) { hint = 'Удерживайте E — резак: резать лёд (гарпун тоже бьёт)'; if (K.e) { dmgIce(ic, 2.2 * dt, D.x, D.y); if (Math.random() < 0.3) { spark(D.x + Math.cos(D.aim) * 20, D.y + Math.sin(D.aim) * 20, 1); sfx.weld(); } } }
+    else if (ic) { hint = 'Удерживайте E — резак: резать лёд (гарпун тоже бьёт)'; if (K.e) { D.action='cut'; D.actionT+=dt; dmgIce(ic, 2.2 * dt, D.x, D.y); if (Math.random() < 0.3) { spark(D.x + Math.cos(D.aim) * 20, D.y + Math.sin(D.aim) * 20, 1); sfx.weld(); } } }
     else hint = 'WASD — плыть · Пробел — гарпун (' + D.ammo + ') · рюкзак ' + dLoad() + '/' + dCap();
-    for (i = 0; i < plants.length; i++) { var pl_ = plants[i]; if (!pl_.got && Math.hypot(pl_.x - D.x, pl_.y - D.y) < 34) { hint = 'E — собрать: ' + PLN[pl_.k]; if (PR.e) { if (dLoad() + 1 > dCap()) toast('Рюкзак полон'); else { pl_.got = 1; D.pl[pl_.k]++; sfx.pick(); toast('Собрано: ' + PLN[pl_.k] + ' · рюкзак ' + dLoad() + '/' + dCap()); } } } }
+    for (i = 0; i < plants.length; i++) { var pl_ = plants[i]; if (!pl_.got && Math.hypot(pl_.x - D.x, pl_.y - D.y) < 34) { hint = 'E — собрать: ' + PLN[pl_.k]; if (PR.e) { D.action='collect'; D.actionT=0; if (dLoad() + 1 > dCap()) toast('Рюкзак полон'); else { pl_.got = 1; D.pl[pl_.k]++; sfx.pick(); toast('Собрано: ' + PLN[pl_.k] + ' · рюкзак ' + dLoad() + '/' + dCap()); } } } }
     for (i = 0; i < crates.length; i++) { var cr_ = crates[i]; if (!cr_.got && Math.hypot(cr_.x - D.x, cr_.y - D.y) < 36) { hint = 'E — взять контейнер'; if (PR.e) { if (dLoad() + 3 > dCap()) toast('Рюкзак полон: контейнер весит 3'); else { cr_.got = 1; D.cargo++; sfx.pick(); toast('Контейнер взят — несите в шлюз'); } } } }
     for (i = 0; i < bcrates.length; i++) { var bc_ = bcrates[i]; if (!bc_.got && Math.hypot(bc_.x - D.x, bc_.y - D.y) < 36) { hint = 'E — взять ящик'; if (PR.e) { if (dLoad() + 2 > dCap()) toast('Рюкзак полон: ящик весит 2'); else { bc_.got = 1; D.bcargo++; sfx.pick(); toast('Ящик взят — несите в шлюз'); } } } }
     var bb = beaconAt(D.x, D.y);
@@ -976,9 +976,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     sx = 0; sy = 0; svx = 0; svy = 0; hull = 100;
     w = [0, 0, 0, 0, 0]; dugongFlood = [0,0,0,0,0,0,0,0,0,0,0,0]; doors = [1, 1, 1, 1];
     leaks = []; fires = []; shots = []; spits = []; parts = [];
-    P = { dis: { t: 0, i: 0, b: 0 }, lx: 0, deck: 1, face: 1, hp: 100, o2: 100, seat: null, work: 0, step: 0, out: false };
+    P = { dis: { t: 0, i: 0, b: 0 }, lx: 0, deck: 1, face: 1, hp: 100, o2: 120, seat: null, work: 0, step: 0, out: false };
     deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
-    D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
+    D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, action: 'idle', actionT: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
     G = { ang: -0.3, cool: 0, ox: -150, oy: -22, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 88, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
@@ -1238,7 +1238,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
     /* crew */
     var rm = dugongWaterRoomAt(P.deck, P.lx);
-    if (P.out) P.o2 -= 2.1 * dt / (1 + 0.5 * S.tu); else { if (rm >= 0 && dugongFlood[rm] * RH > 26) P.o2 -= 14 * dt; else { P.o2 = Math.min(100, P.o2 + 30 * dt); if (P.o2 > 30) P.hp = Math.min(100, P.hp + (P.dis.i > 0.05 || P.dis.t > 0.05 ? 0 : 1.5) * dt); } }
+    if (P.out) P.o2 -= 2.1 * dt / (1 + 0.5 * S.tu); else { if (rm >= 0 && dugongFlood[rm] * RH > 26) P.o2 -= 14 * dt; else { P.o2 = Math.min(120, P.o2 + 30 * dt); if (P.o2 > 30) P.hp = Math.min(100, P.hp + (P.dis.i > 0.05 || P.dis.t > 0.05 ? 0 : 1.5) * dt); } }
     var dz = P.dis; dz.t = Math.max(0, dz.t - 0.03 * dt); dz.b = Math.max(0, dz.b - 0.01 * dt); if (dz.i > 0) dz.i = Math.min(1, dz.i + 0.008 * dt);
     P.hp -= (dz.t * 1.6 + dz.i * 1.2 + dz.b * 0.8) * dt;
     if (P.o2 <= 0) { P.o2 = 0; P.hp -= 25 * dt; }
@@ -1575,7 +1575,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (!P.out) return;
     var g = ctx.createRadialGradient(D.x, D.y, 4, D.x, D.y, 110); g.addColorStop(0, 'rgba(255,246,207,0.18)'); g.addColorStop(1, 'rgba(255,246,207,0)');
     ctx.fillStyle = g; ctx.fillRect(D.x - 110, D.y - 110, 220, 220);
-    ctx.save(); ctx.translate(D.x, D.y); ctx.rotate(D.aim); var sw = Math.sin(t * 9) * 2.2;
+    ctx.save(); ctx.translate(D.x, D.y); ctx.rotate(D.aim); var action=D.action||'idle',phase=action==='swim'?Math.sin(t*11):Math.sin((D.actionT||t)*18),sw=action==='swim'?phase*3.8:action==='idle'?Math.sin(t*2)*0.5:phase*1.8;
     // Баллон и рама снаряжения
     ctx.fillStyle = '#263d49'; rr(-11, -5, 7, 10, 2); ctx.fill();
     ctx.fillStyle = '#718994'; rr(-10, -4, 4, 8, 1.5); ctx.fill();
@@ -1586,6 +1586,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.moveTo(-3, 3); ctx.lineTo(-10, 8 - sw); ctx.lineTo(-15, 9 - sw); ctx.stroke();
     ctx.fillStyle = '#d7a33f'; ctx.beginPath(); ctx.moveTo(-14, 1 + sw); ctx.lineTo(-20, -1 + sw); ctx.lineTo(-17, 5 + sw); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.moveTo(-14, 7 - sw); ctx.lineTo(-20, 7 - sw); ctx.lineTo(-17, 12 - sw); ctx.closePath(); ctx.fill();
+    // Руки меняют позу в зависимости от действия водолаза.
+    ctx.strokeStyle='#253c48';ctx.lineWidth=3.2;ctx.lineCap='round';ctx.beginPath();
+    var reach=action==='shoot'?9:action==='mine'||action==='cut'?7:action==='collect'?5:action==='swim'?Math.sin(t*11+1)*4:2;
+    ctx.moveTo(3,-2);ctx.lineTo(8+reach,-5+Math.abs(reach)*0.2);ctx.stroke();
+    ctx.fillStyle='#d7a33f';ctx.beginPath();ctx.arc(8+reach,-5+Math.abs(reach)*0.2,2.1,0,6.283);ctx.fill();
     // Гидрокостюм, панели и ремни
     ctx.fillStyle = '#b97828'; ctx.beginPath(); ctx.ellipse(0, 0, 9.5, 5.8, 0, 0, 6.283); ctx.fill();
     ctx.fillStyle = '#e9ad43'; ctx.beginPath(); ctx.ellipse(1, -1, 7, 3.7, 0, 0, 6.283); ctx.fill();
@@ -2213,8 +2218,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#e8a23a'; rr(-5, -24, 10, 15, 3); ctx.fill();
     ctx.fillStyle = '#e3c3a0'; ctx.beginPath(); ctx.arc(0, -28, 5, 0, 6.283); ctx.fill();
     ctx.fillStyle = '#3d5563'; ctx.beginPath(); ctx.arc(0, -29, 5.4, Math.PI, 0); ctx.fill();
-    if (P.work) { ctx.strokeStyle = '#cfe4ea'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(13, -14); ctx.stroke(); ctx.fillStyle = '#9ff4ff'; ctx.beginPath(); ctx.arc(14, -14, 2.6, 0, 6.283); ctx.fill(); }
-    else { ctx.strokeStyle = '#e8a23a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(4, -20); ctx.lineTo(8, -14); ctx.stroke(); }
+    if (P.work) { var toolSwing=Math.sin(t*18)*4; ctx.strokeStyle = '#cfe4ea'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(13+toolSwing, -14-Math.abs(toolSwing)*0.25); ctx.stroke(); ctx.fillStyle = '#9ff4ff'; ctx.beginPath(); ctx.arc(14+toolSwing, -14-Math.abs(toolSwing)*0.25, 2.6, 0, 6.283); ctx.fill(); }
+    else { var armSwing=P.seat==='helm'?Math.sin(t*4)*2:P.seat==='gun'?Math.sin(t*8)*3:Math.sin(t*3)*0.8; ctx.strokeStyle = '#e8a23a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(4, -20); ctx.lineTo(8+armSwing, -14+Math.abs(armSwing)*0.25); ctx.stroke(); }
     ctx.restore();
   }
 
@@ -2406,7 +2411,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var rd = clamp(R.rod / 100, 0, 1); el.rodBar.style.transform = 'scaleX(' + rd.toFixed(3) + ')'; el.rodBar.style.background = R.rod <= 0 ? '#ff5a47' : col(rd); el.rodLab.textContent = 'Стерж. ' + Math.round(R.rod) + '% +' + S.rods;
     var wf = clamp(S.fuel / 100, 0, 1), wOut = S.fuel <= 0 && S.cyl === 0; el.wBar.style.transform = 'scaleX(' + wf.toFixed(3) + ')'; el.wBar.style.background = wOut ? '#ff5a47' : col(wf); el.wLab.textContent = 'Сварка ' + Math.round(S.fuel) + '% +' + S.cyl;
     el.pls.textContent = 'мох ' + S.pl.t + ' · вод. ' + S.pl.i + ' · губка ' + S.pl.b;
-    var o2 = clamp(P.o2 / 100, 0, 1);
+    var o2 = clamp(P.o2 / 120, 0, 1);
     el.o2Bar.style.transform = 'scaleX(' + o2.toFixed(3) + ')'; el.o2Bar.style.background = col(o2);
     var ph = clamp(P.hp / 100, 0, 1); el.phBar.style.transform = 'scaleX(' + ph.toFixed(3) + ')'; el.phBar.style.background = col(ph);
     el.phLab.textContent = 'Здоровье ' + Math.round(P.hp) + (P.dis.t > 0.05 ? ' · яд' : '') + (P.dis.i > 0.05 ? ' · инф.' : '') + (P.dis.b > 0.05 ? ' · ожог' : '');
