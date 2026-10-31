@@ -548,13 +548,13 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function dHit(x, y) { return solidAt(x, y) || solidAt(x + 7, y) || solidAt(x - 7, y) || solidAt(x, y + 8) || solidAt(x, y - 8); }
   function postX(r) { return r === 0 ? -HL + 16 : roomCx(r); }
   function toast(s) { msg = s; msgT = 3.5; }
-  function exitSub() { P.out = true; P.seat = null; D.x = sx + postX(0); D.y = sy + SH + 16; D.vx = D.vy = 0; D.aim = 1.57; D.face = 1; toast('Вы вышли наружу'); }
+  function exitSub() { P.out = true; P.seat = null; D.x = sx; D.y = sy - SH - 16; D.vx = D.vy = 0; D.aim = -1.57; D.face = 1; toast('Вы вышли наружу'); }
   function stored() { return S.ore + S.crt * 2 + plN() + S.harp * 0.5 + S.rods + S.cyl + S.med.t + S.med.i + S.med.b + S.med.h; }
   function capSub() { return SUBS[S.sub].cap; }
   function dLoad() { return D.carry + D.cargo * 3 + D.bcargo * 2 + D.pl.t + D.pl.i + D.pl.b; }
   function dCap() { return SUBS[S.sub].carry + 4 * S.bp; }
   function enterSub() {
-    P.out = false; PR.e = 0; P.lx = postX(0) + 14; P.face = 1;
+    P.out = false; PR.e = 0; P.lx = 0; P.deck = 0; P.face = 1;
     var free = capSub() - stored(), n, got = [];
     n = Math.min(D.carry, Math.max(0, Math.floor(free))); if (n) { S.ore += n; oreTot += n; D.carry -= n; free -= n; got.push('руда ' + n); }
     ['t', 'i', 'b'].forEach(function (k) { var m = Math.min(D.pl[k], Math.max(0, Math.floor(free))); if (m) { S.pl[k] += m; D.pl[k] -= m; free -= m; got.push(PLN[k] + ' ' + m); } });
