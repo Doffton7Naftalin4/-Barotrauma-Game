@@ -703,28 +703,45 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     c.restore();
   }
-  function drawDiverWallTexture(c, wallPath, i0, i1, j0, j1) {
-    if (!diverWallMask) return;
-    c.save(); c.clip(wallPath); c.lineCap = 'round'; c.lineJoin = 'round';
-    for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
-      if (!diverWallMask[j * GW + i]) continue;
-      var h = ((i * 73856093) ^ (j * 19349663)) >>> 0;
-      var x = wx0 + i * CS, y = wy0 + j * CS;
-      if (h % 3 === 0) {
-        c.fillStyle = 'rgba(118,139,137,0.20)'; c.beginPath();
-        c.moveTo(x - 8, y - 5); c.lineTo(x + (h % 15), y - 8);
-        c.lineTo(x + 7, y + (h >>> 6) % 12); c.lineTo(x - 5, y + 7); c.closePath(); c.fill();
-      }
-      if (h % 7 === 0) {
-        c.strokeStyle = 'rgba(3,12,18,0.52)'; c.lineWidth = 1.5; c.beginPath();
-        c.moveTo(x - 7, y - 7); c.lineTo(x - 1, y - 1); c.lineTo(x + 2, y + 2); c.lineTo(x + 8, y + 6); c.stroke();
-        c.strokeStyle = 'rgba(151,166,153,0.24)'; c.lineWidth = 1; c.beginPath();
-        c.moveTo(x - 6, y - 8); c.lineTo(x, y - 2); c.stroke();
-      }
-      if (h % 5 === 0) {
-        c.fillStyle = 'rgba(154,166,150,0.24)'; c.fillRect(x + ((h >>> 9) % 13) - 6, y + ((h >>> 15) % 13) - 6, 2 + (h % 3), 2);
+  var diverRockTile = null;
+  function getDiverRockTile() {
+    if (diverRockTile) return diverRockTile;
+    var tile = document.createElement('canvas'); tile.width = tile.height = 256;
+    var t = tile.getContext('2d'), seed = 0x51f15e;
+    function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }
+    t.fillStyle = '#29383d'; t.fillRect(0, 0, 256, 256);
+    var shade = t.createLinearGradient(0, 0, 256, 256);
+    shade.addColorStop(0, 'rgba(119,139,137,0.17)'); shade.addColorStop(0.48, 'rgba(9,19,25,0.08)'); shade.addColorStop(1, 'rgba(3,12,18,0.34)');
+    t.fillStyle = shade; t.fillRect(0, 0, 256, 256);
+    for (var band = 0; band < 13; band++) {
+      var baseY = band * 22 + rnd() * 12, amp = 3 + rnd() * 8, phase = rnd() * 6.28;
+      t.beginPath();
+      for (var x = -8; x <= 264; x += 8) { var yy = baseY + Math.sin(x * 0.035 + phase) * amp + Math.sin(x * 0.011 + phase * 2) * amp * 0.45; if (x === -8) t.moveTo(x, yy); else t.lineTo(x, yy); }
+      t.strokeStyle = band % 2 ? 'rgba(151,166,157,0.12)' : 'rgba(2,12,18,0.24)'; t.lineWidth = 2 + rnd() * 5; t.stroke();
+      t.strokeStyle = 'rgba(180,187,164,0.07)'; t.lineWidth = 1; t.stroke();
+    }
+    for (var n = 0; n < 110; n++) {
+      var px = rnd() * 256, py = rnd() * 256, w = 3 + rnd() * 24, hh = 2 + rnd() * 12;
+      t.beginPath(); t.moveTo(px, py); t.lineTo(px + w, py - hh * 0.35); t.lineTo(px + w * 0.72, py + hh); t.lineTo(px - w * 0.18, py + hh * 0.55); t.closePath();
+      t.fillStyle = n % 3 ? 'rgba(127,148,143,0.10)' : 'rgba(1,10,16,0.20)'; t.fill();
+    }
+    for (var crack = 0; crack < 22; crack++) {
+      var cx = rnd() * 256, cy = rnd() * 256, dx = (rnd() - 0.5) * 28, dy = 12 + rnd() * 34;
+      for (var copyX = -256; copyX <= 256; copyX += 256) for (var copyY = -256; copyY <= 256; copyY += 256) {
+        if ((copyX && cx > 32 && cx < 224) || (copyY && cy > 32 && cy < 224)) continue;
+        t.beginPath(); t.moveTo(cx + copyX, cy + copyY); t.lineTo(cx + dx * 0.35 + copyX, cy + dy * 0.38 + copyY); t.lineTo(cx - dx * 0.15 + copyX, cy + dy * 0.72 + copyY); t.lineTo(cx + dx * 0.5 + copyX, cy + dy + copyY);
+        t.strokeStyle = 'rgba(2,9,14,0.58)'; t.lineWidth = 2.2; t.stroke();
+        t.beginPath(); t.moveTo(cx - 1 + copyX, cy + 1 + copyY); t.lineTo(cx + dx * 0.35 - 1 + copyX, cy + dy * 0.38 + 1 + copyY); t.strokeStyle = 'rgba(174,185,166,0.18)'; t.lineWidth = 0.8; t.stroke();
       }
     }
+    for (var grain = 0; grain < 420; grain++) { var gx = rnd() * 256, gy = rnd() * 256, r = 0.35 + rnd() * 1.35; t.fillStyle = rnd() > 0.58 ? 'rgba(172,185,167,0.24)' : 'rgba(0,7,12,0.28)'; t.beginPath(); t.arc(gx, gy, r, 0, 6.283); t.fill(); }
+    diverRockTile = tile; return tile;
+  }
+  function drawDiverWallTexture(c, wallPath, i0, i1, j0, j1) {
+    if (!diverWallMask) return;
+    var pattern = c.createPattern(getDiverRockTile(), 'repeat');
+    c.save(); c.clip(wallPath); c.fillStyle = pattern; c.globalAlpha = 0.98;
+    c.fillRect(wx0 + i0 * CS - 256, wy0 + j0 * CS - 256, (i1 - i0 + 2) * CS + 512, (j1 - j0 + 2) * CS + 512);
     c.restore();
   }
   function subHit(x,y){
