@@ -1946,17 +1946,6 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         }
       }
     }
-    /* Central ladder shaft and its continuous rungs. */
-    var ladderTop = sy - 22, ladderBottom = sy + 78;
-    ctx.fillStyle = '#101f28'; ctx.fillRect(sx - 7, ladderTop, 14, ladderBottom - ladderTop);
-    ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1.2; ctx.beginPath();
-    ctx.moveTo(sx - 4, ladderTop + 2); ctx.lineTo(sx - 4, ladderBottom - 2);
-    ctx.moveTo(sx + 4, ladderTop + 2); ctx.lineTo(sx + 4, ladderBottom - 2);
-    for (var rung = 0; rung < 13; rung++) {
-      var yy = ladderTop + 4 + rung * ((ladderBottom - ladderTop - 8) / 12);
-      ctx.moveTo(sx - 4, yy); ctx.lineTo(sx + 4, yy);
-    }
-    ctx.stroke();
     /* Independent floor hatches and ladders for the two ballast rooms. */
     /* Floor hatches are set inboard from the outer side walls, on the
        second-deck floor. Their ladders descend vertically into the end
@@ -1993,8 +1982,46 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       ctx.fillStyle = '#a8d2d7'; ctx.fillRect(sx + con.x - 5, cy - 4, 10, 2);
     }
     /* Restore the animated machinery drawings, mounted to real Dugong rooms. */
-    var mounts=[{p:0,d:1,r:0},{p:4,d:1,r:1},{p:3,d:1,r:1,x:-68},{p:1,d:2,r:1},{p:2,d:2,r:2}];
-    for(var mi=0;mi<mounts.length;mi++){var m=mounts[mi],row=DUGONG_DECK_LAYOUT[m.d],left=row.x;for(var ri=0;ri<m.r;ri++)left+=row.widths[ri];var rw=row.widths[m.r],sc=0.8,cx=sx+(m.x==null?left+rw/2:m.x),fy=sy+row.y+row.h-3;ctx.save();ctx.translate(cx-42*sc,fy-78*sc);ctx.scale(sc,sc);drawProps(m.p,0,0);ctx.restore();}
+    var mounts=[
+      {p:0,d:1,r:0},
+      {p:4,d:1,r:1},
+      /* The gun-control console shares the command room with the helm,
+         but is wall-mounted above it so both instruments fit inside the room. */
+      {p:3,d:1,r:1,lift:24},
+      {p:1,d:2,r:1},
+      {p:2,d:2,r:2}
+    ];
+    for(var mi=0;mi<mounts.length;mi++){
+      var m=mounts[mi],row=DUGONG_DECK_LAYOUT[m.d],left=row.x;
+      for(var ri=0;ri<m.r;ri++)left+=row.widths[ri];
+      var rw=row.widths[m.r],sc=0.8,cx=sx+left+rw/2,fy=sy+row.y+row.h-3-(m.lift||0);
+      ctx.save();ctx.translate(cx-42*sc,fy-78*sc);ctx.scale(sc,sc);drawProps(m.p,0,0);ctx.restore();
+    }
+    /* Central ladder is drawn last among interior fixtures: neutral grey like
+       the ballast ladders, with a hatch at each deck crossing. */
+    var ladderTop=sy-22,ladderBottom=sy+78;
+    ctx.strokeStyle='#a9bbc3';ctx.lineWidth=1.5;ctx.beginPath();
+    ctx.moveTo(sx-5,ladderTop+2);ctx.lineTo(sx-5,ladderBottom-2);
+    ctx.moveTo(sx+5,ladderTop+2);ctx.lineTo(sx+5,ladderBottom-2);
+    for(var rung=0;rung<15;rung++){
+      var yy=ladderTop+3+rung*((ladderBottom-ladderTop-6)/14);
+      ctx.moveTo(sx-5,yy);ctx.lineTo(sx+5,yy);
+    }
+    ctx.stroke();
+    var centralHatchYs=[sy-20,sy+28];
+    for(var ch=0;ch<centralHatchYs.length;ch++){
+      var hy=centralHatchYs[ch];
+      ctx.fillStyle='#07131a';ctx.fillRect(sx-9,hy-4,18,8);
+      ctx.strokeStyle='#c0d0d6';ctx.lineWidth=1.8;ctx.beginPath();
+      ctx.moveTo(sx-9,hy-3);ctx.lineTo(sx-9,hy+3);
+      ctx.moveTo(sx+9,hy-3);ctx.lineTo(sx+9,hy+3);
+      ctx.moveTo(sx-9,hy+3);ctx.lineTo(sx+9,hy+3);
+      ctx.stroke();
+      ctx.strokeStyle='#a9bbc3';ctx.lineWidth=1.5;ctx.beginPath();
+      ctx.moveTo(sx-5,hy+4);ctx.lineTo(sx-5,hy+9);
+      ctx.moveTo(sx+5,hy+4);ctx.lineTo(sx+5,hy+9);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
