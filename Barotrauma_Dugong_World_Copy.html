@@ -1035,8 +1035,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       /* Ladder transitions: central ladder joins all three decks; the two
          outer floor hatches connect only main deck to their own ballast rooms. */
       var ladderX = Math.abs(P.lx) < 13;
-      var aftHatchX = Math.abs(P.lx - (-176)) < 13;
-      var foreHatchX = Math.abs(P.lx - 168) < 13;
+      var aftHatchX = Math.abs(P.lx - (-150)) < 13;
+      var foreHatchX = Math.abs(P.lx - 150) < 13;
       if (PR.up && ((deck === 2 && (ladderX || aftHatchX || foreHatchX)) || (deck === 1 && ladderX))) {
         P.deck = deck - 1; deck = P.deck; row = DUGONG_DECK_LAYOUT[deck]; sfx.door();
       } else if (PR.down && ((deck === 0 && ladderX) || (deck === 1 && (ladderX || aftHatchX || foreHatchX)))) {
@@ -1875,11 +1875,15 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         }
         rx += rw;
       }
-      /* Deck perimeter rails. */
-      ctx.strokeStyle = '#81949a'; ctx.lineWidth = 2;
+      /* Closed outer end walls and continuous deck edges. The hull must
+         enclose the end compartments; only internal bulkheads get doorways. */
+      var deckRight = deck.x + deck.widths.reduce(function (a,b) { return a+b; },0);
+      ctx.strokeStyle = '#9aadb2'; ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.moveTo(sx + deck.x, sy + deck.y + 1); ctx.lineTo(sx + deck.x + deck.widths.reduce(function (a,b) { return a+b; },0), sy + deck.y + 1);
-      ctx.moveTo(sx + deck.x, sy + deck.y + deck.h - 1); ctx.lineTo(sx + deck.x + deck.widths.reduce(function (a,b) { return a+b; },0), sy + deck.y + deck.h - 1);
+      ctx.moveTo(sx + deck.x, sy + deck.y + 1); ctx.lineTo(sx + deckRight, sy + deck.y + 1);
+      ctx.moveTo(sx + deck.x, sy + deck.y + deck.h - 1); ctx.lineTo(sx + deckRight, sy + deck.y + deck.h - 1);
+      ctx.moveTo(sx + deck.x + 1, sy + deck.y + 1); ctx.lineTo(sx + deck.x + 1, sy + deck.y + deck.h - 1);
+      ctx.moveTo(sx + deckRight - 1, sy + deck.y + 1); ctx.lineTo(sx + deckRight - 1, sy + deck.y + deck.h - 1);
       ctx.stroke();
       /* Internal bulkheads with an 18-unit passage. Closed doors fill only
          the passage; the surrounding wall remains visible as a partition. */
@@ -1911,15 +1915,26 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     ctx.stroke();
     /* Independent floor hatches and ladders for the two ballast rooms. */
-    var ballastXs = [-176, 168];
+    /* Floor hatches are set inboard from the outer side walls, on the
+       second-deck floor. Their ladders descend vertically into the end
+       ballast compartments on the deck below; there are no side-wall doors. */
+    var ballastXs = [-150, 150];
     for (var ba = 0; ba < ballastXs.length; ba++) {
-      var ax = sx + ballastXs[ba], hatchY = sy + 27;
-      ctx.fillStyle = '#07131a'; ctx.fillRect(ax - 9, hatchY - 4, 18, 8);
-      ctx.strokeStyle = '#c0d0d6'; ctx.lineWidth = 1.8; ctx.strokeRect(ax - 9, hatchY - 4, 18, 8);
+      var ax = sx + ballastXs[ba], floorY = sy + 28;
+      ctx.fillStyle = '#07131a'; ctx.fillRect(ax - 10, floorY - 4, 20, 9);
+      ctx.strokeStyle = '#c0d0d6'; ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(ax - 10, floorY - 3); ctx.lineTo(ax - 10, floorY + 3);
+      ctx.moveTo(ax + 10, floorY - 3); ctx.lineTo(ax + 10, floorY + 3);
+      ctx.moveTo(ax - 10, floorY + 3); ctx.lineTo(ax + 10, floorY + 3);
+      ctx.stroke();
       ctx.strokeStyle = '#a9bbc3'; ctx.lineWidth = 1.5; ctx.beginPath();
-      ctx.moveTo(ax - 5, sy + 31); ctx.lineTo(ax - 5, sy + 72);
-      ctx.moveTo(ax + 5, sy + 31); ctx.lineTo(ax + 5, sy + 72);
-      for (var br = 0; br < 6; br++) { var by = sy + 34 + br * 7; ctx.moveTo(ax - 5, by); ctx.lineTo(ax + 5, by); }
+      ctx.moveTo(ax - 5, floorY + 3); ctx.lineTo(ax - 5, sy + 72);
+      ctx.moveTo(ax + 5, floorY + 3); ctx.lineTo(ax + 5, sy + 72);
+      for (var br = 0; br < 6; br++) {
+        var by = floorY + 7 + br * 6;
+        ctx.moveTo(ax - 5, by); ctx.lineTo(ax + 5, by);
+      }
       ctx.stroke();
     }
     /* Equipment consoles are drawn where their interaction points live. */
@@ -1978,7 +1993,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
   function drawPlayer() {
     if (P.out) return;
-    var playerDeck = clamp(P.deck == null ? 1 : P.deck, 0, 2), x = sx + P.lx, y = sy + DUGONG_DECK_LAYOUT[playerDeck].y + 40;
+    var playerDeck = clamp(P.deck == null ? 1 : P.deck, 0, 2), x = sx + P.lx, y = sy + DUGONG_DECK_LAYOUT[playerDeck].y + DUGONG_DECK_LAYOUT[playerDeck].h;
     ctx.save(); ctx.translate(x, y); ctx.scale(P.face * 0.656, 0.656);
     var sw = P.seat ? 0 : Math.sin(P.step) * 4;
     ctx.strokeStyle = '#243746'; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
