@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Дюгонь — новая конструкция / этап 1</title>
+<style>
+:root{color-scheme:dark;--bg:#07111a;--panel:#0d1d29;--line:#294657;--text:#e6f0f4;--muted:#91aab7;--accent:#71c7d8;--room:#183345;--room2:#203e50}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#142a38 0,#07111a 60%);color:var(--text);font:15px/1.45 system-ui,sans-serif}
+main{max-width:1180px;margin:auto;padding:26px 18px 48px}header{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+h1{font-size:clamp(27px,4vw,42px);margin:0 0 5px;letter-spacing:.04em}h2{font-size:18px;margin:0 0 12px;color:#d6e9ef}.sub{color:var(--muted);margin:0}
+.tag{border:1px solid #416579;border-radius:999px;padding:6px 11px;color:#a9dce6;font-size:12px;letter-spacing:.08em}
+.panel{margin-top:22px;padding:18px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(145deg,#102432ee,#0a1721ee);box-shadow:0 14px 45px #0005}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:18px}
+.metric{padding:12px;border:1px solid #294454;border-radius:10px;background:#0a1822}.metric b{display:block;font-size:20px;color:#e8f7fa}.metric span{font-size:12px;color:var(--muted)}
+.deck{margin-top:20px}.deckhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:8px}.deckhead small{color:var(--muted)}
+.track{position:relative;padding:16px 10px 24px;border:1px solid #2a4a5c;border-radius:12px;background:repeating-linear-gradient(90deg,#0c1b26 0,#0c1b26 39px,#102432 40px)}
+.rooms{display:flex;gap:5px;min-height:108px;align-items:stretch}
+.room{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;min-width:0;padding:12px 7px;border:1px solid #52758a;border-radius:6px;background:linear-gradient(160deg,var(--room2),var(--room));font-weight:650;flex:var(--w,1)}
+.room small{display:block;color:#9dbbc8;font-size:11px;font-weight:400;margin-top:5px}
+.room.empty{border-style:dashed;background:#101e28;color:#8199a4;font-weight:500}
+.room.airlock{max-width:230px;margin:auto;min-height:74px}
+.axis{display:flex;justify-content:space-between;color:#7894a2;font-size:11px;padding:7px 2px 0}
+.orientation{display:flex;justify-content:space-between;color:#8eaab6;font-size:12px;margin:8px 2px 0}
+.note{border-left:3px solid var(--accent);padding:10px 13px;margin-top:18px;background:#102633;color:#bcd1d9;border-radius:0 8px 8px 0}
+.warning{border-left-color:#d4a65f;background:#2a2116;color:#e7d6b9}
+.footer{color:#77919e;font-size:12px;margin-top:18px}
+@media(max-width:640px){main{padding:18px 10px 34px}.panel{padding:12px}.rooms{min-height:124px}.room{font-size:12px;padding:7px 3px}.room small{font-size:10px}.tag{margin-top:6px}}
+</style>
+</head>
+<body><main>
+<header><div><h1>ДУГОНЬ</h1><p class="sub">Новая конструкция · чистый лист · этап 1 — пространственный блокинг</p></div><span class="tag">НЕ СВЯЗАНО СО СТАРОЙ МОДЕЛЬЮ</span></header>
+<div class="meta">
+<div class="metric"><b>34 × 8 м</b><span>Габаритный ориентир руководства Drifter (версия 0.20.16.1)</span></div>
+<div class="metric"><b>3 уровня</b><span>Верхний · средний · нижний</span></div>
+<div class="metric"><b>8 ящиков</b><span>Грузовая вместимость оригинала</span></div>
+<div class="metric"><b>2 + 1</b><span>Две Coilgun и один пустой оружейный hardpoint — позже</span></div>
+</div>
+<section class="panel">
+<h2>Схема помещений по уровням</h2>
+<p class="sub">Схематическая раскладка по описанию оригинала. Пропорции отдельных отсеков и точный внешний контур пока не зафиксированы.</p>
+<div class="deck">
+<div class="deckhead"><h2>01 · Верхний уровень</h2><small>Воздушный шлюз</small></div>
+<div class="track"><div class="rooms"><div class="room empty" style="flex:1">Свободное пространство / корпус</div><div class="room airlock">ВОЗДУШНЫЙ ШЛЮЗ<small>верхний уровень</small></div><div class="room empty" style="flex:1">Свободное пространство / корпус</div></div><div class="axis"><span>Корма</span><span>34 м — ориентир длины</span><span>Нос</span></div></div>
+</div>
+<div class="deck">
+<div class="deckhead"><h2>02 · Средний уровень</h2><small>Основная палуба экипажа</small></div>
+<div class="track"><div class="rooms">
+<div class="room" style="--w:1.1">МАШИННОЕ<small>кормовая часть</small></div>
+<div class="room" style="--w:1.15">РУБКА<small>управление</small></div>
+<div class="room" style="--w:1.1">КОСТЮМЕРНАЯ<small>снаряжение</small></div>
+<div class="room" style="--w:1">МЕДБЛОК<small>медицинский отсек</small></div>
+<div class="room" style="--w:1">ОРУЖЕЙНАЯ<small>хранилище</small></div>
+</div><div class="axis"><span>Корма</span><span>34 м — ориентир длины</span><span>Нос</span></div></div>
+</div>
+<div class="deck">
+<div class="deckhead"><h2>03 · Нижний уровень</h2><small>Энергетика и балласт</small></div>
+<div class="track"><div class="rooms">
+<div class="room" style="--w:.9">БАЛЛАСТ А<small>кормовой</small></div>
+<div class="room" style="--w:1.05">РЕАКТОРНАЯ<small>энергоблок</small></div>
+<div class="room" style="--w:1">ЭЛЕКТРООТСЕК<small>распределение</small></div>
+<div class="room" style="--w:1">ГЕНЕРАТОР O₂<small>кислород</small></div>
+<div class="room" style="--w:.9">БАЛЛАСТ Б<small>носовой</small></div>
+</div><div class="axis"><span>Корма</span><span>34 м — ориентир длины</span><span>Нос</span></div></div>
+</div>
+<div class="note warning"><b>Важно:</b> это первый планировочный блокинг, а не готовый чертёж корпуса. Внешний силуэт, точные размеры отсеков, лестницы, люки и координаты оборудования будут уточняться по оригинальным изображениям. Оружие намеренно не размещено.</div>
+</section>
+<section class="panel">
+<h2>Следующий этап</h2>
+<p class="sub">По доступным текстовым данным подтверждена последовательность отсеков. Для точной формы корпуса и привязки каждого помещения необходим читаемый оригинальный чертёж/скриншот. После сверки будет построен единый корпус с реальными стенами и вертикальными переходами, а не декоративные накладки.</p>
+</section>
+<p class="footer">Рабочий файл создан отдельно. Ни один существующий игровой HTML-файл не использован как шаблон и не изменён.</p>
+</main></body></html>
