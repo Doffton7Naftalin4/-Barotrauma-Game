@@ -2809,6 +2809,12 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
       var right = left + row.widths[roomIndex], floor = row.y + row.h - 4;
       var hgt = level * (row.h - 8), top = floor - hgt;
       var rx = sx + left + 3, rw = right - left - 6;
+      /* Clip each pressure volume to its own compartment. Bulkheads are drawn
+         after the water so the water surface can never visually wash over them. */
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(rx, sy + row.y + 2, rw, row.h - 4);
+      ctx.clip();
       ctx.fillStyle = 'rgba(40,120,175,0.5)';
       ctx.beginPath(); ctx.moveTo(rx, sy + floor);
       for (var x = 0; x <= rw; x += 8) ctx.lineTo(rx + x, sy + top + Math.sin(t * 3 + (rx + x) * 0.15) * 1.2);
@@ -2820,6 +2826,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
         if (x2 === 0) ctx.moveTo(rx, yy); else ctx.lineTo(rx + x2, yy);
       }
       ctx.stroke();
+      ctx.restore();
     }
   }
 
@@ -2897,9 +2904,9 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     for (i = 0; i < mons.length; i++) if (!mons[i].att && !sonarOn()) drawMon(mons[i]);
     /* Hull, decks, mounted guns, player, flooding and damage now use one unscaled coordinate system. */
     ctx.save();
-    drawSubShell(); drawInterior(); drawDoors(); drawSubDrops();
+    drawSubShell(); drawInterior(); drawSubDrops();
     if (S.sub) { ctx.font = '700 12px ' + DISP; ctx.textAlign = 'center'; ctx.fillStyle = '#9ff4ff'; ctx.fillText(SUBS[S.sub].n.toUpperCase(), sx + 6, sy - DUGONG_HULL_TOP - 12); ctx.textAlign = 'left'; }
-    drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights();
+    drawWater(); drawDoors(); drawPlayer(); drawFires(); drawLeaks(); drawLights();
     ctx.restore();
     drawDiver();
     for (i = 0; i < mons.length; i++) if (mons[i].att && !sonarOn()) drawMon(mons[i]);
