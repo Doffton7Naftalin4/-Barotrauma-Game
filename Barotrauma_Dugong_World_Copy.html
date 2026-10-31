@@ -1688,10 +1688,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, dn < 0 ? Math.PI : 0, dn < 0 ? 0 : Math.PI); ctx.fill();
   }
   function drawSubShell() {
-    /* Dugong pressure-hull silhouette: long rounded main hull, raised short upper deck,
-       blunt stern with twin engine pods, and a tapered rounded bow. */
+    /* Dugong silhouette: a long, low capsule-shaped pressure hull with a
+       compact raised bridge, rather than a broad central superstructure. */
     var x0 = sx - HL, x1 = sx + HL + 8;
-    var upperW = HL * 2 * 0.58, upperX = sx - upperW / 2;
+    var upperW = HL * 2 * 0.34, upperX = sx - upperW / 2;
     var mainTop = sy - 30, top = sy - 88, bottom = sy + 88;
     var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (w[0] < 0.5 ? 1 : 0))) * 8;
 
@@ -1707,9 +1707,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.closePath();
     ctx.fill();
 
-    /* One continuous outer pressure hull. The upper deck is a raised central
-       superstructure; the long middle and lower decks stay inside the main hull. */
-    var hull = ctx.createLinearGradient(0, top, 0, bottom);
+    /* Main hull is almost one continuous elongated capsule. Its bow is fuller
+       and rounded; the stern is shorter and carries the two small drive pods. */
+    var hull = ctx.createLinearGradient(0, mainTop, 0, bottom);
     hull.addColorStop(0, '#40545a');
     hull.addColorStop(0.22, '#293b40');
     hull.addColorStop(0.72, '#1e3037');
@@ -1718,82 +1718,87 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.strokeStyle = '#91a29e';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(x0 + 12, mainTop + 8);
-    ctx.lineTo(upperX - 18, mainTop + 8);
-    ctx.quadraticCurveTo(upperX - 3, mainTop + 8, upperX, mainTop - 8);
-    ctx.lineTo(upperX, top + 22);
-    ctx.quadraticCurveTo(upperX + 2, top + 5, upperX + 20, top + 5);
-    ctx.lineTo(upperX + upperW - 25, top + 5);
-    ctx.quadraticCurveTo(upperX + upperW - 3, top + 5, upperX + upperW, top + 27);
-    ctx.lineTo(upperX + upperW, mainTop + 4);
-    ctx.quadraticCurveTo(upperX + upperW + 2, mainTop + 8, upperX + upperW + 24, mainTop + 8);
-    ctx.lineTo(x1 - 54, mainTop + 8);
-    ctx.quadraticCurveTo(x1 + 8, mainTop + 10, x1 + 14, sy - 4);
-    ctx.quadraticCurveTo(x1 + 23, sy + 10, x1 + 5, sy + 28);
-    ctx.quadraticCurveTo(x1 - 8, bottom - 5, x1 - 48, bottom - 8);
-    ctx.lineTo(x0 + 78, bottom - 8);
-    ctx.quadraticCurveTo(x0 + 48, bottom - 8, x0 + 38, bottom - 24);
-    ctx.lineTo(x0 + 12, bottom - 24);
-    ctx.quadraticCurveTo(x0 - 8, bottom - 26, x0 - 8, sy + 28);
-    ctx.lineTo(x0 - 8, sy - 2);
-    ctx.quadraticCurveTo(x0 - 8, mainTop + 8, x0 + 12, mainTop + 8);
+    ctx.moveTo(x0 + 18, mainTop + 8);
+    ctx.lineTo(x1 - 72, mainTop + 8);
+    ctx.quadraticCurveTo(x1 + 2, mainTop + 8, x1 + 20, sy - 8);
+    ctx.quadraticCurveTo(x1 + 38, sy + 12, x1 + 18, sy + 38);
+    ctx.quadraticCurveTo(x1 + 4, bottom - 2, x1 - 42, bottom - 2);
+    ctx.lineTo(x0 + 62, bottom - 2);
+    ctx.quadraticCurveTo(x0 + 14, bottom - 2, x0 + 5, sy + 54);
+    ctx.quadraticCurveTo(x0 - 7, sy + 32, x0 - 7, sy + 8);
+    ctx.lineTo(x0 - 7, sy - 4);
+    ctx.quadraticCurveTo(x0 - 5, mainTop + 8, x0 + 18, mainTop + 8);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    /* Reinforced shoulder line follows the actual stepped hull profile. */
-    ctx.strokeStyle = '#9aa9a5';
-    ctx.lineWidth = 2.5;
+    /* Small, centrally located raised bridge: only the upper deck rises above
+       the long pressure hull. */
     ctx.beginPath();
-    ctx.moveTo(x0 + 18, mainTop + 14);
-    ctx.lineTo(upperX - 12, mainTop + 14);
-    ctx.moveTo(upperX + 10, top + 15);
-    ctx.lineTo(upperX + upperW - 16, top + 15);
-    ctx.moveTo(upperX + upperW + 12, mainTop + 14);
-    ctx.lineTo(x1 - 62, mainTop + 14);
-    ctx.moveTo(x0 + 82, bottom - 17);
-    ctx.lineTo(x1 - 58, bottom - 17);
+    ctx.moveTo(upperX - 12, mainTop + 8);
+    ctx.lineTo(upperX - 3, top + 20);
+    ctx.quadraticCurveTo(upperX, top + 5, upperX + 16, top + 5);
+    ctx.lineTo(upperX + upperW - 18, top + 5);
+    ctx.quadraticCurveTo(upperX + upperW - 2, top + 5, upperX + upperW + 4, top + 21);
+    ctx.lineTo(upperX + upperW + 12, mainTop + 8);
+    ctx.closePath();
+    ctx.fillStyle = '#34494f';
+    ctx.fill();
+    ctx.strokeStyle = '#91a29e';
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    /* Raised upper-deck roof fittings. */
-    ctx.fillStyle = '#465d62';
-    rr(upperX + 24, top - 3, 78, 8, 3); ctx.fill();
-    rr(upperX + upperW - 86, top - 3, 58, 8, 3); ctx.fill();
+    /* Long, restrained reinforcement seams follow the capsule hull. */
+    ctx.strokeStyle = '#9aa9a5';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 22, mainTop + 15);
+    ctx.lineTo(upperX - 16, mainTop + 15);
+    ctx.moveTo(upperX + upperW + 16, mainTop + 15);
+    ctx.lineTo(x1 - 76, mainTop + 15);
+    ctx.moveTo(x0 + 72, bottom - 15);
+    ctx.quadraticCurveTo(sx, bottom - 9, x1 - 50, bottom - 15);
+    ctx.stroke();
 
-    /* Stern propulsion housings and rotating drive shafts. */
+    /* Low-profile bridge fittings. */
+    ctx.fillStyle = '#465d62';
+    rr(upperX + 14, top - 3, 40, 7, 3); ctx.fill();
+    rr(upperX + upperW - 52, top - 3, 32, 7, 3); ctx.fill();
+
+    /* Compact stern propulsion housings and shafts. */
     for (var d = -1; d <= 1; d += 2) {
       var ny = sy + d * 48;
       ctx.fillStyle = '#263940';
-      rr(x0 - 31, ny - 9, 35, 18, 6); ctx.fill();
-      ctx.strokeStyle = '#82949a'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.strokeStyle = '#aab8b9'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      rr(x0 - 25, ny - 7, 29, 14, 5); ctx.fill();
+      ctx.strokeStyle = '#82949a'; ctx.lineWidth = 1.4; ctx.stroke();
+      ctx.strokeStyle = '#aab8b9'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(x0 - 34, ny - pa);
-      ctx.lineTo(x0 - 34, ny + pa);
+      ctx.moveTo(x0 - 28, ny - pa);
+      ctx.lineTo(x0 - 28, ny + pa);
       ctx.stroke();
     }
 
-    /* Bow airlock collar and shallow lower keel; neither creates another deck. */
+    /* Bow collar and shallow keel details. */
     ctx.fillStyle = '#52676b';
-    rr(x0 + 4, sy - 16, 18, 32, 5); ctx.fill();
+    rr(x1 - 26, sy - 14, 16, 28, 5); ctx.fill();
     ctx.fillStyle = '#293d43';
-    rr(x0 + 44, bottom - 12, 54, 8, 3); ctx.fill();
-    rr(x1 - 142, bottom - 12, 66, 8, 3); ctx.fill();
+    rr(x0 + 48, bottom - 11, 48, 7, 3); ctx.fill();
+    rr(x1 - 136, bottom - 11, 58, 7, 3); ctx.fill();
 
     drawTur(G, -1); drawTur(G2, 1);
 
-    /* Empty upper starboard weapon hardpoint: mounting bracket only. */
+    /* Empty upper starboard hardpoint sits on the main hull roof near the bow. */
     ctx.fillStyle = '#526a70';
-    rr(upperX + upperW - 66, top - 7, 31, 8, 3); ctx.fill();
+    rr(x1 - 104, mainTop - 2, 30, 7, 3); ctx.fill();
     ctx.strokeStyle = '#b0bfbd'; ctx.lineWidth = 1.2;
-    ctx.strokeRect(upperX + upperW - 60, top - 12, 19, 6);
+    ctx.strokeRect(x1 - 98, mainTop - 8, 18, 6);
   }
 
   function drawInterior() {
     /* Dugong deck proportions: two full-length main decks and one shorter upper deck.
        A single continuous ladder shaft sits at the exact centre of all three. */
     var x0 = sx - HL, fullW = HL * 2, centerX = sx;
-    var upperW = fullW * 0.58, upperX = centerX - upperW / 2;
+    var upperW = fullW * 0.34, upperX = centerX - upperW / 2;
     var top = sy - 68, deckH = 48, upperH = deckH;
     var decks = [
       { x: upperX, y: top, w: upperW, h: upperH, rooms: [
