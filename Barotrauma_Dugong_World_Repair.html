@@ -447,21 +447,38 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var cr = rr_; if (!nearZones(x, y, cr, diverZones)) { boatZones.push({ x: x, y: y, r: cr }); chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'boat' }); if (Math.random() < 0.04) plantIn(x, y, cr); }
   }
   function tunnel(x, y, a, len, r0, dep, pg) {
-    var st = 50, n = Math.round(len / st), rr_, pi = dep ? 8 : 9;
+    var st = 50, n = Math.round(len / st), rr_, pi = dep ? 8 : 9, made = 0;
     for (var i = 0; i < n; i++) {
       rr_ = Math.max(48, r0 * (1 - i / n * 0.25)) * rand(0.94, 1.06);
       /* Узкое горлышко у входа: лодка не должна проходить в пещеру водолаза. */
       var cutR = i < 4 ? 38 + i * 3 : Math.min(88, rr_);
-      if (i > 4 && (nearZonesMargin(x, y, cutR, mainZones, 55) || nearZonesMargin(x, y, cutR, boatZones, 55))) break;
-      carve(x, y, cutR); if (i > 4) diverZones.push({ x: x, y: y, r: cutR }); a += rand(-0.12, 0.12);
+      /* После стартового участка запрещаем сближение не только с лодочными зонами,
+         но и с уже вырезанными дайверскими тоннелями. Стартовые 5 шагов оставлены
+         для легального присоединения боковой ветви к её родительскому тоннелю. */
+      if (i > 4 && (nearZonesMargin(x, y, cutR, mainZones, 55) ||
+          nearZonesMargin(x, y, cutR, boatZones, 55) ||
+          nearZonesMargin(x, y, cutR, diverZones, 35))) break;
+      carve(x, y, cutR); if (i > 4) diverZones.push({ x: x, y: y, r: cutR }); made++;
+      a += rand(-0.12, 0.12);
       var nx = x + Math.cos(a) * st, ny = y + Math.sin(a) * st;
-      if (nx < wx0 + 500 || nx > wx0 + GW * CS - 500 || ny < wy0 + 500 || ny > wy0 + GH * CS - 500) { a += 1.2; continue; }
+      /* За границей мира прекращаем тоннель: нельзя повторно вырезать одну точку
+         и затем ошибочно создать на ней конечную камеру. */
+      if (nx < wx0 + 500 || nx > wx0 + GW * CS - 500 || ny < wy0 + 500 || ny > wy0 + GH * CS - 500) break;
       x = nx; y = ny; if (Math.hypot(x - gx, y - gy) < 900) break;
       if (i === pi && n >= 11 && Math.random() < 0.28) plugs.push({ x: x, y: y, a: a, rad: Math.min(88, rr_ * 0.96), hp: r0 > 85 ? 9 : 6 });
       if (Math.random() < 0.012) nook(x, y, a + (Math.random() < 0.5 ? 1.571 : -1.571), rr_);
       if (dep < 2 && n - i > 12 && Math.random() < 0.022) tunnel(x, y, a + (Math.random() < 0.5 ? 1 : -1) * rand(0.7, 1.3), (n - i) * st * 0.65, Math.min(82, r0 * 0.78), dep + 1, pg);
     }
-    var cr = rr_; /* Не создаём камеру, если тоннель оборвался у защитной оболочки лодочного хода. */ if (i >= 10 && !nearZones(x, y, cr, boatZones)) { diverZones.push({ x: x, y: y, r: cr }); oreIn(x, y, Math.max(70, cr), 4 + ((Math.random() * 4) | 0)); chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'diver' }); }
+    var cr = rr_;
+    /* Камера допустима только после реально пройденного участка; оборванный на старте
+       или у границы тоннель не оставляет круглую комнату в случайной точке. */
+    if (made >= 10 && !nearZones(x, y, cr, boatZones) &&
+        !nearZonesMargin(x, y, cr, mainZones, 55) &&
+        !nearZonesMargin(x, y, cr, diverZones, 35)) {
+      diverZones.push({ x: x, y: y, r: cr });
+      oreIn(x, y, Math.max(70, cr), 4 + ((Math.random() * 4) | 0));
+      chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'diver' });
+    }
   }
   function beaconAt(x, y) { for (var i = 0; i < beacons.length; i++) { var b = beacons[i]; if (Math.abs(x - b.x) < b.w / 2 && Math.abs(y - b.y) < b.h / 2) return b; } return null; }
   function beaconBlind() { return state === 'play' && P.out && !!beaconAt(D.x, D.y) && !beaconAt(D.x, D.y).active; }
