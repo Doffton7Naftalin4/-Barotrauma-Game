@@ -155,25 +155,26 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   var DISP = "'Big Shoulders Display', Impact, sans-serif";
   var ROOMN = ['Машинное', 'Реактор', 'Насосная', 'Орудийный', 'Рубка'];
   var STN = ['hatch', 'reactor', 'pump', 'gun', 'helm'];
-  /* Independent Dugong replacement model. Legacy simulation adapters are migrated in later stages. */
+  /* Independent Dugong structure. Runtime migration is intentionally staged separately. */
   var DUGONG_BLUEPRINT = {
     id: 'dugong', length: 34, height: 8,
     decks: [
-      { id: 'upper', y: -3, rooms: ['airlock', 'command', 'upper_gun_mount'] },
-      { id: 'main', y: 0, rooms: ['engine', 'command', 'medical', 'armory'] },
-      { id: 'lower', y: 3, rooms: ['ballast_fore', 'ballast_aft', 'reactor', 'electrical', 'oxygen'] }
+      { id: 'upper', y: -3, rooms: ['airlock'] },
+      { id: 'main', y: 0, rooms: ['engine', 'command', 'diving_suits', 'medical', 'armory'] },
+      { id: 'lower', y: 3, rooms: ['ballast_aft', 'reactor', 'electrical', 'oxygen', 'ballast_fore'] }
     ],
     compartments: [
       { id: 'airlock', deck: 'upper', role: 'airlock' },
-      { id: 'command', deck: 'main', role: 'helm' },
       { id: 'engine', deck: 'main', role: 'engine' },
+      { id: 'command', deck: 'main', role: 'helm' },
+      { id: 'diving_suits', deck: 'main', role: 'diving_equipment' },
       { id: 'medical', deck: 'main', role: 'medical' },
       { id: 'armory', deck: 'main', role: 'armory' },
-      { id: 'ballast_fore', deck: 'lower', role: 'ballast' },
       { id: 'ballast_aft', deck: 'lower', role: 'ballast' },
       { id: 'reactor', deck: 'lower', role: 'reactor' },
-      { id: 'electrical', deck: 'lower', role: 'electrical' },
-      { id: 'oxygen', deck: 'lower', role: 'oxygen_generator' }
+      { id: 'electrical', deck: 'lower', role: 'junction' },
+      { id: 'oxygen', deck: 'lower', role: 'oxygen_generator' },
+      { id: 'ballast_fore', deck: 'lower', role: 'ballast' }
     ],
     connections: [],
     hardpoints: [
@@ -185,7 +186,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   };
   function validateDugongBlueprint(model) {
     var ids = Object.create(null), deckIds = Object.create(null), errors = [];
-    model.decks.forEach(function (deck) { deckIds[deck.id] = true; });
+    model.decks.forEach(function (deck) {
+      if (deckIds[deck.id]) errors.push('duplicate deck: ' + deck.id);
+      deckIds[deck.id] = true;
+    });
     model.compartments.forEach(function (room) {
       if (ids[room.id]) errors.push('duplicate compartment: ' + room.id);
       ids[room.id] = true;
@@ -193,9 +197,13 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     });
     model.decks.forEach(function (deck) {
       deck.rooms.forEach(function (id) {
-        var room = model.compartments.filter(function (item) { return item.id === id && item.deck === deck.id; });
-        if (room.length !== 1) errors.push('deck/compartment mismatch: ' + id);
+        var matches = model.compartments.filter(function (item) { return item.id === id && item.deck === deck.id; });
+        if (matches.length !== 1) errors.push('deck/compartment mismatch: ' + id);
       });
+    });
+    model.compartments.forEach(function (room) {
+      var deck = model.decks.filter(function (item) { return item.id === room.deck; })[0];
+      if (deck && deck.rooms.indexOf(room.id) < 0) errors.push('compartment missing from deck: ' + room.id);
     });
     model.hardpoints.forEach(function (mount) {
       if (!deckIds[mount.deck]) errors.push('hardpoint references unknown deck: ' + mount.id);
