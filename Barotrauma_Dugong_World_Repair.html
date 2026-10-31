@@ -456,9 +456,12 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       /* После стартового участка запрещаем сближение не только с лодочными зонами,
          но и с уже вырезанными дайверскими тоннелями. Стартовые 5 шагов оставлены
          для легального присоединения боковой ветви к её родительскому тоннелю. */
-      if ((i > 4 || dep > 0) && (nearZonesMargin(x, y, cutR, mainZones, 55) ||
-          nearZonesMargin(x, y, cutR, boatZones, 55) ||
-          nearZonesMarginExcept(x, y, cutR, diverZones, 35, ownZones))) break;
+      /* Любая дайверская ветвь, включая первые сегменты у входа, не должна
+         пересекать чужую дайверскую сеть. Сближение с лодочной оболочкой
+         разрешено только для пяти стартовых сегментов главной ветви. */
+      if (((i > 4 || dep > 0) && (nearZonesMargin(x, y, cutR, mainZones, 55) ||
+          nearZonesMargin(x, y, cutR, boatZones, 55))) ||
+          nearZonesMarginExcept(x, y, cutR, diverZones, 35, ownZones)) break;
       carve(x, y, cutR); if (i > 4) { var dz = { x: x, y: y, r: cutR }; diverZones.push(dz); ownZones.push(dz); } made++;
       a += rand(-0.12, 0.12);
       var nx = x + Math.cos(a) * st, ny = y + Math.sin(a) * st;
