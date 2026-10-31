@@ -463,7 +463,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       var p = { x: ux * sc - uy * off, y: uy * sc + ux * off, r: 440 + 55 * Math.sin(sc * 0.0023 + p3), s: sc };
       path.push(p); carve(p.x, p.y, p.r * rand(1.06, 1.12)); if (s >= L) break;
     }
-    if (LV.type === 'nest' || !path.some(function (q) { return q.x > gx - 140 - SW - 20 && q.x < gx + 140 + SW + 20 && q.y > gy - 295 - SH - 20 && q.y < gy - 130 + SH + 20; })) break;
+    if (LV.type === 'nest' || !path.some(function (q) { return q.x > gx - 140 - DUGONG_HULL_RIGHT - 20 && q.x < gx + 140 + DUGONG_HULL_LEFT + 20 && q.y > gy - 295 - DUGONG_HULL_TOP - 20 && q.y < gy - 130 + DUGONG_HULL_BOTTOM + 20; })) break;
     }
     path.forEach(function (p) { if (subHit(p.x, p.y) !== null) carve(p.x, p.y, p.r * 1.35); });
     function tg(k) { var a = path[Math.max(0, k - 1)], b = path[Math.min(path.length - 1, k + 1)]; return Math.atan2(b.y - a.y, b.x - a.x); }
@@ -690,7 +690,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       else { hint = 'Удерживайте E — вставить стержень (запас ' + S.rods + ') и запустить сонар'; if (K.e) { bb.prog += dt / 2.5; if (Math.random() < 0.3) sfx.weld(); if (bb.prog >= 1) { bb.active = 1; beaconUp = 1; S.rods--; sfx.pick(); toast('Сонар маяка запущен!'); } } else bb.prog = Math.max(0, bb.prog - dt * 0.5); }
     }
   }
-  function sd_(x, y) { return Math.hypot(x - clamp(x, sx + 6 - SW, sx + 6 + SW), y - clamp(y, sy - SH, sy + SH)); }
+  function sd_(x, y) { return Math.hypot(x - clamp(x, sx - DUGONG_HULL_LEFT, sx + DUGONG_HULL_RIGHT), y - clamp(y, sy - DUGONG_HULL_TOP, sy + DUGONG_HULL_BOTTOM)); }
   function los(a, b, c, d) { var n = Math.ceil(Math.hypot(c - a, d - b) / 16); for (var i = 1; i < n; i++) if (solidAt(a + (c - a) * i / n, b + (d - b) * i / n)) return 0; return 1; }
   function mv(m, dx, dy, v, dt) {
     var l = Math.hypot(dx, dy) || 1; dx = dx / l * v * dt; dy = dy / l * v * dt; m.fx = dx >= 0 ? 1 : -1;
@@ -732,7 +732,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (m.att) { m.x = sx + m.att.lx; m.y = sy + m.att.ly; m.bite -= dt; if (m.bite <= 0) { m.bite = 4.2; hurt(2); addLeak(roomOf(m.att.lx), 0.35, m.att.lx, m.att.ly < 0); sfx.hit(); } continue; }
       var ds = sd_(m.x, m.y), dv = P.out ? Math.hypot(m.x - D.x, m.y - D.y) : 1e9;
       if (Math.min(ds, dv) > 1600) continue;
-      var uD = dv < ds + 120, d = uD ? dv : ds, tx = uD ? D.x : clamp(m.x, sx + 6 - SW, sx + 6 + SW), ty = uD ? D.y : clamp(m.y, sy - SH, sy + SH);
+      var uD = dv < ds + 120, d = uD ? dv : ds, tx = uD ? D.x : clamp(m.x, sx - DUGONG_HULL_LEFT, sx + DUGONG_HULL_RIGHT), ty = uD ? D.y : clamp(m.y, sy - DUGONG_HULL_TOP, sy + DUGONG_HULL_BOTTOM);
       var sees = d < T.ag * 1.4 && los(m.x, m.y, tx, ty), near = d < 110;
       if (sees || near) { m.lk = { x: tx, y: ty }; m.lkT = elapsed; m.lost = 0; m.pk.lk = m.lk; m.pk.lkT = elapsed; }
       else if (m.pk.lk && m.pk.lkT > m.lkT) { m.lk = m.pk.lk; m.lkT = m.pk.lkT; }
@@ -754,7 +754,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (ty_ === 'n') {
         mv(m, dx + Math.cos(m.ph * 3) * 20, dy + Math.sin(m.ph * 4) * 30, T.v, dt); m.bite -= dt;
         if (uD) { if (d < T.r + 6 && m.bite <= 0) { hurtP(7, 'i'); m.bite = 1.1; } }
-        else if (d < 12) { m.att = { lx: clamp(m.x - sx, -HL + 10, HL - 10), ly: (m.y > sy ? 1 : -1) * (RH / 2 + 9) }; m.bite = 3; }
+        else if (d < 12) { m.att = { lx: clamp(m.x - sx, -DUGONG_HULL_LEFT + 10, DUGONG_HULL_RIGHT - 10), ly: (m.y > sy ? 1 : -1) * (RH / 2 + 9) }; m.bite = 3; }
       } else if (ty_ === 'b' || ty_ === 'e' || ty_ === 'm' || ty_ === 'h' || ty_ === 't' || ty_ === 's') {
         m.t -= dt;
         if (m.state === 2) {
@@ -966,14 +966,12 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   ];
   function dugongDamageSpot(room) { return DUGONG_DAMAGE_SPOTS[clamp(room | 0, 0, DUGONG_DAMAGE_SPOTS.length - 1)]; }
   function dugongWaterRoomAt(deck, lx) {
-    var best = -1, distance = 1e9;
+    var roomIndex = dugongRoomAt(deck, lx);
     for (var i = 0; i < DUGONG_DAMAGE_SPOTS.length; i++) {
       var spot = DUGONG_DAMAGE_SPOTS[i];
-      if (spot.deck !== deck) continue;
-      var d = Math.abs(lx - spot.x);
-      if (d < distance) { distance = d; best = i; }
+      if (spot.deck === deck && dugongRoomAt(deck, spot.x) === roomIndex) return i;
     }
-    return best;
+    return -1;
   }
   function dugongEffectY(deck, top) {
     var row = DUGONG_DECK_LAYOUT[deck];
@@ -1124,16 +1122,17 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var sM = SUBS[S.sub].spd, tvx = hIn.x * 140 * sM * pw.ratio * (engOK ? 1 : 0), tvy = hIn.y * 110 * sM * pw.ratio * (engOK ? 1 : 0) + totalW * 26;
     svx += (tvx - svx) * 1.2 * dt; svy += (tvy - svy) * 1.2 * dt;
     var nx2 = sx + svx * dt;
-    if (subHit(nx2, sy) === null) sx = nx2; else { crash(Math.abs(svx), svx > 0 ? HL - 10 : -HL + 10, Math.random() < 0.5); svx *= -0.25; }
+    if (subHit(nx2, sy) === null) sx = nx2; else { crash(Math.abs(svx), svx > 0 ? DUGONG_HULL_RIGHT - 10 : -DUGONG_HULL_LEFT + 10, Math.random() < 0.5); svx *= -0.25; }
     var ny2 = sy + svy * dt, hh2 = subHit(sx, ny2);
-    if (hh2 === null) sy = ny2; else { crash(Math.abs(svy), clamp(hh2, -HL + 10, HL - 10), svy < 0); svy *= -0.25; }
+    if (hh2 === null) sy = ny2; else { crash(Math.abs(svy), clamp(hh2, -DUGONG_HULL_LEFT + 10, DUGONG_HULL_RIGHT - 10), svy < 0); svy *= -0.25; }
     tcool -= dt;
 
     /* water */
     for (var li = 0; li < leaks.length; li++) { var L = leaks[li]; w[L.waterRoom] += L.size * 0.10 * dt; L.size = Math.min(1, L.size + 0.006 * dt); }
     var pumpOn = pw.ratio > 0.3, drain = (turbo ? 0.12 : 0.035) * (w[2] > 0.6 ? 0.3 : 1) * pw.ratio;
     for (var pi = 0; pi < NR; pi++) if (pumpOn) w[pi] = Math.max(0, w[pi] - drain * dt);
-    for (var dk2 = 0; dk2 < 4; dk2++) if (deckDoors[1][dk2]) { var fl = (w[dk2] - w[dk2 + 1]) * 0.45 * dt; w[dk2] -= fl; w[dk2 + 1] += fl; }
+    if (deckDoors[1][0]) { var flMain = (w[0] - w[4]) * 0.45 * dt; w[0] -= flMain; w[4] += flMain; }
+    if (deckDoors[2][1]) { var flLower = (w[1] - w[2]) * 0.45 * dt; w[1] -= flLower; w[2] += flLower; }
     for (var wi = 0; wi < NR; wi++) w[wi] = clamp(w[wi], 0, 1);
 
     /* fires */
@@ -1178,7 +1177,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     for (var sq = spits.length - 1; sq >= 0; sq--) {
       var sp = spits[sq], hit = 0; sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.life -= dt;
       if (sp.life <= 0 || solidAt(sp.x, sp.y)) hit = 1;
-      else if (Math.abs(sp.x - sx - 6) < SW && Math.abs(sp.y - sy) < SH) { hurt(3); addLeak(roomOf(clamp(sp.x - sx, -HL, HL)), 0.35, sp.x - sx, sp.y < sy); spark(sp.x, sp.y, 6); sfx.hit(); hit = 1; }
+      else if (sp.x > sx - DUGONG_HULL_LEFT && sp.x < sx + DUGONG_HULL_RIGHT && sp.y > sy - DUGONG_HULL_TOP && sp.y < sy + DUGONG_HULL_BOTTOM) { hurt(3); addLeak(roomOf(clamp(sp.x - sx, -HL, HL)), 0.35, sp.x - sx, sp.y < sy); spark(sp.x, sp.y, 6); sfx.hit(); hit = 1; }
       else if (P.out && Math.hypot(sp.x - D.x, sp.y - D.y) < 11) { hurtP(10, 't'); hit = 1; }
       if (hit) spits.splice(sq, 1);
     }
@@ -1199,7 +1198,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     /* level objectives */
     for (var pj = 0; pj < pods.length; pj++) {
       var pd = pods[pj];
-      if (!pd.got && ((Math.abs(pd.x - sx - 6) < SW + 24 && Math.abs(pd.y - sy) < SH + 26) || (P.out && Math.hypot(pd.x - D.x, pd.y - D.y) < 30))) { pd.got = 1; podsGot++; spark(pd.x, pd.y, 14); sfx.pick(); }
+      if (!pd.got && ((pd.x > sx - DUGONG_HULL_LEFT - 24 && pd.x < sx + DUGONG_HULL_RIGHT + 24 && pd.y > sy - DUGONG_HULL_TOP - 26 && pd.y < sy + DUGONG_HULL_BOTTOM + 26) || (P.out && Math.hypot(pd.x - D.x, pd.y - D.y) < 30))) { pd.got = 1; podsGot++; spark(pd.x, pd.y, 14); sfx.pick(); }
     }
     if (nest) {
       nest.hit = Math.max(0, nest.hit - dt); nest.t -= dt;
@@ -1208,7 +1207,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     dockMsg = '';
     if (LV.type !== 'nest') {
-      var dg = Math.hypot(gx - sx, gy - sy), gap = sy - SH - stB, alg = Math.abs(sx + 6 - gx) < 60 && gap > -8 && gap < 46, need = (LV.type === 'rescue' && podsGot < pods.length) || (LV.type === 'salvage' && cargoGot < crates.length) || (LV.type === 'mine' && oreTot < LV.ore);
+      var dg = Math.hypot(gx - sx, gy - sy), gap = sy - DUGONG_HULL_TOP - stB, alg = Math.abs(sx + 6 - gx) < 60 && gap > -8 && gap < 46, need = (LV.type === 'rescue' && podsGot < pods.length) || (LV.type === 'salvage' && cargoGot < crates.length) || (LV.type === 'mine' && oreTot < LV.ore);
       if (dg < 800) {
         if (need) { dockMsg = LV.type === 'rescue' ? 'Сначала подберите все капсулы' : LV.type === 'mine' ? 'Сначала добудьте руду' : 'Сначала доставьте весь груз на борт'; dockT = 0; }
         else if (P.out) { dockMsg = 'Вернитесь на борт для стыковки'; dockT = 0; }
@@ -2159,7 +2158,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
        flooding, leaks, fire and electrical sparks in the same submarine space. */
     ctx.save(); ctx.translate(sx, sy); ctx.scale(1.25, 1.25); ctx.translate(-sx, -sy);
     drawSubShell(); drawInterior(); drawDoors();
-    if (S.sub) { ctx.font = '700 12px ' + DISP; ctx.textAlign = 'center'; ctx.fillStyle = '#9ff4ff'; ctx.fillText(SUBS[S.sub].n.toUpperCase(), sx + 6, sy - SH - 12); ctx.textAlign = 'left'; }
+    if (S.sub) { ctx.font = '700 12px ' + DISP; ctx.textAlign = 'center'; ctx.fillStyle = '#9ff4ff'; ctx.fillText(SUBS[S.sub].n.toUpperCase(), sx + 6, sy - DUGONG_HULL_TOP - 12); ctx.textAlign = 'left'; }
     drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights();
     ctx.restore();
     drawDiver();
