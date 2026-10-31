@@ -737,7 +737,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if(!dHit(nx,D.y))D.x=nx;else{D.vx=0;wallContact=true;}
     if(!dHit(D.x,ny))D.y=ny;else{D.vy=0;wallContact=true;}
     var hullContact=dugongResolveDiverHull(D.x,D.y,8);
-    if(hullContact){D.x=hullContact.x;D.y=hullContact.y;var vn=D.vx*hullContact.nx+D.vy*hullContact.ny;if(vn<0){D.vx-=vn*hullContact.nx;D.vy-=vn*hullContact.ny;}var surfaceDrag=Math.exp(-7*dt);D.vx*=surfaceDrag;D.vy*=surfaceDrag;wallContact=true;}
+    if(hullContact){D.x=hullContact.x;D.y=hullContact.y;/* Stop all residual momentum on hull contact: prevents held swim input from skating the diver along the submarine into nearby terrain. */D.vx=0;D.vy=0;wallContact=true;}
     if(wallContact){var contactDrag=Math.exp(-4*dt);D.vx*=contactDrag;D.vy*=contactDrag;}
     if(dHit(D.x,D.y)){D.vx=0;D.vy=0;}
     D.cool -= dt;
