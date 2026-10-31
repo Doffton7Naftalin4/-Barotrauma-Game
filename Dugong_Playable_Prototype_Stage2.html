@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>Дюгонь — игровой прототип</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#06111a;color:#dcecf2;font:14px system-ui,sans-serif}body{display:flex;justify-content:center}main{width:min(1100px,100%);padding:14px}header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}h1{margin:0;font-size:clamp(23px,4vw,34px);letter-spacing:.08em}.sub{color:#8ca9b7;font-size:12px}.status{display:flex;gap:8px;flex-wrap:wrap}.chip{border:1px solid #315365;border-radius:20px;padding:5px 10px;color:#a9d5df;font-size:11px}#wrap{border:1px solid #274556;border-radius:12px;overflow:hidden;background:#091722;box-shadow:0 12px 35px #0008}canvas{display:block;width:100%;height:auto;touch-action:none}#bar{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;background:#0c1c28;border-top:1px solid #274556;color:#a9c0ca;font-size:12px;flex-wrap:wrap}.controls{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}.pad{display:flex;gap:8px}.ctrl{min-width:54px;height:48px;border:1px solid #45687a;border-radius:10px;background:#142b3a;color:#e4f2f5;font-size:19px;touch-action:none}.ctrl:active{background:#275064}.hint{color:#8faab7;font-size:12px}.foot{color:#718c99;font-size:11px;margin-top:10px}@media(min-width:700px){.ctrl{min-width:64px;height:44px}}
+</style></head><body><main>
+<header><div><h1>ДУГОНЬ</h1><div class="sub">Самостоятельный игровой прототип · корпус и три палубы</div></div><div class="status"><span class="chip">НОВАЯ ГЕОМЕТРИЯ</span><span class="chip">ЭТАП 2 · ИГРОВОЙ БЛОКИНГ</span></div></header>
+<div id="wrap"><canvas id="game" width="1000" height="570" aria-label="Игровой вид в разрезе подлодки"></canvas><div id="bar"><span id="deckName">Средняя палуба · основная</span><span id="roomName">Рубка</span><span>WASD / стрелки — движение · ↑↓ у лестницы — смена палубы</span></div></div>
+<div class="controls"><div class="pad"><button class="ctrl" data-k="left">◀</button><button class="ctrl" data-k="right">▶</button></div><div class="hint">Подойди к вертикальной шахте, затем нажми ↑ или ↓. На телефоне используй кнопки.</div><div class="pad"><button class="ctrl" data-k="up">▲</button><button class="ctrl" data-k="down">▼</button></div></div>
+<p class="foot">Прототип сделан с нуля. Это не финальная точная копия чертежа: размеры и точный силуэт ещё предстоит сверить с оригинальными изображениями. Орудия намеренно отсутствуют.</p>
+</main>
+<script>
+(()=>{
+const c=document.getElementById('game'),ctx=c.getContext('2d'),W=c.width,H=c.height;
+const decks=[
+ {name:'Верхняя палуба',y:130,h:74,rooms:[{a:0,b:1.7,n:'Корпусной проход'},{a:1.7,b:3.2,n:'Воздушный шлюз'},{a:3.2,b:5,n:'Корпусной проход'}]},
+ {name:'Средняя палуба',y:254,h:92,rooms:[{a:0,b:1.15,n:'Машинное отделение'},{a:1.15,b:2.25,n:'Командная рубка'},{a:2.25,b:3.25,n:'Костюмерная'},{a:3.25,b:4.15,n:'Медблок'},{a:4.15,b:5,n:'Оружейная'}]},
+ {name:'Нижняя палуба',y:395,h:78,rooms:[{a:0,b:.95,n:'Кормовой балласт'},{a:.95,b:2.05,n:'Реакторная'},{a:2.05,b:3.05,n:'Электроотсек'},{a:3.05,b:4.05,n:'Генератор O₂'},{a:4.05,b:5,n:'Носовой балласт'}]}
+];
+const x0=105,x1=895,unit=(x1-x0)/5;
+const shafts=[x0+unit*1.1,x0+unit*3.45];
+const keys={left:false,right:false,up:false,down:false};let player={x:x0+unit*1.65,deck:1,walk:0,face:1};let last=0;
+function rounded(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();ctx.stroke()}
+function roomAt(){let d=decks[player.deck],p=(player.x-x0)/unit;return d.rooms.find(r=>p>=r.a&&p<=r.b)?.n||'Коридор'}
+function hullPath(){ctx.beginPath();ctx.moveTo(110,105);ctx.quadraticCurveTo(75,105,75,150);ctx.lineTo(75,430);ctx.quadraticCurveTo(75,490,145,500);ctx.lineTo(850,500);ctx.quadraticCurveTo(930,490,930,430);ctx.lineTo(930,150);ctx.quadraticCurveTo(930,105,875,105);ctx.closePath()}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ let bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#071925');bg.addColorStop(1,'#030b12');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ // outside water depth lines
+ ctx.strokeStyle='rgba(74,145,174,.12)';ctx.lineWidth=1;for(let y=35;y<540;y+=26){ctx.beginPath();ctx.moveTo(20,y);ctx.lineTo(980,y);ctx.stroke()}
+ // hull
+ hullPath();ctx.fillStyle='#263c49';ctx.fill();ctx.strokeStyle='#91a9b4';ctx.lineWidth=5;ctx.stroke();
+ hullPath();ctx.strokeStyle='#101e28';ctx.lineWidth=2;ctx.stroke();
+ // inner field
+ ctx.fillStyle='#0b1a24';ctx.fillRect(92,116,816,376);
+ // floors and room cells
+ decks.forEach((d,di)=>{
+   d.rooms.forEach((r,i)=>{
+     let x=x0+r.a*unit,w=(r.b-r.a)*unit;
+     ctx.fillStyle=di===player.deck?'#173747':'#102632';ctx.fillRect(x,d.y,w,d.h);
+     ctx.strokeStyle='#557687';ctx.lineWidth=2;ctx.strokeRect(x,d.y,w,d.h);
+     ctx.fillStyle='#d0e2e8';ctx.font='600 13px system-ui';ctx.textAlign='center';
+     let label=r.n; if(w<125) {ctx.font='600 11px system-ui';}
+     ctx.fillText(label,x+w/2,d.y+24,{maxWidth:w-8});
+     ctx.fillStyle='#6f8d9a';ctx.fillRect(x+7,d.y+d.h-9,w-14,3);
+   });
+   ctx.fillStyle='#8ba9b6';ctx.font='11px system-ui';ctx.textAlign='left';ctx.fillText(d.name,94,d.y-10);
+ });
+ // vertical shafts and ladder details
+ shafts.forEach(x=>{
+   ctx.fillStyle='#0b1218';ctx.fillRect(x-10,193,20,202);
+   ctx.strokeStyle='#9bb5c0';ctx.lineWidth=3;ctx.strokeRect(x-10,193,20,202);
+   for(let y=200;y<392;y+=12){ctx.beginPath();ctx.moveTo(x-8,y);ctx.lineTo(x+8,y);ctx.stroke()}
+   ctx.fillStyle='#e0a64c';ctx.fillRect(x-4,246,8,4);ctx.fillRect(x-4,386,8,4);
+ });
+ // compartments equipment silhouettes, deliberately not weapons
+ drawEquipment();
+ // player
+ let d=decks[player.deck],py=d.y+d.h-11,px=player.x;
+ ctx.save();ctx.translate(px,py);ctx.scale(player.face,1);
+ let step=Math.sin(player.walk)*4;ctx.strokeStyle='#14232d';ctx.lineWidth=5;ctx.lineCap='round';
+ ctx.beginPath();ctx.moveTo(-3,-15);ctx.lineTo(-5+step,0);ctx.moveTo(3,-15);ctx.lineTo(5-step,0);ctx.stroke();
+ ctx.fillStyle='#d98d39';ctx.fillRect(-6,-30,12,17);ctx.fillStyle='#e8c7a4';ctx.beginPath();ctx.arc(0,-36,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#253d4b';ctx.beginPath();ctx.arc(0,-38,6,Math.PI,0);ctx.fill();ctx.restore();
+ // labels and ladder proximity
+ ctx.fillStyle='#a8c4cf';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('КОРМА',x0,535);ctx.fillText('НОС',x1,535);
+ let near=shafts.some(x=>Math.abs(player.x-x)<25);
+ ctx.fillStyle=near?'#f1c16d':'#7e9ba8';ctx.fillText(near?'ЛЕСТНИЦА — ↑ / ↓':'34 м · условная длина корпуса',500,550);
+ document.getElementById('deckName').textContent=d.name;document.getElementById('roomName').textContent=roomAt();
+}
+function drawEquipment(){
+ // machine compartment, helm station, suit racks, med cabinet, weapon lockers, lower machinery
+ let y=decks[1].y,base=decks[1].h;
+ // engine
+ ctx.fillStyle='#314b59';ctx.fillRect(x0+14,y+39,unit-28,34);ctx.fillStyle='#65b8c2';ctx.fillRect(x0+22,y+46,unit-44,5);
+ // helm console
+ let hx=x0+unit*1.15+18;ctx.fillStyle='#355362';ctx.fillRect(hx,y+53,unit-36,18);ctx.strokeStyle='#75d4cf';ctx.strokeRect(hx+8,y+57,unit-52,9);
+ // suit racks
+ let sx=x0+unit*2.25+15;for(let i=0;i<3;i++){ctx.fillStyle='#466272';ctx.fillRect(sx+i*25,y+39,16,34);ctx.fillStyle='#9ab8c3';ctx.fillRect(sx+4+i*25,y+44,8,9)}
+ // med
+ let mx=x0+unit*3.25+20;ctx.fillStyle='#355362';ctx.fillRect(mx,y+47,unit-40,27);ctx.fillStyle='#d96e69';ctx.fillRect(mx+24,y+54,7,13);ctx.fillRect(mx+21,y+57,13,7);
+ // armory lockers
+ let ax=x0+unit*4.15+14;for(let i=0;i<3;i++){ctx.fillStyle='#354e5c';ctx.fillRect(ax+i*27,y+43,19,31);ctx.strokeStyle='#7896a3';ctx.strokeRect(ax+i*27,y+43,19,31)}
+ // reactor and lower modules
+ let ly=decks[2].y;ctx.fillStyle='#4c5960';ctx.fillRect(x0+unit*1.15,ly+24,unit*.72,45);ctx.fillStyle='#e8a44c';ctx.fillRect(x0+unit*1.36,ly+31,unit*.3,29);
+ for(let i=0;i<3;i++){let x=x0+unit*(2.18+i*.94);ctx.fillStyle='#2e4d5b';ctx.fillRect(x,ly+35,unit*.58,32);ctx.fillStyle='#4dc4b5';ctx.fillRect(x+9,ly+42,unit*.32,4)}
+}
+function move(dt){
+ let v=(keys.right?1:0)-(keys.left?1:0);if(v){player.x=Math.max(x0+8,Math.min(x1-8,player.x+v*150*dt));player.face=v;player.walk+=dt*12}
+ if(keys.up||keys.down){let dir=keys.up?-1:1;if(shafts.some(x=>Math.abs(player.x-x)<25)){let nd=player.deck+dir;if(nd>=0&&nd<3){player.deck=nd;keys.up=false;keys.down=false}}}
+}
+function loop(ts){let dt=Math.min(.04,(ts-last)/1000||0);last=ts;move(dt);draw();requestAnimationFrame(loop)}
+window.addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')keys.left=true;if(k==='arrowright'||k==='d')keys.right=true;if(k==='arrowup'||k==='w')keys.up=true;if(k==='arrowdown'||k==='s')keys.down=true;if(['arrowleft','arrowright','arrowup','arrowdown',' '].includes(k))e.preventDefault()});
+window.addEventListener('keyup',e=>{let k=e.key.toLowerCase();if(k==='arrowleft'||k==='a')keys.left=false;if(k==='arrowright'||k==='d')keys.right=false;if(k==='arrowup'||k==='w')keys.up=false;if(k==='arrowdown'||k==='s')keys.down=false});
+document.querySelectorAll('[data-k]').forEach(b=>{let k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();keys[k]=true;b.setPointerCapture(e.pointerId)});['pointerup','pointercancel','lostpointercapture'].forEach(ev=>b.addEventListener(ev,()=>keys[k]=false))});
+draw();requestAnimationFrame(loop);
+})();
+</script></body></html>
