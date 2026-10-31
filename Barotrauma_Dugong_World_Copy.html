@@ -176,7 +176,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       { id: 'oxygen', deck: 'lower', role: 'oxygen_generator' },
       { id: 'ballast_fore', deck: 'lower', role: 'ballast' }
     ],
-    connections: [],
+    connections: [
+      { id: 'central_ladder_upper_main', type: 'ladder', from: 'upper', to: 'main', x: 0, traversable: false },
+      { id: 'central_ladder_main_lower', type: 'ladder', from: 'main', to: 'lower', x: 0, traversable: false }
+    ],
     hardpoints: [
       { id: 'coilgun_upper_aft', weapon: 'coilgun', deck: 'upper', side: 'top', installed: true },
       { id: 'coilgun_lower_mid', weapon: 'coilgun', deck: 'lower', side: 'bottom', installed: true },
@@ -1727,21 +1730,24 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function drawInterior() {
-    /* Three real visible deck bands with individual compartment boundaries. */
-    var x0 = sx - HL, deckH = 48, top = sy - 72;
+    /* Dugong deck proportions: two full-length main decks and one shorter upper deck.
+       A single continuous ladder shaft sits at the exact centre of all three. */
+    var x0 = sx - HL, fullW = HL * 2, centerX = sx;
+    var upperW = fullW * 0.58, upperX = centerX - upperW / 2;
+    var top = sy - 68, upperH = 34, deckH = 48;
     var decks = [
-      { y: top, rooms: [
-        { n: 'ВОЗДУШНЫЙ ШЛЮЗ', w: 76, c: '#24414c' },
-        { n: 'ВЕРХНИЙ ПРОХОД', w: 344, c: '#1a303a' }
+      { x: upperX, y: top, w: upperW, h: upperH, rooms: [
+        { n: 'ВОЗДУШНЫЙ ШЛЮЗ', w: upperW * 0.38, c: '#24414c' },
+        { n: 'ВЕРХНИЙ ПРОХОД', w: upperW * 0.62, c: '#1a303a' }
       ]},
-      { y: top + deckH, rooms: [
+      { x: x0, y: top + upperH, w: fullW, h: deckH, rooms: [
         { n: 'МАШИННОЕ', w: 86, c: '#263943' },
         { n: 'РУБКА', w: 76, c: '#244653' },
         { n: 'КОСТЮМЫ', w: 76, c: '#203a45' },
         { n: 'МЕДБЛОК', w: 78, c: '#24414a' },
         { n: 'ОРУЖЕЙНАЯ', w: 104, c: '#263943' }
       ]},
-      { y: top + deckH * 2, rooms: [
+      { x: x0, y: top + upperH + deckH, w: fullW, h: deckH, rooms: [
         { n: 'БАЛЛАСТ', w: 74, c: '#1d3540' },
         { n: 'РЕАКТОР', w: 78, c: '#293943' },
         { n: 'ЭЛЕКТРО', w: 76, c: '#203943' },
@@ -1751,40 +1757,39 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ];
     ctx.save();
     for (var d = 0; d < decks.length; d++) {
-      var deck = decks[d], rx = x0;
+      var deck = decks[d], rx = deck.x;
       for (var r = 0; r < deck.rooms.length; r++) {
-        var room = deck.rooms[r];
-        ctx.fillStyle = room.c; ctx.fillRect(rx, deck.y, room.w, deckH);
-        ctx.fillStyle = 'rgba(8,18,24,0.55)'; ctx.fillRect(rx, deck.y + deckH - 5, room.w, 5);
+        var room = deck.rooms[r], rw = room.w;
+        ctx.fillStyle = room.c; ctx.fillRect(rx, deck.y, rw, deck.h);
+        ctx.fillStyle = 'rgba(8,18,24,0.55)'; ctx.fillRect(rx, deck.y + deck.h - 5, rw, 5);
         ctx.strokeStyle = '#70848e'; ctx.lineWidth = 1.4;
-        ctx.strokeRect(rx + 0.5, deck.y + 0.5, room.w - 1, deckH - 1);
+        ctx.strokeRect(rx + 0.5, deck.y + 0.5, rw - 1, deck.h - 1);
         ctx.fillStyle = '#d0e0e5'; ctx.font = '700 8px ' + DISP;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(room.n, rx + room.w / 2, deck.y + 12);
-        /* Small lit equipment blocks make each compartment legible at game scale. */
+        ctx.fillText(room.n, rx + rw / 2, deck.y + Math.min(13, deck.h / 2));
         if (d === 1) {
           ctx.fillStyle = r === 1 ? '#4c7d8d' : '#536b76';
-          ctx.fillRect(rx + 10, deck.y + 24, Math.max(12, room.w - 20), 13);
-          ctx.fillStyle = '#a4c4ce'; ctx.fillRect(rx + 13, deck.y + 27, Math.max(6, room.w - 26), 2);
+          ctx.fillRect(rx + 10, deck.y + 25, Math.max(12, rw - 20), 13);
+          ctx.fillStyle = '#a4c4ce'; ctx.fillRect(rx + 13, deck.y + 28, Math.max(6, rw - 26), 2);
         } else if (d === 2) {
-          ctx.fillStyle = '#415d68'; ctx.fillRect(rx + 12, deck.y + 25, room.w - 24, 12);
-          ctx.fillStyle = '#6fa6b5'; ctx.fillRect(rx + 15, deck.y + 28, Math.max(5, room.w - 30), 2);
+          ctx.fillStyle = '#415d68'; ctx.fillRect(rx + 12, deck.y + 25, Math.max(8, rw - 24), 12);
+          ctx.fillStyle = '#6fa6b5'; ctx.fillRect(rx + 15, deck.y + 28, Math.max(5, rw - 30), 2);
         }
-        rx += room.w;
+        rx += rw;
       }
     }
-    /* Ladder trunks connect the decks visually; they are not yet movement portals. */
-    [x0 + 112, x0 + 264, x0 + 356].forEach(function (lx) {
-      ctx.fillStyle = '#101f28'; ctx.fillRect(lx - 5, top + deckH - 1, 10, deckH * 2 + 2);
-      ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(lx - 3, top + deckH + 2); ctx.lineTo(lx - 3, top + deckH * 3 - 2);
-      ctx.moveTo(lx + 3, top + deckH + 2); ctx.lineTo(lx + 3, top + deckH * 3 - 2);
-      for (var rung = 0; rung < 7; rung++) {
-        var yy = top + deckH + 5 + rung * 13;
-        ctx.moveTo(lx - 3, yy); ctx.lineTo(lx + 3, yy);
-      }
-      ctx.stroke();
-    });
+    /* One ladder only: a single central shaft joining upper, main and lower decks. */
+    var ladderX = centerX, ladderTop = top + upperH - 2, ladderBottom = top + upperH + deckH * 2 + 2;
+    ctx.fillStyle = '#101f28'; ctx.fillRect(ladderX - 7, ladderTop, 14, ladderBottom - ladderTop);
+    ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(ladderX - 4, ladderTop + 2); ctx.lineTo(ladderX - 4, ladderBottom - 2);
+    ctx.moveTo(ladderX + 4, ladderTop + 2); ctx.lineTo(ladderX + 4, ladderBottom - 2);
+    for (var rung = 0; rung < 9; rung++) {
+      var yy = ladderTop + 5 + rung * ((ladderBottom - ladderTop - 10) / 8);
+      ctx.moveTo(ladderX - 4, yy); ctx.lineTo(ladderX + 4, yy);
+    }
+    ctx.stroke();
     ctx.restore();
   }
 
