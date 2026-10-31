@@ -259,7 +259,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       { deck: 0, x: -50.4, type: 'hatch', name: 'Шлюз' },
       { deck: 1, x: -167, type: 'fab', name: 'Технический фабрикатор' },
       { deck: 1, x: 67, type: 'medfab', name: 'Медицинский фабрикатор' },
-      { deck: 1, x: 158, type: 'storage', name: 'Склад предметов' },
+      { deck: 1, x: 158, type: 'storage', name: 'Корабельное хранилище' },
+      { deck: 1, x: 112, type: 'recon', name: 'Реконструктор предметов' },
       { deck: 1, x: -104, type: 'helm', name: 'Управление лодкой' },
       { deck: 1, x: -68, type: 'gun', name: 'Управление орудиями' },
       { deck: 2, x: -93, type: 'reactor', name: 'Реактор' },
@@ -273,7 +274,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     return best;
   }
 
-  var STNAME = { fab: 'Технический фабрикатор', medfab: 'Медицинский фабрикатор', storage: 'Склад', hatch: 'Шлюз', reactor: 'Реактор', pump: 'Насосная', gun: 'Терминал орудий', helm: 'Терминал управления' };
+  var STNAME = { fab: 'Технический фабрикатор', medfab: 'Медицинский фабрикатор', storage: 'Корабельное хранилище', recon: 'Реконструктор предметов', hatch: 'Шлюз', reactor: 'Реактор', pump: 'Насосная', gun: 'Терминал орудий', helm: 'Терминал управления' };
   var LEVELS = [
     { name: 'Первый рейс', short: 'Дойти до станции', brief: 'Найдите станцию «Донная» и пришвартуйтесь снизу', type: 'dock', goal: 7000, ev: 1500, den: 0.3, roam: [90, 130], pk: { sw: 3, je: 3, ee: 1 } },
     { name: 'Спасательная операция', short: 'Три капсулы и станция', brief: 'Подберите 3 капсулы и пришвартуйтесь к станции', type: 'rescue', goal: 10000, pods: 3, ev: 1300, den: 0.4, roam: [75, 105], pk: { sw: 3, je: 2, ee: 2, sp: 2, br: 1 } },
@@ -773,6 +774,17 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function stored(){return massTotal(S,['ore','crate','moss','algae','sponge','harpoon','fuel','weld','medkit','antidote','antibiotic','ointment']);}
   function packLoad(){return massTotal(D,['ore','cargo','crate','weld','fuel','moss','algae','sponge','antidote','antibiotic','ointment','medkit','harpoon']);}
   function packRoom() { return Math.max(0, dCap() - packLoad()); }
+  function setItemCountOn(owner,id,n){n=Math.max(0,n|0);if(owner===D){if(INV_BY[id])INV_BY[id].set(n);return;}if(id==='ore')S.ore=n;else if(id==='crate')S.crt=n;else if(id==='harpoon')S.harp=n;else if(id==='weld')S.cyl=n;else if(id==='fuel')S.rods=n;else if(id==='moss')S.pl.t=n;else if(id==='algae')S.pl.i=n;else if(id==='sponge')S.pl.b=n;else if(id==='medkit')S.med.h=n;else if(id==='antidote')S.med.t=n;else if(id==='antibiotic')S.med.i=n;else if(id==='ointment')S.med.b=n;}
+  function invSlotRoomFor(id){var room=0;for(var i=0;i<INV_N;i++){var slot=invSlots&&invSlots[i];if(!slot)room+=STACK_MAX;else if(slot.id===id)room+=Math.max(0,STACK_MAX-slot.n);}return room;}
+  function invFreedSlotsFor(id,n){var freed=0,left=n;for(var i=INV_N-1;i>=0&&left>0;i--){var slot=invSlots&&invSlots[i];if(slot&&slot.id===id){if(slot.n<=left){left-=slot.n;freed++;}else left=0;}}return freed;}
+  function massGrams(masses){var g=0;for(var i=0;i<(masses||[]).length;i++)g+=masses[i]||0;return g;}
+  function expectedItemMassG(id,n,worst){var spec=ITEM_MASS_G[id],unit=Array.isArray(spec)?(worst?spec[1]:(spec[0]+spec[1])/2):(spec||1000);return unit*n;}
+  function packCanReceive(id,n,masses,baseLoad,extraSlots){if(invSlotRoomFor(id)+(extraSlots||0)*STACK_MAX<n)return false;var g=masses?massGrams(masses):expectedItemMassG(id,n,true);return (baseLoad==null?packLoad():baseLoad)+g/1000<=dCap()+0.000001;}
+  function storageCanReceive(id,n,masses,baseLoad){var g=masses?massGrams(masses):expectedItemMassG(id,n,true);return (baseLoad==null?stored():baseLoad)+g/1000<=capSub()+0.000001;}
+  function transferStoredToPack(id,n){if(itemCount(S,id)<n)return false;var masses=takeItemMass(S,id,n);setItemCountOn(S,id,itemCount(S,id)-n);setItemCountOn(D,id,itemCount(D,id)+n);putItemMass(D,id,masses);invSync();return true;}
+  function transferPackToStorage(id,n){if(itemCount(D,id)<n)return false;var masses=takeItemMass(D,id,n);setItemCountOn(D,id,itemCount(D,id)-n);setItemCountOn(S,id,itemCount(S,id)+n);putItemMass(S,id,masses);invSync();return true;}
+  function craftOutputRoute(id,n){if(packCanReceive(id,n))return 'pack';if(storageCanReceive(id,n))return 'storage';return null;}
+  function deliverCraftedFromStorage(id,n,route){if(route==='pack')return transferStoredToPack(id,n);return true;}
   function capSub() { return SUBS[S.sub].cap; }
   function dLoad() { return packLoad(); }
   function dCap() { return SUBS[S.sub].carry + 4 * S.bp; }
@@ -1399,11 +1411,13 @@ if (e.code === 'KeyM') muted = !muted;
           
         }
       } else if (P.seat === 'fab') {
-        var fd=K.down-K.up;if(fd&&fd!==S.pd)S.sel=(S.sel+fd+7)%7;S.pd=fd;var rc=RC[S.sel];hint='ТЕХНИЧЕСКИЙ ФАБРИКАТОР · W/S — выбор · Пробел — изготовить · E — выйти';if(PR.space){if(rc[3]&&S[rc[3]])toast('Уже установлено');else if(S.ore<rc[1]||!canPl(rc[4])||S.crt<(rc[6]||0))toast('Не хватает ресурсов');else if(stored()-rc[1]-plCost(rc[4])+RCW[S.sel]>capSub())toast('На складе нет места');else{S.ore-=rc[1];S.crt-=rc[6]||0;payPl(rc[4]);rc[2]();sfx.pick();toast('Изготовлено: '+rc[0]);}}
+        var fd=K.down-K.up;if(fd&&fd!==S.pd)S.sel=(S.sel+fd+7)%7;S.pd=fd;var rc=RC[S.sel],rcOut=RC_OUTPUT[S.sel],rcRoute=rcOut?craftOutputRoute(rcOut.id,rcOut.n):'storage';hint='ТЕХНИЧЕСКИЙ ФАБРИКАТОР · W/S — выбор · Пробел — изготовить · E — выйти';if(PR.space){if(rc[3]&&S[rc[3]])toast('Уже установлено');else if(S.ore<rc[1]||!canPl(rc[4])||S.crt<(rc[6]||0))toast('Не хватает ресурсов');else if(rcOut&&!rcRoute)toast('Нет места: освободи рюкзак и корабельное хранилище');else{S.ore-=rc[1];S.crt-=rc[6]||0;payPl(rc[4]);rc[2]();if(rcOut)deliverCraftedFromStorage(rcOut.id,rcOut.n,rcRoute);sfx.pick();toast('Изготовлено: '+rc[0]+(rcOut&&rcRoute==='pack'?' · в рюкзак':' · на склад'));}}
       } else if (P.seat === 'medfab') {
-        var mf=K.down-K.up;if(mf&&mf!==S.pd)S.sel=(S.sel+mf+MRC.length)%MRC.length;S.pd=mf;var mr=MRC[S.sel];hint='МЕДИЦИНСКИЙ ФАБРИКАТОР · W/S — выбор · Пробел — изготовить · E — выйти';if(PR.space){if(!canMakeMed(mr))toast('Не хватает нужных растений');else if(stored()+1>capSub())toast('На складе нет места');else{payMed(mr);mr[2]();sfx.pick();toast('Изготовлено: '+mr[0]);}}
+        var mf=K.down-K.up;if(mf&&mf!==S.pd)S.sel=(S.sel+mf+MRC.length)%MRC.length;S.pd=mf;var mr=MRC[S.sel],mrOut=MRC_OUTPUT[S.sel],mrRoute=craftOutputRoute(mrOut.id,mrOut.n);hint='МЕДИЦИНСКИЙ ФАБРИКАТОР · W/S — выбор · Пробел — изготовить · E — выйти';if(PR.space){if(!canMakeMed(mr))toast('Не хватает нужных растений');else if(!mrRoute)toast('Нет места: освободи рюкзак и корабельное хранилище');else{payMed(mr);mr[2]();deliverCraftedFromStorage(mrOut.id,mrOut.n,mrRoute);sfx.pick();toast('Изготовлено: '+mr[0]+(mrRoute==='pack'?' · в рюкзак':' · на склад'));}}
       } else if (P.seat === 'storage') {
-        var items=[['Руда',S,'ore',D,'carry'],['Гарпуны',S,'harp',D,'ammo',0.25],['Баллоны сварки',S,'cyl',D,'cyl'],['Топливные стержни',S,'rods',D,'rods'],['Синий мох',S.pl,'t',D.pl,'t'],['Бурая водоросль',S.pl,'i',D.pl,'i'],['Алая губка',S.pl,'b',D.pl,'b'],['Антидот',S.med,'t',D.med,'t'],['Антибиотик',S.med,'i',D.med,'i'],['Мазь',S.med,'b',D.med,'b'],['Аптечки',S.med,'h',D.med,'h'],['Ящики',S,'crt',D,'bcargo',2]];var sd=K.down-K.up;if(sd&&sd!==S.pd)S.sel=(S.sel+sd+items.length)%items.length;S.pd=sd;hint='СКЛАД ПОДЛОДКИ · W/S — предмет · Пробел — взять · Q — положить · E — выйти';if(PR.space||PR.q){var it=items[S.sel],have=it[1][it[2]]||0,phave=it[3][it[4]]||0,weight=it[5]||1;if(PR.space){if(have<=0)toast('На складе этого нет');else if(packRoom()<weight)toast('Рюкзак заполнен');else{it[1][it[2]]--;it[3][it[4]]=(it[3][it[4]]||0)+1;toast('Взято: '+it[0]);}}else{if(phave<=0)toast('В рюкзаке этого нет');else if(stored()+weight>capSub())toast('Склад заполнен');else{it[3][it[4]]--;it[1][it[2]]=(it[1][it[2]]||0)+1;toast('Сдано на склад: '+it[0]);}}sfx.pick();}
+        var sd=K.down-K.up;if(sd&&sd!==S.pd)S.sel=(S.sel+sd+STORAGE_ITEMS.length)%STORAGE_ITEMS.length;S.pd=sd;var si=STORAGE_ITEMS[S.sel];hint='КОРАБЕЛЬНОЕ ХРАНИЛИЩЕ · W/S — предмет · Пробел — взять 1 · Q — сдать 1 · E — выйти';if(PR.space){var sh=itemCount(S,si.id);if(sh<=0)toast('На складе этого нет');else{var sm=itemMassList(S,si.id)[0];if(!packCanReceive(si.id,1,[sm]))toast('Не хватает веса или свободной ячейки в рюкзаке');else if(transferStoredToPack(si.id,1)){toast('Взято: '+si.name);sfx.pick();}}}else if(PR.q){var ph=itemCount(D,si.id);if(ph<=0)toast('В рюкзаке этого нет');else{var pm=itemMassList(D,si.id)[0];if(!storageCanReceive(si.id,1,[pm]))toast('Корабельное хранилище заполнено');else if(transferPackToStorage(si.id,1)){toast('Сдано на склад: '+si.name);sfx.pick();}}}
+      } else if (P.seat === 'recon') {
+        var rd=K.down-K.up;if(rd&&rd!==S.pd)S.sel=(S.sel+rd+RECON_RECIPES.length)%RECON_RECIPES.length;S.pd=rd;var rr=RECON_RECIPES[S.sel];hint='РЕКОНСТРУКТОР · W/S — рецепт · Пробел — разобрать · E — выйти';if(PR.space)reconstructSelected();
       } else if (P.seat === 'reactor') {
         if (K.up || K.down) { R.auto = false; R.Ft = clamp(R.Ft + (K.up - K.down) * 40 * dt, 0, 100); }
         if (PR.q) { if (R.fault) { hint = 'Автоматика отказала'; } else R.auto = !R.auto; }
@@ -1930,8 +1944,37 @@ if (e.code === 'KeyM') muted = !muted;
     ['Аптечка (+60% здоровья)', 0, function () { S.med.h++; }, 0, { x: 2 }, 'Восстанавливает 60% здоровья. Делается из любых 2 растений. По H сначала используется лекарство от болезни, и только потом аптечка.'],];
   var RCW = [2.5, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1];
   var MRC = [['Антидот от яда',0,function(){S.med.t++;},{t:1},'Снимает отравление от медуз и ядовитых плевков.'],['Антибиотик от инфекции',0,function(){S.med.i++;},{i:1},'Лечит инфекцию после укусов мелких существ.'],['Мазь от ожогов',0,function(){S.med.b++;},{b:1},'Устраняет ожоги, полученные от огня.'],['Аптечка первой помощи',0,function(){S.med.h++;},{x:2},'Восстанавливает до 60 единиц здоровья.']];
+  var STORAGE_ITEMS=[{id:'ore',name:'Руда'},{id:'harpoon',name:'Гарпуны'},{id:'weld',name:'Баллоны сварки'},{id:'fuel',name:'Топливные стержни'},{id:'moss',name:'Синий мох'},{id:'algae',name:'Бурая водоросль'},{id:'sponge',name:'Алая губка'},{id:'antidote',name:'Антидот'},{id:'antibiotic',name:'Антибиотик'},{id:'ointment',name:'Мазь от ожогов'},{id:'medkit',name:'Аптечки'},{id:'crate',name:'Грузовые ящики'}];
+  var RC_OUTPUT=[{id:'harpoon',n:10},{id:'weld',n:1},{id:'fuel',n:1},null,null,null,null,{id:'antidote',n:1},{id:'antibiotic',n:1},{id:'ointment',n:1},{id:'medkit',n:1}];
+  var MRC_OUTPUT=[{id:'antidote',n:1},{id:'antibiotic',n:1},{id:'ointment',n:1},{id:'medkit',n:1}];
+  var RECON_RECIPES=[
+    {input:'harpoon',need:10,label:'10 гарпунов',output:'ore',amount:1,desc:'Разборка партии гарпунов возвращает часть металлического сырья.'},
+    {input:'weld',need:1,label:'Баллон сварки',output:'ore',amount:1,desc:'Из корпуса баллона извлекается немного металлического сырья.'},
+    {input:'fuel',need:1,label:'Топливный стержень',output:'ore',amount:1,desc:'Повреждённый стержень разбирается на металлические компоненты.'},
+    {input:'antidote',need:1,label:'Антидот',output:'moss',amount:1,desc:'Извлекается часть исходного биоматериала — синий мох.'},
+    {input:'antibiotic',need:1,label:'Антибиотик',output:'algae',amount:1,desc:'Извлекается часть исходного биоматериала — бурая водоросль.'},
+    {input:'ointment',need:1,label:'Мазь от ожогов',output:'sponge',amount:1,desc:'Извлекается часть исходного биоматериала — алая губка.'},
+    {input:'medkit',need:1,label:'Аптечка',output:'plant',amount:1,desc:'Аптечка разбирается с потерями: возвращается один случайный растительный компонент.'}
+  ];
   function canMakeMed(r){var c=r[3];if(c.x)return plN()>=c.x;return c.t?S.pl.t>0:c.i?S.pl.i>0:S.pl.b>0;}
   function payMed(r){var c=r[3];if(c.x)payPl({x:c.x});else if(c.t)S.pl.t--;else if(c.i)S.pl.i--;else S.pl.b--;}
+  function reconstructSelected(){
+    var recipe=RECON_RECIPES[S.sel];if(!recipe)return;
+    var fromPack=Math.min(itemCount(D,recipe.input),recipe.need),fromStorage=recipe.need-fromPack;
+    if(itemCount(S,recipe.input)<fromStorage){toast('Недостаточно предметов для разборки');return;}
+    var packMasses=itemMassList(D,recipe.input).slice(0,fromPack),storeMasses=itemMassList(S,recipe.input).slice(0,fromStorage);
+    var packG=massGrams(packMasses),storeG=massGrams(storeMasses),outputId=recipe.output;
+    if(outputId==='plant'){var plants=['moss','algae','sponge'];outputId=plants[(Math.random()*plants.length)|0];}
+    var outN=recipe.amount,storedBase=stored()-storeG/1000,packBase=packLoad()-packG/1000;
+    var route=storageCanReceive(outputId,outN,null,storedBase)?'storage':(packCanReceive(outputId,outN,null,packBase,invFreedSlotsFor(recipe.input,fromPack))?'pack':null);
+    if(!route){toast('Нет места для полученного сырья — освободи склад или рюкзак');return;}
+    if(fromPack){takeItemMass(D,recipe.input,fromPack);setItemCountOn(D,recipe.input,itemCount(D,recipe.input)-fromPack);}
+    if(fromStorage){takeItemMass(S,recipe.input,fromStorage);setItemCountOn(S,recipe.input,itemCount(S,recipe.input)-fromStorage);}
+    if(fromPack)invSync();
+    if(route==='storage'){setItemCountOn(S,outputId,itemCount(S,outputId)+outN);itemMassList(S,outputId);}
+    else{setItemCountOn(D,outputId,itemCount(D,outputId)+outN);itemMassList(D,outputId);invSync();}
+    sfx.pick();toast('Разобрано: '+recipe.label+' → '+(outputId==='ore'?'руда':outputId==='moss'?'синий мох':outputId==='algae'?'бурая водоросль':'алая губка')+' ×'+outN+(route==='storage'?' · на склад':' · в рюкзак'));
+  }
   function plCost(c) { var n = 0; if (c) for (var k in c) n += c[k]; return n; }
   function plN() { return S.pl.t + S.pl.i + S.pl.b; }
   function canPl(c) { if (!c) return true; for (var k in c) if (k === 'x' ? plN() < c[k] : S.pl[k] < c[k]) return false; return true; }
@@ -1954,7 +1997,8 @@ if (e.code === 'KeyM') muted = !muted;
     for (var q = 0; q < dl.length && q < 3; q++) ctx.fillText(dl[q], 116, 373 + q * 17);
   }
   function drawMedFab(){ctx.fillStyle='rgba(2,12,18,0.96)';ctx.fillRect(100,22,600,394);ctx.strokeStyle='#17303f';ctx.lineWidth=2;ctx.strokeRect(100,22,600,394);ctx.textAlign='left';ctx.font='700 19px '+DISP;ctx.fillStyle='#4fe0b6';ctx.fillText('МЕДИЦИНСКИЙ ФАБРИКАТОР',116,48);ctx.font='500 13px '+DISP;ctx.fillStyle='#9ff4ff';ctx.fillText('Растения на складе: мох '+S.pl.t+' · водоросль '+S.pl.i+' · губка '+S.pl.b,116,70);for(var i=0;i<MRC.length;i++){var r=MRC[i],y=104+i*48;if(i===S.sel){ctx.fillStyle='#123042';ctx.fillRect(108,y-18,584,38);}ctx.font='700 16px '+DISP;ctx.fillStyle=canMakeMed(r)?'#cfe4ea':'#ff8a78';ctx.fillText(r[0],120,y);ctx.font='500 13px '+DISP;ctx.fillStyle='#7a97a3';ctx.fillText(r[4],120,y+17);ctx.textAlign='right';ctx.fillStyle='#f0a73c';ctx.fillText(r[3].x?'2 любых растения':(r[3].t?'1 синий мох':r[3].i?'1 бурая водоросль':'1 алая губка'),680,y);ctx.textAlign='left';}ctx.font='500 13px '+DISP;ctx.fillStyle='#f0a73c';ctx.fillText('W/S — выбор · Пробел — изготовить · E — выйти',116,392);}
-  function drawStorage(){var items=[['Руда',S.ore],['Гарпуны',S.harp],['Баллоны сварки',S.cyl],['Топливные стержни',S.rods],['Синий мох',S.pl.t],['Бурая водоросль',S.pl.i],['Алая губка',S.pl.b],['Антидот',S.med.t],['Антибиотик',S.med.i],['Мазь',S.med.b],['Аптечки',S.med.h],['Ящики',S.crt]];ctx.fillStyle='rgba(2,12,18,0.96)';ctx.fillRect(100,22,600,394);ctx.strokeStyle='#17303f';ctx.lineWidth=2;ctx.strokeRect(100,22,600,394);ctx.textAlign='left';ctx.font='700 19px '+DISP;ctx.fillStyle='#4fe0b6';ctx.fillText('СКЛАД ПОДЛОДКИ',116,47);ctx.font='500 13px '+DISP;ctx.fillStyle='#9ff4ff';ctx.fillText('Вместимость '+Math.ceil(stored())+'/'+capSub()+' · рюкзак '+Math.ceil(packLoad())+'/'+dCap(),116,68);for(var i=0;i<items.length;i++){var y=91+i*23;if(i===S.sel){ctx.fillStyle='#123042';ctx.fillRect(108,y-15,584,21);}ctx.font='500 14px '+DISP;ctx.fillStyle='#cfe4ea';ctx.fillText(items[i][0],120,y);ctx.textAlign='right';ctx.fillStyle='#f0a73c';ctx.fillText(items[i][1],680,y);ctx.textAlign='left';}ctx.font='500 13px '+DISP;ctx.fillStyle='#f0a73c';ctx.fillText('W/S — выбор · Пробел — взять · Q — положить · E — выйти',116,392);}
+  function drawStorage(){ctx.fillStyle='rgba(2,12,18,0.96)';ctx.fillRect(100,22,600,394);ctx.strokeStyle='#17303f';ctx.lineWidth=2;ctx.strokeRect(100,22,600,394);ctx.textAlign='left';ctx.font='700 19px '+DISP;ctx.fillStyle='#4fe0b6';ctx.fillText('КОРАБЕЛЬНОЕ ХРАНИЛИЩЕ',116,47);ctx.font='500 13px '+DISP;ctx.fillStyle='#9ff4ff';ctx.fillText('Масса склада '+stored().toFixed(2)+' / '+capSub()+' кг · рюкзак '+packLoad().toFixed(2)+' / '+dCap()+' кг',116,68);for(var i=0;i<STORAGE_ITEMS.length;i++){var item=STORAGE_ITEMS[i],y=91+i*23,storedN=itemCount(S,item.id),packN=itemCount(D,item.id);if(i===S.sel){ctx.fillStyle='#123042';ctx.fillRect(108,y-15,584,21);}ctx.font='500 14px '+DISP;ctx.fillStyle='#cfe4ea';ctx.fillText(item.name,120,y);ctx.textAlign='right';ctx.fillStyle='#f0a73c';ctx.fillText('склад '+storedN+'  ·  рюкзак '+packN,680,y);ctx.textAlign='left';}var selected=STORAGE_ITEMS[S.sel],list=itemMassList(S,selected.id),weight=list.reduce(function(a,b){return a+b;},0)/1000;ctx.font='500 12px '+DISP;ctx.fillStyle='#9fb4bd';ctx.fillText('Вес выбранного запаса: '+weight.toFixed(3)+' кг',116,372);ctx.font='500 13px '+DISP;ctx.fillStyle='#f0a73c';ctx.fillText('W/S — выбор · Пробел — взять 1 · Q — сдать 1 · E — выйти',116,397);}
+  function drawReconstructor(){ctx.fillStyle='rgba(2,12,18,0.96)';ctx.fillRect(100,22,600,394);ctx.strokeStyle='#17303f';ctx.lineWidth=2;ctx.strokeRect(100,22,600,394);ctx.textAlign='left';ctx.font='700 19px '+DISP;ctx.fillStyle='#4fe0b6';ctx.fillText('РЕКОНСТРУКТОР ПРЕДМЕТОВ',116,47);ctx.font='500 13px '+DISP;ctx.fillStyle='#9ff4ff';ctx.fillText('Разборка возвращает только часть исходных материалов',116,69);for(var i=0;i<RECON_RECIPES.length;i++){var r=RECON_RECIPES[i],y=103+i*38,have=itemCount(D,r.input)+itemCount(S,r.input);if(i===S.sel){ctx.fillStyle='#123042';ctx.fillRect(108,y-19,584,34);}ctx.font='700 14px '+DISP;ctx.fillStyle=have>=r.need?'#cfe4ea':'#718792';ctx.fillText(r.label,120,y-2);ctx.font='500 12px '+DISP;ctx.fillStyle='#8fa9b4';ctx.fillText(r.desc,120,y+13);ctx.textAlign='right';ctx.fillStyle=have>=r.need?'#f0a73c':'#718792';ctx.fillText('есть '+have+' / '+r.need,680,y-2);ctx.textAlign='left';}ctx.font='500 13px '+DISP;ctx.fillStyle='#f0a73c';ctx.fillText('W/S — рецепт · Пробел — разобрать · E — выйти',116,397);}
   function drawTerminalPanel() {
     /* Compact strip in the lower-left corner: the view of the sub stays open. */
     var x = 10, w = 336, h = 46, y = H - h - 8, title = '', sub = '', bars = [], i;
@@ -2816,10 +2860,11 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
         var hot=clamp((R.T-30)/120,0,1);ctx.fillStyle='rgb('+Math.round(60+195*hot)+','+Math.round(200-140*hot)+','+Math.round(180-130*hot)+')';rr(rx0+5,floor-rh+5,rw0-10,rh-10,3);ctx.fill();
         ctx.strokeStyle='#0b1820';ctx.lineWidth=1;for(var z=1;z<4;z++){ctx.beginPath();ctx.moveTo(rx0+z*rw0/4,floor-rh+5);ctx.lineTo(rx0+z*rw0/4,floor-5);ctx.stroke();}
       }else if(kind==='pump'){
-        var pw0=Math.min(innerW-4,roomW*0.68),ph=Math.min(25,innerH-2),px0=sx+left+(roomW-pw0)/2;
-        ctx.fillStyle='#263d49';rr(px0,floor-ph,pw0,ph,4);ctx.fill();
-        ctx.strokeStyle=turbo?'#4fe0b6':'#6a8696';ctx.lineWidth=3;ctx.beginPath();ctx.arc(sx+left+roomW/2,floor-ph/2,Math.min(7,ph*.28),0,6.283);ctx.stroke();
-        ctx.fillStyle=turbo?'#4fe0b6':'#1d3a46';ctx.beginPath();ctx.arc(sx+left+roomW/2,floor-ph/2,3,0,6.283);ctx.fill();
+        var pw0=Math.min(innerW-4,roomW*0.68),ph=Math.min(25,innerH-2),px0=sx+left+(roomW-pw0)/2;ctx.fillStyle='#263d49';rr(px0,floor-ph,pw0,ph,4);ctx.fill();ctx.strokeStyle=turbo?'#4fe0b6':'#6a8696';ctx.lineWidth=3;ctx.beginPath();ctx.arc(sx+left+roomW/2,floor-ph/2,Math.min(7,ph*.28),0,6.283);ctx.stroke();ctx.fillStyle=turbo?'#4fe0b6':'#1d3a46';ctx.beginPath();ctx.arc(sx+left+roomW/2,floor-ph/2,3,0,6.283);ctx.fill();
+      }else if(kind==='storage'){
+        var sw=Math.min(38,innerW*.46),sh=Math.min(29,innerH-2),sx0=sx+left+roomW*.68-sw/2;ctx.fillStyle='#263c49';rr(sx0,floor-sh,sw,sh,3);ctx.fill();ctx.strokeStyle='#8da6ae';ctx.lineWidth=1.4;ctx.stroke();ctx.fillStyle='#132a35';for(var dr=0;dr<3;dr++){ctx.fillRect(sx0+4,floor-sh+4+dr*7,sw-8,5);ctx.fillStyle='#d2a85e';ctx.fillRect(sx0+sw-8,floor-sh+5+dr*7,2,3);ctx.fillStyle='#132a35';}
+      }else if(kind==='reconstructor'){
+        var dw=Math.min(32,innerW*.38),dh=Math.min(29,innerH-2),dx0=sx+left+roomW*.22-dw/2;ctx.fillStyle='#263c49';rr(dx0,floor-dh,dw,dh,3);ctx.fill();ctx.strokeStyle='#8da6ae';ctx.lineWidth=1.4;ctx.stroke();ctx.fillStyle='#10232d';rr(dx0+5,floor-dh+5,dw-10,dh-10,2);ctx.fill();ctx.strokeStyle='#4fe0b6';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(dx0+dw/2,floor-dh/2,5,0,6.283);ctx.stroke();ctx.fillStyle='#f0a73c';ctx.fillRect(dx0+dw-5,floor-dh+5,2,3);
       }
       ctx.restore();
     }
@@ -2827,6 +2872,8 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     drawRoomMachine(1,0,'fab');
     drawRoomMachine(1,1,'helm','left');
     drawRoomMachine(1,1,'gun','right');
+    drawRoomMachine(1,4,'reconstructor');
+    drawRoomMachine(1,4,'storage');
     drawRoomMachine(2,1,'reactor');
     drawRoomMachine(2,2,'pump');
     /* Central ladder is drawn last among interior fixtures: neutral grey like
@@ -3079,7 +3126,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     if (flash > 0) { ctx.fillStyle = 'rgba(255,90,71,' + (flash * 1.2).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
 
-    if(state!=='menu')drawRadar();if(state==='play'&&P.seat==='fab')drawFab();if(state==='play'&&P.seat==='medfab')drawMedFab();if(state==='play'&&P.seat==='storage')drawStorage();if(state==='play'&&P.seat&&['helm','gun','reactor','pump'].indexOf(P.seat)>=0)drawTerminalPanel();if(state==='play'&&shop)drawShop();if(state==='play'&&uiPanel)drawPlayerPanel();
+    if(state!=='menu')drawRadar();if(state==='play'&&P.seat==='fab')drawFab();if(state==='play'&&P.seat==='medfab')drawMedFab();if(state==='play'&&P.seat==='storage')drawStorage();if(state==='play'&&P.seat==='recon')drawReconstructor();if(state==='play'&&P.seat&&['helm','gun','reactor','pump'].indexOf(P.seat)>=0)drawTerminalPanel();if(state==='play'&&shop)drawShop();if(state==='play'&&uiPanel)drawPlayerPanel();
     if (state === 'play') {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(2,8,14,0.85)'; ctx.font = '700 22px ' + DISP;
       ctx.textAlign = 'left'; ctx.font = '700 15px ' + DISP; ctx.fillStyle = '#f0a73c'; var ob = 'ЗАДАНИЕ: ' + LEVELS[cur].brief; ctx.strokeText(ob, 10, 16); ctx.fillText(ob, 10, 16);
