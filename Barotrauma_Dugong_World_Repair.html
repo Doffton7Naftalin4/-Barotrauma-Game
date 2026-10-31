@@ -863,7 +863,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (K.e) { D.action='mine'; D.actionT+=dt; tgt.prog += dt / 1.6; spark(tgt.x, tgt.y, 1); if (Math.random() < 0.25) sfx.weld(); if (tgt.prog >= 1) { D.carry+=tgt.v;if(dLoad()>dCap()){D.carry-=tgt.v;tgt.prog=0;toast('Рюкзак полон '+dLoad().toFixed(3)+'/'+dCap()+' кг: вернитесь на борт');}else{tgt.got=1; sfx.pick(); spark(tgt.x, tgt.y, 14); toast('+' + tgt.v + ' руды в рюкзаке ' + dLoad() + '/' + dCap()); } } }
     } else if (nearH) { hint = 'E — войти в шлюз'; if (PR.e) enterSub(); }
     else if (ic) { hint = 'Удерживайте E — резак: резать лёд (гарпун тоже бьёт)'; if (K.e) { D.action='cut'; D.actionT+=dt; dmgIce(ic, 2.2 * dt, D.x, D.y); if (Math.random() < 0.3) { spark(D.x + Math.cos(D.aim) * 20, D.y + Math.sin(D.aim) * 20, 1); sfx.weld(); } } }
-    else hint = 'WASD — плыть · Пробел — гарпун (' + D.ammo + ') · рюкзак ' + dLoad() + '/' + dCap();
+    else hint = 'WASD — плыть · F — фонарь ' + (diverLampOn?'выкл.':'вкл.') + ' · Пробел — гарпун (' + D.ammo + ') · рюкзак ' + dLoad().toFixed(3) + '/' + dCap() + ' кг';
     for (i = 0; i < plants.length; i++) { var pl_ = plants[i]; if (!pl_.got && Math.hypot(pl_.x - D.x, pl_.y - D.y) < 34) { hint = 'E — собрать: ' + PLN[pl_.k]; if (PR.e) { D.action='collect'; D.actionT=0; D.pl[pl_.k]++;if(dLoad()>dCap()){D.pl[pl_.k]--;toast('Рюкзак полон');}else{pl_.got=1; sfx.pick(); toast('Собрано: ' + PLN[pl_.k] + ' · рюкзак ' + dLoad() + '/' + dCap()); } } } }
     for (i = 0; i < crates.length; i++) { var cr_ = crates[i]; if (!cr_.got && Math.hypot(cr_.x - D.x, cr_.y - D.y) < 36) { hint = 'E — взять контейнер'; if (PR.e) { if (dLoad() + 3 > dCap()) toast('Рюкзак полон: контейнер весит 3'); else { cr_.got = 1; D.cargo++; sfx.pick(); toast('Контейнер взят — несите в шлюз'); } } } }
     for (i = 0; i < bcrates.length; i++) { var bc_ = bcrates[i]; if (!bc_.got && Math.hypot(bc_.x - D.x, bc_.y - D.y) < 36) { hint = 'E — взять ящик'; if (PR.e) { if (dLoad() + 2 > dCap()) toast('Рюкзак полон: ящик весит 2'); else { bc_.got = 1; D.bcargo++; sfx.pick(); toast('Ящик взят — несите в шлюз'); } } } }
@@ -1010,7 +1010,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   };
 
   /* ---------- input ---------- */
-  var K = { left: 0, right: 0, up: 0, down: 0, e: 0, space: 0, q: 0, h: 0 };
+  var K = { left: 0, right: 0, up: 0, down: 0, e: 0, space: 0, q: 0, h: 0 }; var diverLampOn = false;
   var PR = { e: 0, space: 0, q: 0, h: 0, up: 0, down: 0, left: 0, right: 0 };
   var map = {
     ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left',
@@ -1027,6 +1027,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       else if(e.code==='KeyJ')togglePanel('health');
       else if(e.code==='Escape'&&uiPanel){if(uiPanel==='inventory'&&invMenu)invMenu=null;else if(uiPanel==='inventory'&&invGrab)invReturnGrab();else closePanel();}
       else if(uiPanel==='inventory'&&!shop)invKey(e);
+      else if(!uiPanel&&!shop&&e.code==='KeyF'&&P.out){diverLampOn=!diverLampOn;sfx.door();toast(diverLampOn?'ФОНАРЬ ВКЛЮЧЁН':'ФОНАРЬ ВЫКЛЮЧЕН');}
       else if(!uiPanel&&!shop&&e.code.indexOf('Digit')===0){var qk=INV_Q[+e.code.slice(5)-1];if(qk)invQuick(qk);}
     }
 if (e.code === 'KeyM') muted = !muted;
@@ -1137,7 +1138,7 @@ if (e.code === 'KeyM') muted = !muted;
   for (var si = 0; si < 60; si++) snow.push({ x: Math.random() * W, y: Math.random() * H, z: 0.3 + Math.random() * 0.7 });
 
   function reset() {
-    var LV0 = LEVELS[cur]; GOAL = LV0.goal;
+    diverLampOn = false; var LV0 = LEVELS[cur]; GOAL = LV0.goal;
     sx = 0; sy = 0; svx = 0; svy = 0; hull = 100;
     w = [0, 0, 0, 0, 0]; dugongFlood = [0,0,0,0,0,0,0,0,0,0,0,0]; doors = [1, 1, 1, 1];
     leaks = []; fires = []; shots = []; spits = []; parts = []; drops = [];
@@ -2269,7 +2270,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     castLight(d, sx - 125, sy, hr, 0, 6.2832, 64, hp, so); castLight(d, sx + 10, sy, hr, 0, 6.2832, 64, hp, so); castLight(d, sx + 145, sy, hr, 0, 6.2832, 64, hp, so);
     if (pOn) castLight(d, sx + 206, sy, 620, -0.5, 0.5, 40, 0.92, so);
     if (pOn) [G, G2].forEach(function (T) { var lx_ = sx + T.ox + Math.cos(T.ang) * 30, ly_ = sy + T.oy + Math.sin(T.ang) * 30; castLight(d, lx_, ly_, 540, T.ang - 0.3, T.ang + 0.3, 24, 0.9, so); });
-    if (state === 'play' && P.out) castLight(d, D.x, D.y, 250, 0, 6.2832, 72, 0.96);
+    if (state === 'play' && P.out) { castLight(d,D.x,D.y,diverLampOn?72:105,0,6.2832,48,diverLampOn?0.38:0.62); if(diverLampOn)castLight(d,D.x,D.y,430,D.aim-0.31,D.aim+0.31,52,0.98); }
     for (i = 0; i < ores.length; i++) if (!ores[i].got) blob(d, ores[i].x, ores[i].y, 38, 0.9);
     for (i = 0; i < plants.length; i++) if (!plants[i].got) blob(d, plants[i].x, plants[i].y, 38, 0.9);
     for (i = 0; i < crates.length; i++) if (!crates[i].got) blob(d, crates[i].x, crates[i].y, 50, 0.9);
