@@ -177,8 +177,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       { id: 'ballast_fore', deck: 'lower', role: 'ballast' }
     ],
     connections: [
-      { id: 'central_ladder_upper_main', type: 'ladder', from: 'upper', to: 'main', x: 0, traversable: false },
-      { id: 'central_ladder_main_lower', type: 'ladder', from: 'main', to: 'lower', x: 0, traversable: false }
+      { id: 'central_ladder_upper_main', type: 'ladder', from: 'upper', to: 'main', x: 0, traversable: false, purpose: 'deck_transition' },
+      { id: 'central_ladder_main_lower', type: 'ladder', from: 'main', to: 'lower', x: 0, traversable: false, purpose: 'deck_transition' },
+      { id: 'ballast_aft_floor_hatch', type: 'floor_hatch_ladder', from: 'lower', to: 'ballast_aft', access: 'floor_hatch', ladder: 'ballast_aft_ladder', traversable: false },
+      { id: 'ballast_fore_floor_hatch', type: 'floor_hatch_ladder', from: 'lower', to: 'ballast_fore', access: 'floor_hatch', ladder: 'ballast_fore_ladder', traversable: false }
     ],
     hardpoints: [
       { id: 'coilgun_upper_aft', weapon: 'coilgun', deck: 'upper', side: 'top', installed: true },
@@ -1790,6 +1792,25 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       ctx.moveTo(ladderX - 4, yy); ctx.lineTo(ladderX + 4, yy);
     }
     ctx.stroke();
+
+    /* Ballast tanks are accessed independently through floor hatches.
+       Each hatch has its own short ladder; neither connects to the central shaft. */
+    var lowerY = top + upperH + deckH;
+    var ballastXs = [x0 + 37, x0 + fullW - 55];
+    for (var bi = 0; bi < ballastXs.length; bi++) {
+      var hx = ballastXs[bi], floorY = lowerY + deckH;
+      ctx.fillStyle = '#07131a'; ctx.fillRect(hx - 7, floorY - 2, 14, 5);
+      ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(hx - 9, floorY - 3); ctx.lineTo(hx + 9, floorY - 3);
+      ctx.moveTo(hx - 5, floorY + 1); ctx.lineTo(hx - 5, floorY + 15);
+      ctx.moveTo(hx + 5, floorY + 1); ctx.lineTo(hx + 5, floorY + 15);
+      for (var br = 0; br < 3; br++) {
+        var by = floorY + 4 + br * 4;
+        ctx.moveTo(hx - 5, by); ctx.lineTo(hx + 5, by);
+      }
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
