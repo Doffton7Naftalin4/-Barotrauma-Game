@@ -1860,17 +1860,18 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     rr(upperX + upperW - 52, top - 3, 32, 7, 3); ctx.fill();
 
     /* Compact stern propulsion housings and shafts. */
-    for (var d = -1; d <= 1; d += 2) {
-      var ny = sy + d * 48;
+    var engineYs = [sy + 42, sy + 68];
+    for (var ei = 0; ei < engineYs.length; ei++) {
+      var ny = engineYs[ei];
+      /* Both independent drive pods sit on the stern's lower mounting rail and overlap the pressure hull. */
       ctx.fillStyle = '#263940';
-      rr(x0 - 24, ny - 8, 38, 16, 5); ctx.fill();
-      /* Reinforced mounting neck overlaps the pressure hull so the drive pod is visibly attached. */
-      ctx.fillStyle = '#344a50'; rr(x0 - 10, ny - 6, 34, 12, 4); ctx.fill();
+      rr(x0 - 43, ny - 8, 42, 16, 5); ctx.fill();
+      ctx.fillStyle = '#344a50'; rr(x0 - 18, ny - 7, 31, 14, 4); ctx.fill();
       ctx.strokeStyle = '#82949a'; ctx.lineWidth = 1.4; ctx.stroke();
       ctx.strokeStyle = '#aab8b9'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(x0 - 27, ny - pa);
-      ctx.lineTo(x0 - 27, ny + pa);
+      ctx.moveTo(x0 - 46, ny - pa * 0.45);
+      ctx.lineTo(x0 - 46, ny + pa * 0.45);
       ctx.stroke();
     }
 
@@ -1993,7 +1994,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     /* Restore the animated machinery drawings, mounted to real Dugong rooms. */
     var mounts=[{p:0,d:1,r:0},{p:4,d:1,r:1},{p:3,d:1,r:1,x:-68},{p:1,d:2,r:1},{p:2,d:2,r:2}];
-    for(var mi=0;mi<mounts.length;mi++){var m=mounts[mi],row=DUGONG_DECK_LAYOUT[m.d],left=row.x;for(var ri=0;ri<m.r;ri++)left+=row.widths[ri];var rw=row.widths[m.r],sc=Math.min((rw-8)/84,(row.h-6)/84),cx=sx+(m.x==null?left+rw/2:m.x),fy=sy+row.y+row.h-3;ctx.save();ctx.translate(cx-42*sc,fy-78*sc);ctx.scale(sc,sc);drawProps(m.p,0,0);ctx.restore();}
+    for(var mi=0;mi<mounts.length;mi++){var m=mounts[mi],row=DUGONG_DECK_LAYOUT[m.d],left=row.x;for(var ri=0;ri<m.r;ri++)left+=row.widths[ri];var rw=row.widths[m.r],sc=0.8,cx=sx+(m.x==null?left+rw/2:m.x),fy=sy+row.y+row.h-3;ctx.save();ctx.translate(cx-42*sc,fy-78*sc);ctx.scale(sc,sc);drawProps(m.p,0,0);ctx.restore();}
     ctx.restore();
   }
 
