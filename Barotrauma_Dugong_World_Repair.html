@@ -665,8 +665,13 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function dugongAirlockDoor(){var row=DUGONG_DECK_LAYOUT[0];return {x:sx+row.x,y:sy+row.y+row.h/2};}
   function dugongAirlockOutsidePoint(){var door=dugongAirlockDoor();return {x:door.x-15,y:door.y};}
   function exitSub(){var p=dugongAirlockOutsidePoint();P.out=true;P.seat=null;D.x=p.x;D.y=p.y;D.vx=D.vy=0;D.aim=Math.PI;D.face=-1;toast('Вы вышли через левую дверь шлюза');}
-  function stored() { return S.ore + S.crt * 2 + plN() + S.harp * 0.25 + S.rods + S.cyl + S.med.t + S.med.i + S.med.b + S.med.h; }
-  function packLoad() { return D.carry + D.cargo * 3 + D.bcargo * 2 + D.cyl + D.rods + D.pl.t + D.pl.i + D.pl.b + D.med.t + D.med.i + D.med.b + D.med.h + D.ammo * 0.25; }
+  /* Индивидуальная масса каждой единицы (г). Природные ресурсы получают небольшую вариацию. */
+  var ITEM_MASS_G={ore:[680,1080],moss:[85,155],algae:[110,205],sponge:[145,265],medkit:460,antidote:125,antibiotic:135,ointment:90,harpoon:180,weld:1250,fuel:1450,crate:2000,cargo:3000};
+  function itemCount(o,id){if(id==='ore')return o===D?D.carry:S.ore;if(id==='crate')return o===D?D.bcargo:S.crt;if(id==='cargo')return o===D?D.cargo:0;if(id==='moss'||id==='algae'||id==='sponge')return o.pl[id==='moss'?'t':id==='algae'?'i':'b']||0;if(id==='medkit'||id==='antidote'||id==='antibiotic'||id==='ointment')return o.med[id==='medkit'?'h':id==='antidote'?'t':id==='antibiotic'?'i':'b']||0;if(id==='harpoon')return o===D?D.ammo:S.harp;if(id==='weld')return o.cyl||0;if(id==='fuel')return o.rods||0;return 0;}
+  function itemMassList(o,id){if(!o.mass)o.mass={};var a=o.mass[id]||(o.mass[id]=[]),n=Math.max(0,itemCount(o,id)|0),sp=ITEM_MASS_G[id];while(a.length>n)a.pop();while(a.length<n)a.push(Array.isArray(sp)?Math.round(rand(sp[0],sp[1])):(sp||1000));return a;}
+  function massTotal(o,ids){var g=0;for(var i=0;i<ids.length;i++){var a=itemMassList(o,ids[i]);for(var j=0;j<a.length;j++)g+=a[j];}return g/1000;}
+  function stored(){return massTotal(S,['ore','crate','moss','algae','sponge','harpoon','fuel','weld','medkit','antidote','antibiotic','ointment']);}
+  function packLoad(){return massTotal(D,['ore','cargo','crate','weld','fuel','moss','algae','sponge','antidote','antibiotic','ointment','medkit','harpoon']);}
   function packRoom() { return Math.max(0, dCap() - packLoad()); }
   function capSub() { return SUBS[S.sub].cap; }
   function dLoad() { return packLoad(); }
@@ -1136,10 +1141,10 @@ if (e.code === 'KeyM') muted = !muted;
     leaks = []; fires = []; shots = []; spits = []; parts = []; drops = [];
     P = { dis: { t: 0, i: 0, b: 0 }, lx: 0, deck: 1, face: 1, hp: 100, o2: 120, seat: null, work: 0, step: 0, out: false };
     deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
-    D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, action: 'idle', actionT: 0, pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 0 }, cyl: 0, rods: 0 }; shop = null;
+    D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, action: 'idle', actionT: 0, pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 0 }, cyl: 0, rods: 0, mass: {} }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
-    G = { ang: -0.3, cool: 0, ox: -150, oy: -22, i: 0, cap: 100, dry: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 88, i: 1, cap: 100, dry: 0 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
+    G = { ang: -0.3, cool: 0, ox: -150, oy: -22, i: 0, cap: 100, dry: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 88, i: 1, cap: 100, dry: 0 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0, mass: {} }; cargoGot = 0;
     turbo = false; shake = 0; flash = 0; tcool = 0; elapsed = 0; alarmT = 0; fireT = 0; kills = 0; shockT = 0; shockImm = 0; dockT = 0; dockMsg = ''; oreTot = 0; menuS = 0;
     roamT = rand(LV0.roam[0], LV0.roam[1]) * 0.7;
     invReset(); genWorld(LV0);
@@ -1853,27 +1858,27 @@ var DB = [
   { k: 'dropall', x: 608, y: 300, w: 136, h: 24, t: 'Выбросить всё', hk: 'Shift+Q' }
 ];
 var INV_ITEMS = [
-  { id: 'medkit', cat: 1, w: 1, name: 'Аптечка', desc: 'Восстанавливает 60 единиц здоровья. Быстрая клавиша 1.', get: function () { return D.med.h; }, set: function (n) { D.med.h = n; },
+  { id: 'medkit', cat: 1, w: 0.46, name: 'Аптечка', desc: 'Восстанавливает 60 единиц здоровья. Быстрая клавиша 1.', get: function () { return D.med.h; }, set: function (n) { D.med.h = n; },
     use: function () { if (P.hp >= 100) return { m: 'Здоровье уже полное' }; P.hp = Math.min(100, P.hp + 60); return { m: 'Аптечка: +60 здоровья', c: 1 }; } },
-  { id: 'antidote', cat: 1, w: 1, name: 'Антидот', desc: 'Снимает отравление от медуз и ядовитых плевков. Быстрая клавиша 2.', get: function () { return D.med.t; }, set: function (n) { D.med.t = n; },
+  { id: 'antidote', cat: 1, w: 0.125, name: 'Антидот', desc: 'Снимает отравление от медуз и ядовитых плевков. Быстрая клавиша 2.', get: function () { return D.med.t; }, set: function (n) { D.med.t = n; },
     use: function () { if (P.dis.t <= 0.05) return { m: 'Отравления нет' }; P.dis.t = 0; return { m: 'Антидот: отравление снято', c: 1 }; } },
-  { id: 'antibiotic', cat: 1, w: 1, name: 'Антибиотик', desc: 'Лечит инфекцию после укусов мелких существ. Быстрая клавиша 3.', get: function () { return D.med.i; }, set: function (n) { D.med.i = n; },
+  { id: 'antibiotic', cat: 1, w: 0.135, name: 'Антибиотик', desc: 'Лечит инфекцию после укусов мелких существ. Быстрая клавиша 3.', get: function () { return D.med.i; }, set: function (n) { D.med.i = n; },
     use: function () { if (P.dis.i <= 0.05) return { m: 'Инфекции нет' }; P.dis.i = 0; return { m: 'Антибиотик: инфекция побеждена', c: 1 }; } },
-  { id: 'ointment', cat: 1, w: 1, name: 'Мазь от ожогов', desc: 'Лечит ожоги от огня и возвращает нормальную скорость ходьбы. Быстрая клавиша 4.', get: function () { return D.med.b; }, set: function (n) { D.med.b = n; },
+  { id: 'ointment', cat: 1, w: 0.09, name: 'Мазь от ожогов', desc: 'Лечит ожоги от огня и возвращает нормальную скорость ходьбы. Быстрая клавиша 4.', get: function () { return D.med.b; }, set: function (n) { D.med.b = n; },
     use: function () { if (P.dis.b <= 0.05) return { m: 'Ожогов нет' }; P.dis.b = 0; return { m: 'Мазь: ожог вылечен', c: 1 }; } },
-  { id: 'harpoon', cat: 2, w: 0.25, name: 'Гарпуны', desc: 'Боезапас ручного гарпуна. Тратится при стрельбе (Пробел). Четыре гарпуна занимают одно место груза.', get: function () { return D.ammo; }, set: function (n) { D.ammo = n; },
+  { id: 'harpoon', cat: 2, w: 0.18, name: 'Гарпуны', desc: 'Боезапас ручного гарпуна. Тратится при стрельбе (Пробел). Четыре гарпуна занимают одно место груза.', get: function () { return D.ammo; }, set: function (n) { D.ammo = n; },
     use: function () { return { m: 'Гарпуны расходуются при стрельбе' }; } },
-  { id: 'weld', cat: 2, w: 1, name: 'Баллон сварки', desc: 'Запасной баллон сварки. Применение на борту заменяет рабочий баллон, если он наполовину пуст.', get: function () { return D.cyl; }, set: function (n) { D.cyl = n; },
+  { id: 'weld', cat: 2, w: 1.25, name: 'Баллон сварки', desc: 'Запасной баллон сварки. Применение на борту заменяет рабочий баллон, если он наполовину пуст.', get: function () { return D.cyl; }, set: function (n) { D.cyl = n; },
     use: function () { if (P.out) return { m: 'Баллон меняется только на борту' }; if (S.fuel > 60) return { m: 'Рабочий баллон ещё почти полон (' + Math.round(S.fuel) + '%)' }; S.fuel = 100; return { m: 'Сварочный баллон заменён', c: 1 }; } },
-  { id: 'fuel', cat: 2, w: 1, name: 'Топливный стержень', desc: 'Запасной стержень реактора. Применяйте в отсеке реактора, когда текущий почти выработан.', get: function () { return D.rods; }, set: function (n) { D.rods = n; },
+  { id: 'fuel', cat: 2, w: 1.45, name: 'Топливный стержень', desc: 'Запасной стержень реактора. Применяйте в отсеке реактора, когда текущий почти выработан.', get: function () { return D.rods; }, set: function (n) { D.rods = n; },
     use: function () { if (P.out || P.deck !== 2 || dugongRoomAt(2, P.lx) !== 1) return { m: 'Стержень ставится в отсеке реактора' }; if (R.rod > 70) return { m: 'Текущий стержень ещё не выработан (' + Math.round(R.rod) + '%)' }; R.rod = 100; return { m: 'Стержень реактора заменён', c: 1 }; } },
-  { id: 'ore', cat: 3, w: 1, name: 'Руда', desc: 'Сырьё для технического фабрикатора. Сдайте на склад через шлюз или продайте в аванпосте.', get: function () { return D.carry; }, set: function (n) { D.carry = n; },
+  { id: 'ore', cat: 3, w: 0.88, name: 'Руда', desc: 'Сырьё для технического фабрикатора. Сдайте на склад через шлюз или продайте в аванпосте.', get: function () { return D.carry; }, set: function (n) { D.carry = n; },
     use: function () { return { m: 'Руда выгружается на склад при входе в шлюз' }; } },
-  { id: 'moss', cat: 3, w: 1, name: 'Синий мох', desc: 'Сырьё для антидота. Изготавливается в медицинском фабрикаторе.', get: function () { return D.pl.t; }, set: function (n) { D.pl.t = n; },
+  { id: 'moss', cat: 3, w: 0.12, name: 'Синий мох', desc: 'Сырьё для антидота. Изготавливается в медицинском фабрикаторе.', get: function () { return D.pl.t; }, set: function (n) { D.pl.t = n; },
     use: function () { return { m: 'Отнесите в медицинский фабрикатор' }; } },
-  { id: 'algae', cat: 3, w: 1, name: 'Бурая водоросль', desc: 'Сырьё для антибиотика. Изготавливается в медицинском фабрикаторе.', get: function () { return D.pl.i; }, set: function (n) { D.pl.i = n; },
+  { id: 'algae', cat: 3, w: 0.16, name: 'Бурая водоросль', desc: 'Сырьё для антибиотика. Изготавливается в медицинском фабрикаторе.', get: function () { return D.pl.i; }, set: function (n) { D.pl.i = n; },
     use: function () { return { m: 'Отнесите в медицинский фабрикатор' }; } },
-  { id: 'sponge', cat: 3, w: 1, name: 'Алая губка', desc: 'Сырьё для мази от ожогов. Изготавливается в медицинском фабрикаторе.', get: function () { return D.pl.b; }, set: function (n) { D.pl.b = n; },
+  { id: 'sponge', cat: 3, w: 0.20, name: 'Алая губка', desc: 'Сырьё для мази от ожогов. Изготавливается в медицинском фабрикаторе.', get: function () { return D.pl.b; }, set: function (n) { D.pl.b = n; },
     use: function () { return { m: 'Отнесите в медицинский фабрикатор' }; } },
   { id: 'crate', cat: 4, w: 2, name: 'Ящик с грузом', desc: 'Грузовой ящик. Сдайте на склад или продайте в техническом аванпосте за кредиты.', get: function () { return D.bcargo; }, set: function (n) { D.bcargo = n; },
     use: function () { return { m: 'Ящик сдаётся на склад через шлюз' }; } },
@@ -2122,7 +2127,7 @@ function drawInventory() {
     invIcon(it.id, IV.dx + 36, IV.dy + 36, 1.6);
     ivT(it.name, IV.dx + 72, IV.dy + 28, '700 20px ' + DISP, '#f0e8cf');
     ivT(INV_FILTERS[it.cat].toUpperCase(), IV.dx + 72, IV.dy + 45, '700 11px ' + DISP, INV_CATC[it.cat]);
-    ivT('В стопке ×' + st.n + ' · вес ' + (Math.round(it.w * st.n * 100) / 100) + ' · всего ×' + it.get(), IV.dx + 72, IV.dy + 60, '500 12px ' + DISP, '#9fb4bd');
+    var sm=itemMassList(D,it.id).slice(0,st.n).reduce(function(a,b){return a+b;},0)/1000;ivT('В стопке ×'+st.n+' · вес '+sm.toFixed(3)+' кг · всего ×'+it.get(), IV.dx + 72, IV.dy + 60, '500 12px ' + DISP, '#9fb4bd');
     c.font = '500 14px ' + DISP; var ln = wrapTxt(it.desc, 258);
     for (k = 0; k < ln.length && k < 5; k++) ivT(ln[k], IV.dx + 12, IV.dy + 86 + k * 17, '500 14px ' + DISP, '#c5d4da');
   } else ivT(invGrab ? 'Выберите ячейку, чтобы положить предмет' : 'Ячейка пуста', IV.dx + 14, IV.dy + 32, '700 15px ' + DISP, '#718792');
@@ -2130,7 +2135,7 @@ function drawInventory() {
   /* нагрузка */
   var load = packLoad(), cap = dCap(), used = 0, lr = clamp(load / cap, 0, 1);
   for (i = 0; i < INV_N; i++) if (invSlots[i]) used++;
-  ivT('Нагрузка ' + Math.ceil(load) + ' / ' + cap, 56, 347, '700 13px ' + DISP, '#cfe4ea'); ivT('Ячейки ' + used + ' / ' + INV_N, 448, 347, '500 13px ' + DISP, '#9fb4bd', 'right');
+  ivT('Нагрузка ' + load.toFixed(3) + ' / ' + cap + ' кг', 56, 347, '700 13px ' + DISP, '#cfe4ea'); ivT('Ячейки ' + used + ' / ' + INV_N, 448, 347, '500 13px ' + DISP, '#9fb4bd', 'right');
   c.fillStyle = '#10232e'; c.fillRect(56, 353, 392, 10); c.fillStyle = lr > 0.9 ? '#ff5a47' : lr > 0.7 ? '#f0a73c' : '#4fe0b6'; c.fillRect(56, 353, 392 * lr, 10); c.strokeStyle = '#345363'; c.lineWidth = 1; c.strokeRect(56.5, 353.5, 391, 9);
   ivT('Здоровье ' + Math.round(P.hp) + ' / 100', 56, 387, '700 13px ' + DISP, '#cfe4ea');
   c.fillStyle = '#10232e'; c.fillRect(160, 378, 150, 10); c.fillStyle = P.hp < 30 ? '#ff5a47' : '#4fe0b6'; c.fillRect(160, 378, 150 * clamp(P.hp / 100, 0, 1), 10); c.strokeStyle = '#345363'; c.strokeRect(160.5, 378.5, 149, 9);
