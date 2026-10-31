@@ -403,33 +403,36 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ores = ores.filter(function (o) { return settleResource(o, false); });
     plants = plants.filter(function (p) { return settleResource(p, !!p.boatWall); });
   }
-  function nook(x, y, a, wr) {
-    var dx = Math.cos(a), dy = Math.sin(a), cr = rand(135, 195);
-    /* Вход начинается внутри края главного тоннеля: между ним и камерой не должно быть разрыва. */
-    var neckStart = wr * 0.88, d2 = wr + 145 + cr * 1.12, cx = x + dx * d2, cy = y + dy * d2;
-    var nx = x + dx * neckStart, ny = y + dy * neckStart;
-    var ex = x + dx * (d2 - cr * 0.68), ey = y + dy * (d2 - cr * 0.68);
-    var ax = cx - dx * cr * 0.68, ay = cy - dy * cr * 0.68;
-    var bx = cx + dx * cr * 0.68, by = cy + dy * cr * 0.68;
-    /* Разрешено только одно намеренное соединение с лодочным тоннелем. Остальной коридор
-       обязан оставаться отделённым от лодочных ветвей и уже созданных дайверских пещер. */
-    if (lineNearZones(nx, ny, ex, ey, 40, boatZones, 70) ||
-        lineNearZones(nx, ny, ex, ey, 40, diverZones, 90) ||
-        lineNearZones(ax, ay, bx, by, cr * 0.62, boatZones, 70) ||
-        lineNearZones(ax, ay, bx, by, cr * 0.62, diverZones, 90) ||
-        nearZonesMargin(cx, cy, cr * 0.68, mainZones, 55) ||
-        nearZonesMargin(cx, cy, cr * 0.68, boatZones, 70) ||
-        nearZonesMargin(cx, cy, cr * 0.68, diverZones, 90)) return;
-    carve(nx, ny, 40);
-    carveLine(nx, ny, ex, ey, 40);
-    /* Вытянутая камера вместо круглой комнаты; её ось совпадает с направлением входа. */
-    carveLine(ax, ay, bx, by, cr * 0.62);
-    reserveLineZones(nx, ny, ex, ey, 42, diverZones, 48);
-    reserveLineZones(ax, ay, bx, by, cr * 0.64, diverZones, 48);
-    oreIn(cx, cy, cr, 6 + ((Math.random() * 4) | 0));
-    caves.push({ x: cx, y: cy, r: cr * 0.68 });
-    if (Math.random() < 0.4) plantIn(cx, cy, cr);
-    if (Math.random() < 0.8) plugs.push({ x: nx + dx * 32, y: ny + dy * 32, a: a, rad: 42, hp: 6 });
+  function nook(x, y, a, wr, parentZone) {
+    /* Вместо овальной камеры — узкий извилистый боковой ход с меняющейся шириной. */
+    var px = x + Math.cos(a) * Math.max(34, wr * 0.72);
+    var py = y + Math.sin(a) * Math.max(34, wr * 0.72);
+    var heading = a, made = 0, last = null, own = parentZone ? [parentZone] : [];
+    var steps = Math.round(rand(10, 14));
+    for (var i = 0; i < steps; i++) {
+      if (i > 0) {
+        heading += rand(-0.24, 0.24) + Math.sin(i * 0.63) * 0.045;
+        px += Math.cos(heading) * rand(38, 52);
+        py += Math.sin(heading) * rand(38, 52);
+      }
+      var rr = clamp(rand(38, 58) + Math.sin(i * 0.91) * 7, 34, 62);
+      if (nearZonesMargin(px, py, rr, mainZones, 55) ||
+          nearZonesMargin(px, py, rr, boatZones, 70) ||
+          nearZonesMarginExcept(px, py, rr, diverZones, 34, own)) break;
+      carve(px, py, rr);
+      var zone = { x: px, y: py, r: rr };
+      diverZones.push(zone); own.push(zone); last = zone; made++;
+    }
+    /* Не оставляем короткий обрубок и не создаём в конце большую круглую комнату. */
+    if (made < 8 || !last) return;
+    oreIn(last.x, last.y, last.r, 2 + ((Math.random() * 2) | 0));
+    caves.push({ x: last.x, y: last.y, r: last.r });
+    if (Math.random() < 0.28) plantIn(last.x, last.y, last.r);
+    if (Math.random() < 0.8) plugs.push({
+      x: x + Math.cos(a) * (Math.max(34, wr * 0.72) + 18),
+      y: y + Math.sin(a) * (Math.max(34, wr * 0.72) + 18),
+      a: a, rad: 38, hp: 6
+    });
   }
   /* ice plugs: solid cells (value 3) that must be broken by cannons, harpoons or the diver's cutter */
   function applyPlug(p) {
@@ -503,7 +506,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (nx < wx0 + 500 || nx > wx0 + GW * CS - 500 || ny < wy0 + 500 || ny > wy0 + GH * CS - 500) break;
       x = nx; y = ny; if (Math.hypot(x - gx, y - gy) < 900) break;
       if (i === pi && n >= 11 && Math.random() < 0.28) plugs.push({ x: x, y: y, a: a, rad: Math.min(88, rr_ * 0.96), hp: r0 > 85 ? 9 : 6 });
-      if (Math.random() < 0.012) nook(x, y, a + (Math.random() < 0.5 ? 1.571 : -1.571), rr_);
+      if (Math.random() < 0.012) nook(x, y, a + (Math.random() < 0.5 ? 1.571 : -1.571), rr_, ownZones.length ? ownZones[ownZones.length - 1] : null);
       if (dep < 2 && n - i > 12 && Math.random() < 0.022) tunnel(x, y, a + (Math.random() < 0.5 ? 1 : -1) * rand(0.7, 1.3), (n - i) * st * 0.65, Math.min(82, r0 * 0.78), dep + 1, pg, ownZones.length ? ownZones[ownZones.length - 1] : null);
     }
     var cr = rr_;
@@ -830,12 +833,13 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function dive(dt){
     var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action='idle';D.actionT=0;if(l){D.action='swim';D.actionT+=dt;ax/=l;ay/=l;var swimAngle=Math.atan2(ay,ax);D.aim=Math.round(swimAngle/(Math.PI/4))*(Math.PI/4);D.bodyFlip=ax< -0.001;D.bodyAngle=swimAngle;if(D.bodyFlip)D.bodyAngle+=swimAngle>0?-Math.PI:Math.PI;D.backView=Math.abs(ax)<0.35;if(D.backView)D.bodyAngle=ay>0?Math.PI/2:-Math.PI/2;if(ax)D.face=ax>0?1:-1;}
     D.vx+=ax*430*dt;D.vy+=ay*430*dt;var drag=Math.exp(-5.8*dt);D.vx*=drag;D.vy*=drag;
-    var nx=D.x+D.vx*dt,ny=D.y+D.vy*dt,wallContact=false;
-    if(!dHit(nx,D.y))D.x=nx;else{D.vx=0;wallContact=true;}
-    if(!dHit(D.x,ny))D.y=ny;else{D.vy=0;wallContact=true;}
+    var nx=D.x+D.vx*dt,ny=D.y+D.vy*dt;
+    /* Скала гасит только скорость по нормали столкновения. Касательная скорость
+       сохраняется: водолаз скользит вдоль стен, а не прилипает к ним. */
+    if(!dHit(nx,D.y))D.x=nx;else D.vx=0;
+    if(!dHit(D.x,ny))D.y=ny;else D.vy=0;
     var hullContact=dugongResolveDiverHull(D.x,D.y,8);
-    if(hullContact){D.x=hullContact.x;D.y=hullContact.y;/* Stop all residual momentum on hull contact: prevents held swim input from skating the diver along the submarine into nearby terrain. */D.vx=0;D.vy=0;wallContact=true;}
-    if(wallContact){var contactDrag=Math.exp(-4*dt);D.vx*=contactDrag;D.vy*=contactDrag;}
+    if(hullContact){D.x=hullContact.x;D.y=hullContact.y;/* Контакт с корпусом подлодки по-прежнему останавливает водолаза. */D.vx=0;D.vy=0;}
     if(dHit(D.x,D.y)){D.vx=0;D.vy=0;}
     D.cool -= dt;
     if ((PR.space || K.space) && D.cool <= 0) {
