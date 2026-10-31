@@ -669,6 +669,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   var ITEM_MASS_G={ore:[680,1080],moss:[85,155],algae:[110,205],sponge:[145,265],medkit:460,antidote:125,antibiotic:135,ointment:90,harpoon:180,weld:1250,fuel:1450,crate:2000,cargo:3000};
   function itemCount(o,id){if(id==='ore')return o===D?D.carry:S.ore;if(id==='crate')return o===D?D.bcargo:S.crt;if(id==='cargo')return o===D?D.cargo:0;if(id==='moss'||id==='algae'||id==='sponge')return o.pl[id==='moss'?'t':id==='algae'?'i':'b']||0;if(id==='medkit'||id==='antidote'||id==='antibiotic'||id==='ointment')return o.med[id==='medkit'?'h':id==='antidote'?'t':id==='antibiotic'?'i':'b']||0;if(id==='harpoon')return o===D?D.ammo:S.harp;if(id==='weld')return o.cyl||0;if(id==='fuel')return o.rods||0;return 0;}
   function itemMassList(o,id){if(!o.mass)o.mass={};var a=o.mass[id]||(o.mass[id]=[]),n=Math.max(0,itemCount(o,id)|0),sp=ITEM_MASS_G[id];while(a.length>n)a.pop();while(a.length<n)a.push(Array.isArray(sp)?Math.round(rand(sp[0],sp[1])):(sp||1000));return a;}
+  function takeItemMass(o,id,n){return itemMassList(o,id).splice(0,Math.max(0,n|0));}
+  function putItemMass(o,id,items){if(!o.mass)o.mass={};var a=o.mass[id]||(o.mass[id]=[]);o.mass[id]=a.concat(items||[]);}
   function massTotal(o,ids){var g=0;for(var i=0;i<ids.length;i++){var a=itemMassList(o,ids[i]);for(var j=0;j<a.length;j++)g+=a[j];}return g/1000;}
   function stored(){return massTotal(S,['ore','crate','moss','algae','sponge','harpoon','fuel','weld','medkit','antidote','antibiotic','ointment']);}
   function packLoad(){return massTotal(D,['ore','cargo','crate','weld','fuel','moss','algae','sponge','antidote','antibiotic','ointment','medkit','harpoon']);}
@@ -1963,8 +1965,8 @@ function invSort() {
   INV_ITEMS.forEach(function (it) { var n = cnt[it.id] || 0; while (n > 0 && k < INV_N) { var m = Math.min(STACK_MAX, n); invSlots[k++] = { id: it.id, n: m }; n -= m; } });
   invSync(); toast('Рюкзак отсортирован'); sfx.pick();
 }
-function invSpawnDrop(id, n) {
-  var d = { id: id, n: n, t: 1.2, life: 300, warn: 0 }, i, o;
+function invSpawnDrop(id,n,masses) {
+  var d={id:id,n:n,mass:masses||[],t:1.2,life:300,warn:0},i,o;
   if (P.out) { var px = D.x + Math.cos(D.aim) * 30, py = D.y + Math.sin(D.aim) * 30; if (solidAt(px, py)) { px = D.x; py = D.y; } d.loc = 'w'; d.x = px; d.y = py; }
   else {
     var dk_ = clamp(P.deck == null ? 1 : P.deck, 0, 2), row = DUGONG_DECK_LAYOUT[dk_], rw = row.widths.reduce(function (a, b) { return a + b; }, 0);
@@ -1972,17 +1974,17 @@ function invSpawnDrop(id, n) {
   }
   for (i = 0; i < drops.length; i++) {
     o = drops[i];
-    if (o.id === id && o.loc === d.loc && (d.loc === 'w' ? Math.hypot(o.x - d.x, o.y - d.y) < 16 : (o.deck === d.deck && Math.abs(o.lx - d.lx) < 16))) { o.n += n; o.t = 1.2; return; }
+    if (o.id === id && o.loc === d.loc && (d.loc === 'w' ? Math.hypot(o.x - d.x, o.y - d.y) < 16 : (o.deck === d.deck && Math.abs(o.lx - d.lx) < 16))) { o.n += n; o.mass=(o.mass||[]).concat(d.mass); o.t=1.2; return; }
   }
   drops.push(d);
 }
 function invDropSlot(i, all) {
   var s = invSlots[i]; if (!s) { toast('Пустая ячейка'); return; }
-  var n = all ? s.n : 1, id = s.id, it = INV_BY[id]; invConsume(i, n); invSpawnDrop(id, n);
+  var n=all?s.n:1,id=s.id,it=INV_BY[id],masses=takeItemMass(D,id,n);invConsume(i,n);invSpawnDrop(id,n,masses);
   toast('Выброшено: ' + it.name + (n > 1 ? ' ×' + n : '')); sfx.door();
 }
 function invDropGrab() {
-  if (!invGrab) return; var g = invGrab, it = INV_BY[g.id]; invGrab = null; it.set(Math.max(0, it.get() - g.n)); invSpawnDrop(g.id, g.n);
+  if (!invGrab) return; var g=invGrab,it=INV_BY[g.id],masses=takeItemMass(D,g.id,g.n);invGrab=null;it.set(Math.max(0,it.get()-g.n));invSpawnDrop(g.id,g.n,masses);
   toast('Выброшено: ' + it.name + (g.n > 1 ? ' ×' + g.n : '')); sfx.door();
 }
 function invTickDrops(dt) {
@@ -1993,9 +1995,9 @@ function invPickup() {
     var d = drops[i]; if (d.t > 0) continue;
     var near = P.out ? (d.loc === 'w' && Math.hypot(d.x - D.x, d.y - D.y) < 28) : (d.loc === 's' && d.deck === P.deck && Math.abs(d.lx - P.lx) < 22);
     if (!near) continue;
-    var it = INV_BY[d.id], room = Math.floor((dCap() - packLoad()) / it.w + 1e-6), take = Math.min(d.n, room);
+    var it=INV_BY[d.id],roomG=Math.max(0,Math.round((dCap()-packLoad())*1000)),masses=d.mass||[],take=0,totalG=0;while(take<d.n&&take<masses.length&&totalG+masses[take]<=roomG){totalG+=masses[take];take++;}
     if (take <= 0) { if (d.warn <= 0) { toast('Рюкзак полон: ' + it.name + ' остаётся на полу'); d.warn = 3; } continue; }
-    it.set(it.get() + take); d.n -= take; if (d.n <= 0) drops.splice(i, 1);
+    it.set(it.get()+take);putItemMass(D,d.id,masses.slice(0,take));d.mass=masses.slice(take);d.n-=take;if(d.n<=0)drops.splice(i,1);
     toast('Подобрано: ' + it.name + (take > 1 ? ' ×' + take : '')); sfx.pick();
   }
 }
