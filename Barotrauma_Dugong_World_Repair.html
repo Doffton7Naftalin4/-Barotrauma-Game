@@ -335,6 +335,19 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function carveLine(a, b, c, d, r) { var n = Math.ceil(Math.hypot(c - a, d - b) / 40); for (var k = 0; k <= n; k++) carve(a + (c - a) * k / n, b + (d - b) * k / n, r); }
   function nearZonesMargin(x, y, r, zones, margin) { for (var zi = 0; zi < zones.length; zi++) { var z = zones[zi]; if (Math.hypot(x - z.x, y - z.y) < r + z.r + margin) return true; } return false; }
+  /* Проверка всего коридора, а не только его конечной точки: так ветви не прорезают чужие пещеры. */
+  function lineNearZones(x1, y1, x2, y2, r, zones, margin) {
+    var n = Math.max(1, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 42));
+    for (var k = 0; k <= n; k++) {
+      var t = k / n;
+      if (nearZonesMargin(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, r, zones, margin)) return true;
+    }
+    return false;
+  }
+  function reserveLineZones(x1, y1, x2, y2, r, zones, step) {
+    var n = Math.max(1, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / (step || 48)));
+    for (var k = 0; k <= n; k++) { var t = k / n; zones.push({ x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t, r: r }); }
+  }
   function nearZones(x, y, r, zones) { return nearZonesMargin(x, y, r, zones, 180); }
   function airPt(cx, cy, r) { for (var q = 0; q < 30; q++) { var x = cx + rand(-r, r), y = cy + rand(-r, r); if (!solidAt(x, y) && !solidAt(x + 18, y) && !solidAt(x - 18, y) && !solidAt(x, y + 18) && !solidAt(x, y - 18)) return { x: x, y: y }; } return { x: cx, y: cy }; }
   function oreIn(cx, cy, r, n) {
@@ -358,17 +371,31 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function nook(x, y, a, wr) {
     var dx = Math.cos(a), dy = Math.sin(a), cr = rand(135, 195);
-    /* Узкая горловина от главного хода и вытянутая камера за пределами его габарита. */
-    var neckStart = wr * 1.18, d2 = wr + 150 + cr * 1.2, cx = x + dx * d2, cy = y + dy * d2;
-    if (nearZonesMargin(cx, cy, cr * 0.72, mainZones, 55) || nearZonesMargin(cx, cy, cr * 0.72, boatZones, 70) || nearZonesMargin(cx, cy, cr * 0.72, diverZones, 90)) return;
-    carve(x + dx * neckStart, y + dy * neckStart, 38);
-    carveLine(x + dx * neckStart, y + dy * neckStart, x + dx * (d2 - cr * 0.72), y + dy * (d2 - cr * 0.72), 40);
-    /* Камера вытянута по оси подхода, а не является круглой комнатой. */
-    carveLine(cx - dx * cr * 0.72, cy - dy * cr * 0.72, cx + dx * cr * 0.72, cy + dy * cr * 0.72, cr * 0.62);
+    /* Вход начинается внутри края главного тоннеля: между ним и камерой не должно быть разрыва. */
+    var neckStart = wr * 0.88, d2 = wr + 145 + cr * 1.12, cx = x + dx * d2, cy = y + dy * d2;
+    var nx = x + dx * neckStart, ny = y + dy * neckStart;
+    var ex = x + dx * (d2 - cr * 0.68), ey = y + dy * (d2 - cr * 0.68);
+    var ax = cx - dx * cr * 0.68, ay = cy - dy * cr * 0.68;
+    var bx = cx + dx * cr * 0.68, by = cy + dy * cr * 0.68;
+    /* Разрешено только одно намеренное соединение с лодочным тоннелем. Остальной коридор
+       обязан оставаться отделённым от лодочных ветвей и уже созданных дайверских пещер. */
+    if (lineNearZones(nx, ny, ex, ey, 40, boatZones, 70) ||
+        lineNearZones(nx, ny, ex, ey, 40, diverZones, 90) ||
+        lineNearZones(ax, ay, bx, by, cr * 0.62, boatZones, 70) ||
+        lineNearZones(ax, ay, bx, by, cr * 0.62, diverZones, 90) ||
+        nearZonesMargin(cx, cy, cr * 0.68, mainZones, 55) ||
+        nearZonesMargin(cx, cy, cr * 0.68, boatZones, 70) ||
+        nearZonesMargin(cx, cy, cr * 0.68, diverZones, 90)) return;
+    carve(nx, ny, 40);
+    carveLine(nx, ny, ex, ey, 40);
+    /* Вытянутая камера вместо круглой комнаты; её ось совпадает с направлением входа. */
+    carveLine(ax, ay, bx, by, cr * 0.62);
+    reserveLineZones(nx, ny, ex, ey, 42, diverZones, 48);
+    reserveLineZones(ax, ay, bx, by, cr * 0.64, diverZones, 48);
     oreIn(cx, cy, cr, 6 + ((Math.random() * 4) | 0));
-    diverZones.push({ x: cx, y: cy, r: cr * 0.72 }); caves.push({ x: cx, y: cy, r: cr * 0.72 });
+    caves.push({ x: cx, y: cy, r: cr * 0.68 });
     if (Math.random() < 0.4) plantIn(cx, cy, cr);
-    if (Math.random() < 0.8) plugs.push({ x: x + dx * (neckStart + 32), y: y + dy * (neckStart + 32), a: a, rad: 42, hp: 6 });
+    if (Math.random() < 0.8) plugs.push({ x: nx + dx * 32, y: ny + dy * 32, a: a, rad: 42, hp: 6 });
   }
   /* ice plugs: solid cells (value 3) that must be broken by cannons, harpoons or the diver's cutter */
   function applyPlug(p) {
