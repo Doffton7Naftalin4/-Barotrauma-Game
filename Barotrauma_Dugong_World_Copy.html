@@ -226,11 +226,15 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     { id: 'main', x: -210, y: -20, h: 48, widths: [86, 76, 76, 78, 104], names: ['МАШИННОЕ', 'РУБКА', 'КОСТЮМЫ', 'МЕДБЛОК', 'ОРУЖЕЙНАЯ'], colors: ['#263943', '#244653', '#203a45', '#24414a', '#263943'] },
     { id: 'lower', x: -210, y: 28, h: 48, widths: [74, 78, 76, 82, 110], names: ['БАЛЛАСТ КОРМА', 'РЕАКТОР', 'ЭЛЕКТРО', 'КИСЛОРОД', 'БАЛЛАСТ НОС'], colors: ['#173b48', '#293943', '#203943', '#24414a', '#173b48'] }
   ];
-  var deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
+  var deckDoors = [[1], [1, 1, 1, 1], [0, 1, 1, 0]];
   function dugongDoorX(deck, index) {
     var row = DUGONG_DECK_LAYOUT[deck], x = row.x;
     for (var i = 0; i <= index; i++) x += row.widths[i];
     return x;
+  }
+  function dugongHasDoor(deck, index) {
+    /* Ballast rooms have no side-wall doorway: their only access is the floor hatch above. */
+    return !(deck === 2 && (index === 0 || index === 3));
   }
   function dugongRoomAt(deck, lx) {
     var row = DUGONG_DECK_LAYOUT[deck], x = row.x;
@@ -912,7 +916,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
-    G = { ang: -0.3, cool: 0, ox: -150, oy: -30, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 80, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
+    G = { ang: -0.3, cool: 0, ox: -150, oy: -22, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 88, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
     turbo = false; shake = 0; flash = 0; tcool = 0; elapsed = 0; alarmT = 0; fireT = 0; kills = 0; shockT = 0; shockImm = 0; dockT = 0; dockMsg = ''; oreTot = 0; menuS = 0;
     roamT = rand(LV0.roam[0], LV0.roam[1]) * 0.7;
     genWorld(LV0);
@@ -1049,7 +1053,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       var nx = P.lx + dir * spd * dt, k, boundary;
       for (k = 0; k < row.widths.length - 1; k++) {
         boundary = dugongDoorX(deck, k);
-        if (!deckDoors[deck][k]) {
+        if (!dugongHasDoor(deck, k) || !deckDoors[deck][k]) {
           if (P.lx <= boundary && nx > boundary - 7) nx = boundary - 7;
           if (P.lx >= boundary && nx < boundary + 7) nx = boundary + 7;
         }
@@ -1082,7 +1086,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         }
       } else {
         var doorIndex = -1;
-        for (k = 0; k < row.widths.length - 1; k++) if (Math.abs(P.lx - dugongDoorX(deck, k)) < 18) doorIndex = k;
+        for (k = 0; k < row.widths.length - 1; k++) if (dugongHasDoor(deck, k) && Math.abs(P.lx - dugongDoorX(deck, k)) < 18) doorIndex = k;
         var station = dugongStationAt(deck, P.lx);
         if (doorIndex >= 0) {
           hint = 'E — ' + (deckDoors[deck][doorIndex] ? 'закрыть' : 'открыть') + ' переборку';
@@ -1860,6 +1864,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       var ny = sy + d * 48;
       ctx.fillStyle = '#263940';
       rr(x0 - 24, ny - 8, 38, 16, 5); ctx.fill();
+      /* Reinforced mounting neck overlaps the pressure hull so the drive pod is visibly attached. */
+      ctx.fillStyle = '#344a50'; rr(x0 - 10, ny - 6, 34, 12, 4); ctx.fill();
       ctx.strokeStyle = '#82949a'; ctx.lineWidth = 1.4; ctx.stroke();
       ctx.strokeStyle = '#aab8b9'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
       ctx.beginPath();
@@ -1920,6 +1926,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
          the passage; the surrounding wall remains visible as a partition. */
       for (var k = 0; k < deck.widths.length - 1; k++) {
         var bx = sx + dugongDoorX(d, k), gapY = sy + deck.y + 14, gapH = 22;
+        if (!dugongHasDoor(d, k)) {
+          ctx.strokeStyle = '#81949a'; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.moveTo(bx, sy + deck.y + 2); ctx.lineTo(bx, sy + deck.y + deck.h - 2); ctx.stroke();
+          continue;
+        }
         ctx.strokeStyle = '#81949a'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(bx, sy + deck.y + 2); ctx.lineTo(bx, gapY);
         ctx.moveTo(bx, gapY + gapH); ctx.lineTo(bx, sy + deck.y + deck.h - 2); ctx.stroke();
@@ -1971,7 +1982,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     /* Equipment consoles are drawn where their interaction points live. */
     var consoles = [
       { x: -167, deck: 1, c: '#4c7d8d' }, { x: -86, deck: 1, c: '#668b91' },
-      { x: 158, deck: 1, c: '#526d79' }, { x: -93, deck: 2, c: '#b56d45' },
+      { x: -93, deck: 2, c: '#b56d45' },
       { x: -16, deck: 2, c: '#4d8990' }, { x: 0, deck: 0, c: '#4c7d8d' }
     ];
     for (var ci = 0; ci < consoles.length; ci++) {
@@ -1981,8 +1992,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       ctx.fillStyle = '#a8d2d7'; ctx.fillRect(sx + con.x - 5, cy - 4, 10, 2);
     }
     /* Restore the animated machinery drawings, mounted to real Dugong rooms. */
-    var mounts=[{p:0,d:1,r:0},{p:4,d:1,r:1},{p:1,d:2,r:1},{p:2,d:2,r:2},{p:3,d:1,r:4}];
-    for(var mi=0;mi<mounts.length;mi++){var m=mounts[mi],row=DUGONG_DECK_LAYOUT[m.d],left=row.x;for(var ri=0;ri<m.r;ri++)left+=row.widths[ri];var rw=row.widths[m.r],sc=Math.min((rw-8)/84,(row.h-6)/84),cx=sx+left+rw/2,fy=sy+row.y+row.h-3;ctx.save();ctx.translate(cx-42*sc,fy-78*sc);ctx.scale(sc,sc);drawProps(m.p,0,0);ctx.restore();}
+    var mounts=[{p:0,d:1,r:0},{p:4,d:1,r:1},{p:3,d:1,r:1,x:-68},{p:1,d:2,r:1},{p:2,d:2,r:2}];
+    for(var mi=0;mi<mounts.length;mi++){var m=mounts[mi],row=DUGONG_DECK_LAYOUT[m.d],left=row.x;for(var ri=0;ri<m.r;ri++)left+=row.widths[ri];var rw=row.widths[m.r],sc=Math.min((rw-8)/84,(row.h-6)/84),cx=sx+(m.x==null?left+rw/2:m.x),fy=sy+row.y+row.h-3;ctx.save();ctx.translate(cx-42*sc,fy-78*sc);ctx.scale(sc,sc);drawProps(m.p,0,0);ctx.restore();}
     ctx.restore();
   }
 
