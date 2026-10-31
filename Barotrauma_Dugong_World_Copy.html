@@ -904,7 +904,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
-    G = { ang: -0.3, cool: 0, ox: -150, oy: -80, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 80, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
+    G = { ang: -0.3, cool: 0, ox: -150, oy: -30, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 80, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
     turbo = false; shake = 0; flash = 0; tcool = 0; elapsed = 0; alarmT = 0; fireT = 0; kills = 0; shockT = 0; shockImm = 0; dockT = 0; dockMsg = ''; oreTot = 0; menuS = 0;
     roamT = rand(LV0.roam[0], LV0.roam[1]) * 0.7;
     genWorld(LV0);
@@ -1120,7 +1120,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     tcool -= dt;
 
     /* water */
-    for (var li = 0; li < leaks.length; li++) { var L = leaks[li]; w[L.room] += L.size * 0.10 * dt; L.size = Math.min(1, L.size + 0.006 * dt); }
+    for (var li = 0; li < leaks.length; li++) { var L = leaks[li]; w[L.waterRoom] += L.size * 0.10 * dt; L.size = Math.min(1, L.size + 0.006 * dt); }
     var pumpOn = pw.ratio > 0.3, drain = (turbo ? 0.12 : 0.035) * (w[2] > 0.6 ? 0.3 : 1) * pw.ratio;
     for (var pi = 0; pi < NR; pi++) if (pumpOn) w[pi] = Math.max(0, w[pi] - drain * dt);
     for (var dk2 = 0; dk2 < 4; dk2++) if (deckDoors[1][dk2]) { var fl = (w[dk2] - w[dk2 + 1]) * 0.45 * dt; w[dk2] -= fl; w[dk2 + 1] += fl; }
@@ -1756,7 +1756,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function drawTur(T, dn) {
-    var tx = sx + T.ox, by = sy + dn * 80;
+    var tx = sx + T.ox, by = sy + T.oy;
     ctx.save(); ctx.translate(tx, sy + T.oy); ctx.rotate(T.ang);
     var wq_ = WP[S.subs[S.sub].wp[T.i]]; ctx.fillStyle = '#6a7b86'; ctx.fillRect(0, -wq_.bw / 2, 28 + wq_.bl, wq_.bw); ctx.fillStyle = T.cool > 0 ? '#f0a73c' : '#8fa1ad'; ctx.fillRect(22 + wq_.bl, -wq_.bw / 2 - 1, 8, wq_.bw + 2); ctx.fillStyle = pw.ratio > 0.3 && !pw.short ? '#fff6cf' : '#4a5660'; ctx.beginPath(); ctx.arc(32 + wq_.bl, 0, 2.4, 0, 6.283); ctx.fill(); ctx.restore();
     ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, dn < 0 ? Math.PI : 0, dn < 0 ? 0 : Math.PI); ctx.fill();
