@@ -1107,7 +1107,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     for (var li = 0; li < leaks.length; li++) { var L = leaks[li]; w[L.room] += L.size * 0.10 * dt; L.size = Math.min(1, L.size + 0.006 * dt); }
     var pumpOn = pw.ratio > 0.3, drain = (turbo ? 0.12 : 0.035) * (w[2] > 0.6 ? 0.3 : 1) * pw.ratio;
     for (var pi = 0; pi < NR; pi++) if (pumpOn) w[pi] = Math.max(0, w[pi] - drain * dt);
-    for (var dk2 = 0; dk2 < 4; dk2++) if (doors[dk2]) { var fl = (w[dk2] - w[dk2 + 1]) * 0.45 * dt; w[dk2] -= fl; w[dk2 + 1] += fl; }
+    for (var dk2 = 0; dk2 < 4; dk2++) if (deckDoors[1][dk2]) { var fl = (w[dk2] - w[dk2 + 1]) * 0.45 * dt; w[dk2] -= fl; w[dk2 + 1] += fl; }
     for (var wi = 0; wi < NR; wi++) w[wi] = clamp(w[wi], 0, 1);
 
     /* fires */
