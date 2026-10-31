@@ -321,7 +321,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   /* ---------- cave: grid world ---------- */
-  var wx0, wy0, GW, GH, cave, gx = 0, gy = 0, gdir = 0, path = [], ores = [], chambers = [], caves = [], beacons = [], wrecks = [], thals = [], outposts = [], bcrates = [], beaconUp = 0, plugs = [], icePlugs = [], iceId = null, stB = 0, stT = 0, shop = null, boatZones = [], diverZones = [], mainZones = [];
+  var wx0, wy0, GW, GH, cave, diverAirMask = null, diverWallMask = null, gx = 0, gy = 0, gdir = 0, path = [], ores = [], chambers = [], caves = [], beacons = [], wrecks = [], thals = [], outposts = [], bcrates = [], beaconUp = 0, plugs = [], icePlugs = [], iceId = null, stB = 0, stT = 0, shop = null, boatZones = [], diverZones = [], mainZones = [];
   var D, spits = [], shockT = 0, shockImm = 0, dockT = 0, dockMsg = '', roamT = 0, oreTot = 0, menuS = 0, msg = '', msgT = 0;
   var MT = { m: { hp: 4, r: 26, v: 95, ag: 600, dm: 8, dp: 20 }, h: { hp: 9, r: 44, v: 115, ag: 780, dm: 16, dp: 34 }, t: { hp: 5, r: 28, v: 150, ag: 820, dm: 7, dp: 16 }, n: { hp: 1, r: 14, v: 90, ag: 480 }, s: { hp: 1, r: 18, v: 80, ag: 560, dm: 3, dp: 8 }, b: { hp: 6, r: 38, v: 105, ag: 700, dm: 12, dp: 30 }, e: { hp: 3, r: 22, v: 135, ag: 650, dm: 5, dp: 14 }, j: { hp: 2, r: 24, v: 34, ag: 380 }, k: { hp: 3, r: 20, v: 60, ag: 560 } };
   var PK = { sw: [0, ['s', 2, 4]], je: [0, ['j', 2, 3]], sn: [0.05, ['n', 3, 5]], mu: [0.12, ['m', 3, 5]], ee: [0.1, ['e', 3, 5]], sp: [0.25, ['k', 3, 5]], tt: [0.3, ['t', 3, 5]], br: [0.35, ['b', 1, 2]], ha: [0.4, ['h', 1, 2]], hm: [0.55, ['h', 1, 1], ['m', 3, 5]], hu: [0.6, ['b', 1, 2], ['s', 2, 4]] };
@@ -648,6 +648,84 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       var n = (Math.random() < 0.72 ? 0 : 1 + ((Math.random() * 2) | 0)), pkc = { h: { x: c.x, y: c.y }, al: 0, lk: null, lkT: -99 };
       for (var q = 0; q < n; q++) { var kd = PK[pickPack(LV, clamp(hd / LV.goal, 0, 1))], p = airPt(c.x, c.y, c.r * 0.6); mons.push(mk(kd[1][0], p.x, p.y, pkc, 0)); }
     });
+    buildCaveVisualMasks();
+  }
+  function buildCaveVisualMasks() {
+    diverAirMask = new Uint8Array(cave.length);
+    diverWallMask = new Uint8Array(cave.length);
+    for (var zi = 0; zi < diverZones.length; zi++) {
+      var z = diverZones[zi], rr = z.r + CS * 1.15;
+      var i0 = Math.max(0, Math.floor((z.x - rr - wx0) / CS));
+      var i1 = Math.min(GW - 1, Math.ceil((z.x + rr - wx0) / CS));
+      var j0 = Math.max(0, Math.floor((z.y - rr - wy0) / CS));
+      var j1 = Math.min(GH - 1, Math.ceil((z.y + rr - wy0) / CS));
+      for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
+        var dx = wx0 + i * CS - z.x, dy = wy0 + j * CS - z.y, id = j * GW + i;
+        if (cave[id] === 0 && dx * dx + dy * dy <= rr * rr) diverAirMask[id] = 1;
+      }
+    }
+    for (var y = 0; y < GH; y++) for (var x = 0; x < GW; x++) {
+      var id = y * GW + x; if (!diverAirMask[id]) continue;
+      for (var oy = -2; oy <= 2; oy++) for (var ox = -2; ox <= 2; ox++) {
+        if (!ox && !oy) continue;
+        var nx = x + ox, ny = y + oy;
+        if (nx < 0 || ny < 0 || nx >= GW || ny >= GH) continue;
+        var ni = ny * GW + nx;
+        if (cave[ni] === 1) diverWallMask[ni] = 1;
+      }
+    }
+  }
+  function drawDiverCaveBackdrop(c, i0, i1, j0, j1) {
+    if (!diverAirMask) return;
+    var air = new Path2D(), i, j;
+    for (j = j0; j <= j1; j++) for (i = i0; i <= i1; i++) {
+      if (diverAirMask[j * GW + i]) air.rect(wx0 + i * CS - CS / 2, wy0 + j * CS - CS / 2, CS, CS);
+    }
+    c.save(); c.clip(air);
+    var top = wy0 + j0 * CS - 60, bottom = wy0 + (j1 + 1) * CS + 60;
+    var bg = c.createLinearGradient(0, top, 0, bottom);
+    bg.addColorStop(0, '#07131c'); bg.addColorStop(0.48, '#0b2029'); bg.addColorStop(1, '#102b32');
+    c.fillStyle = bg; c.fillRect(wx0 + i0 * CS - 60, top, (i1 - i0 + 1) * CS + 120, bottom - top);
+    c.globalAlpha = 0.18; c.strokeStyle = '#31505a'; c.lineWidth = 2;
+    for (j = j0; j <= j1; j += 7) for (i = i0; i <= i1; i += 9) {
+      var id = j * GW + i; if (!diverAirMask[id]) continue;
+      var h = ((i * 73856093) ^ (j * 19349663)) >>> 0;
+      if (h % 4 === 0) {
+        var x = wx0 + i * CS, y = wy0 + j * CS, rx = 24 + (h % 45), ry = 10 + ((h >>> 7) % 20);
+        c.beginPath(); c.ellipse(x, y, rx, ry, ((h >>> 13) % 100) / 100 - 0.5, 0, 6.283); c.stroke();
+      }
+    }
+    c.globalAlpha = 0.24; c.fillStyle = '#8ab0b5';
+    for (j = j0; j <= j1; j += 5) for (i = i0; i <= i1; i += 5) {
+      var id2 = j * GW + i; if (!diverAirMask[id2]) continue;
+      var h2 = ((i * 83492791) ^ (j * 297121507)) >>> 0;
+      if (h2 % 13 === 0) c.fillRect(wx0 + i * CS + (h2 % 13), wy0 + j * CS + ((h2 >>> 5) % 13), 2, 2);
+    }
+    c.restore();
+  }
+  function drawDiverWallTexture(c, wallPath, i0, i1, j0, j1) {
+    if (!diverWallMask) return;
+    c.save(); c.clip(wallPath); c.lineCap = 'round'; c.lineJoin = 'round';
+    for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) {
+      if (!diverWallMask[j * GW + i]) continue;
+      var h = ((i * 73856093) ^ (j * 19349663)) >>> 0;
+      var x = wx0 + i * CS, y = wy0 + j * CS;
+      if (h % 3 === 0) {
+        c.fillStyle = 'rgba(118,139,137,0.20)'; c.beginPath();
+        c.moveTo(x - 8, y - 5); c.lineTo(x + (h % 15), y - 8);
+        c.lineTo(x + 7, y + (h >>> 6) % 12); c.lineTo(x - 5, y + 7); c.closePath(); c.fill();
+      }
+      if (h % 7 === 0) {
+        c.strokeStyle = 'rgba(3,12,18,0.52)'; c.lineWidth = 1.5; c.beginPath();
+        c.moveTo(x - 7, y - 7); c.lineTo(x - 1, y - 1); c.lineTo(x + 2, y + 2); c.lineTo(x + 8, y + 6); c.stroke();
+        c.strokeStyle = 'rgba(151,166,153,0.24)'; c.lineWidth = 1; c.beginPath();
+        c.moveTo(x - 6, y - 8); c.lineTo(x, y - 2); c.stroke();
+      }
+      if (h % 5 === 0) {
+        c.fillStyle = 'rgba(154,166,150,0.24)'; c.fillRect(x + ((h >>> 9) % 13) - 6, y + ((h >>> 15) % 13) - 6, 2 + (h % 3), 2);
+      }
+    }
+    c.restore();
   }
   function subHit(x,y){
     var i0=Math.floor((x-DUGONG_HULL_LEFT-wx0)/CS),i1=Math.ceil((x+DUGONG_HULL_RIGHT-wx0)/CS);
@@ -1629,18 +1707,21 @@ if (e.code === 'KeyM') muted = !muted;
     var son = sonarOn(), c = ctx;
     var wz = state === 'play' && P.out ? viewZoom : 1, vx0 = camX + W / 2 - W / (2 * wz), vx1 = camX + W / 2 + W / (2 * wz), vy0 = camY + H / 2 - H / (2 * wz), vy1 = camY + H / 2 + H / (2 * wz), i0 = Math.max(0, Math.floor((vx0 - wx0) / CS) - 1), i1 = Math.min(GW - 2, Math.ceil((vx1 - wx0) / CS) + 1), j0 = Math.max(0, Math.floor((vy0 - wy0) / CS) - 1), j1 = Math.min(GH - 2, Math.ceil((vy1 - wy0) / CS) + 1), i, j, k, ln = [];
     if (son) { sbx = Math.floor(camX / GQ) * GQ; sby = Math.floor(camY / GQ) * GQ; c = scx; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, sc.width, sc.height); c.setTransform(1 / SK, 0, 0, 1 / SK, -sbx / SK, -sby / SK); }
-    c.fillStyle = son ? '#04121b' : '#08161e'; c.beginPath();
+    if (!son) drawDiverCaveBackdrop(c, i0, i1, j0, j1);
+    var wallPath = new Path2D(), diverPath = new Path2D();
     for (j = j0; j <= j1; j++) for (i = i0; i <= i1; i++) {
       var a = cave[j * GW + i] === 1, b = cave[j * GW + i + 1] === 1, cc = cave[(j + 1) * GW + i + 1] === 1, d = cave[(j + 1) * GW + i] === 1;
       if (!(a || b || cc || d)) continue;
       var x = wx0 + i * CS, y = wy0 + j * CS;
-      if (a && b && cc && d) { c.rect(x, y, CS, CS); continue; }
+      var targetPath = !son && diverWallMask && diverWallMask[j * GW + i] ? diverPath : wallPath;
+      if (a && b && cc && d) { targetPath.rect(x, y, CS, CS); continue; }
       var po = [], ed = [], cs = [[x, y, a], [x + CS, y, b], [x + CS, y + CS, cc], [x, y + CS, d]];
       for (k = 0; k < 4; k++) { var p = cs[k], q = cs[(k + 1) % 4]; if (p[2]) po.push([p[0], p[1]]); if (p[2] !== q[2]) { var mp = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; po.push(mp); ed.push(mp); } }
-      c.moveTo(po[0][0], po[0][1]); for (k = 1; k < po.length; k++) c.lineTo(po[k][0], po[k][1]); c.closePath();
+      targetPath.moveTo(po[0][0], po[0][1]); for (k = 1; k < po.length; k++) targetPath.lineTo(po[k][0], po[k][1]); targetPath.closePath();
       for (k = 0; k + 1 < ed.length; k += 2) ln.push(ed[k], ed[k + 1]);
     }
-    c.fill();
+    c.fillStyle = son ? '#04121b' : '#08161e'; c.fill(wallPath);
+    if (!son) { c.fillStyle = '#26343a'; c.fill(diverPath); drawDiverWallTexture(c, diverPath, i0, i1, j0, j1); }
     var pth = new Path2D(); for (i = 0; i < ln.length; i += 2) { pth.moveTo(ln[i][0], ln[i][1]); pth.lineTo(ln[i + 1][0], ln[i + 1][1]); }
     c.lineJoin = 'round';
     if (son) {
