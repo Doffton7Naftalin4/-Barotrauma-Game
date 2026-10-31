@@ -1507,7 +1507,19 @@ if (e.code === 'KeyM') muted = !muted;
     for(var fd=0;fd<DUGONG_DECK_LAYOUT.length;fd++){var fr=DUGONG_DECK_LAYOUT[fd];for(var fk=0;fk<fr.widths.length-1;fk++)if(deckDoors[fd][fk]){
       var fa=dugongFloodIndex(fd,fk),fb=dugongFloodIndex(fd,fk+1);if(fa>=0&&fb>=0&&dugongHasDoor(fd,fk)){var flow=(dugongFlood[fa]-dugongFlood[fb])*0.24*dt;dugongFlood[fa]=clamp(dugongFlood[fa]-flow,0,1);dugongFlood[fb]=clamp(dugongFlood[fb]+flow,0,1);}
     }}
-    for(var vd=0;vd<2;vd++){var va=dugongFloodIndex(vd,dugongRoomAt(vd,0)),vb=dugongFloodIndex(vd+1,dugongRoomAt(vd+1,0));if(va>=0&&vb>=0){var vf=(dugongFlood[va]-dugongFlood[vb])*0.12*dt;dugongFlood[va]=clamp(dugongFlood[va]-vf,0,1);dugongFlood[vb]=clamp(dugongFlood[vb]+vf,0,1);}}
+    /* Open central ladder hatches connect the rooms directly above and below.
+       Signed flow is symmetric: positive values move down, negative values move up. */
+    for(var vd=0;vd<2;vd++){
+      var upperRoom=dugongFloodIndex(vd,dugongRoomAt(vd,0));
+      var lowerRoom=dugongFloodIndex(vd+1,dugongRoomAt(vd+1,0));
+      if(upperRoom>=0&&lowerRoom>=0){
+        var levelDiff=dugongFlood[upperRoom]-dugongFlood[lowerRoom];
+        var hatchFlow=levelDiff*0.22*dt;
+        hatchFlow=clamp(hatchFlow,-Math.abs(levelDiff)*0.5,Math.abs(levelDiff)*0.5);
+        dugongFlood[upperRoom]=clamp(dugongFlood[upperRoom]-hatchFlow,0,1);
+        dugongFlood[lowerRoom]=clamp(dugongFlood[lowerRoom]+hatchFlow,0,1);
+      }
+    }
     syncLegacyWater();
 
     /* fires */
@@ -2696,8 +2708,18 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
         ctx.fillStyle='#91a29e';ctx.fillRect(sx+deck.x+2,sy+deck.y-4,deckRight-deck.x-4,1.5);
       }
       ctx.beginPath();
-      ctx.moveTo(sx + deck.x, sy + deck.y + 1); ctx.lineTo(sx + deckRight, sy + deck.y + 1);
-      ctx.moveTo(sx + deck.x, sy + deck.y + deck.h - 1); ctx.lineTo(sx + deckRight, sy + deck.y + deck.h - 1);
+      if(d===0){
+        ctx.moveTo(sx + deck.x, sy + deck.y + 1); ctx.lineTo(sx + deckRight, sy + deck.y + 1);
+      }else{
+        ctx.moveTo(sx + deck.x, sy + deck.y + 1); ctx.lineTo(sx - 11, sy + deck.y + 1);
+        ctx.moveTo(sx + 11, sy + deck.y + 1); ctx.lineTo(sx + deckRight, sy + deck.y + 1);
+      }
+      if(d===2){
+        ctx.moveTo(sx + deck.x, sy + deck.y + deck.h - 1); ctx.lineTo(sx + deckRight, sy + deck.y + deck.h - 1);
+      }else{
+        ctx.moveTo(sx + deck.x, sy + deck.y + deck.h - 1); ctx.lineTo(sx - 11, sy + deck.y + deck.h - 1);
+        ctx.moveTo(sx + 11, sy + deck.y + deck.h - 1); ctx.lineTo(sx + deckRight, sy + deck.y + deck.h - 1);
+      }
       if(d===0){
         var airDoorY=sy+deck.y+deck.h/2;
         ctx.moveTo(sx+deck.x+1,sy+deck.y+1);ctx.lineTo(sx+deck.x+1,airDoorY-10);
@@ -2943,6 +2965,19 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
       ctx.stroke();
       ctx.restore();
     }
+    /* The central ladder is an open vertical shaft through all three decks. */
+    ctx.save();
+    ctx.strokeStyle = '#a9bbc3'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(sx - 7, sy + DUGONG_DECK_LAYOUT[0].y + 3);
+    ctx.lineTo(sx - 7, sy + DUGONG_DECK_LAYOUT[2].y + DUGONG_DECK_LAYOUT[2].h - 3);
+    ctx.moveTo(sx + 7, sy + DUGONG_DECK_LAYOUT[0].y + 3);
+    ctx.lineTo(sx + 7, sy + DUGONG_DECK_LAYOUT[2].y + DUGONG_DECK_LAYOUT[2].h - 3);
+    for(var rungY=sy + DUGONG_DECK_LAYOUT[0].y + 8;rungY<sy + DUGONG_DECK_LAYOUT[2].y + DUGONG_DECK_LAYOUT[2].h - 5;rungY+=9){
+      ctx.moveTo(sx - 7,rungY);ctx.lineTo(sx + 7,rungY);
+    }
+    ctx.stroke();
+    ctx.restore();
   }
 
   function drawLights() {
