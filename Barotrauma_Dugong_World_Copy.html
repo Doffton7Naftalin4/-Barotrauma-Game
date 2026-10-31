@@ -987,12 +987,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         if(invMoveFrom===null){invSel=idx;invMoveFrom=idx;}
         else{
           var from=l[invMoveFrom],to=l[idx];
-          if(from&&to&&from.id!==to.id){
-            var ai=invOrder.indexOf(from.id),bi=invOrder.indexOf(to.id);
-            if(ai<0){invOrder.push(from.id);ai=invOrder.length-1;}
-            if(bi<0){invOrder.push(to.id);bi=invOrder.length-1;}
-            var tmp=invOrder[ai];invOrder[ai]=invOrder[bi];invOrder[bi]=tmp;toast('Предметы перемещены');
-          }
+          if(from&&to)moveInventorySlot(invMoveFrom,idx);
           invSel=idx;invMoveFrom=null;
         }
       }else invMoveFrom=null;
