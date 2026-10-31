@@ -926,14 +926,14 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   document.getElementById('zoomIn').addEventListener('click', function (e) { e.stopPropagation(); setViewZoom(viewZoom + 0.12); });
   document.getElementById('zoomOut').addEventListener('click', function (e) { e.stopPropagation(); setViewZoom(viewZoom - 0.12); });
   cv.addEventListener('wheel', function (e) {
-    if (state === 'play' && P.out) { e.preventDefault(); setViewZoom(viewZoom * (e.deltaY < 0 ? 1.12 : 0.89)); }
+    if (state === 'play') { e.preventDefault(); setViewZoom(viewZoom * (e.deltaY < 0 ? 1.12 : 0.89)); }
   }, { passive: false });
   var touchPoints = {}, pinchStart = 0, pinchZoom = 1;
   cv.addEventListener('pointerdown', function (e) {
     if (e.pointerType !== 'touch') return;
     touchPoints[e.pointerId] = { x: e.clientX, y: e.clientY };
     var ids = Object.keys(touchPoints);
-    if (ids.length === 2 && state === 'play' && P.out) {
+    if (ids.length === 2 && state === 'play') {
       var a = touchPoints[ids[0]], b = touchPoints[ids[1]];
       pinchStart = Math.hypot(a.x - b.x, a.y - b.y); pinchZoom = viewZoom;
     }
@@ -942,7 +942,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (!touchPoints[e.pointerId]) return;
     touchPoints[e.pointerId] = { x: e.clientX, y: e.clientY };
     var ids = Object.keys(touchPoints);
-    if (ids.length === 2 && pinchStart > 0 && state === 'play' && P.out) {
+    if (ids.length === 2 && pinchStart > 0 && state === 'play') {
       var a = touchPoints[ids[0]], b = touchPoints[ids[1]];
       setViewZoom(pinchZoom * Math.hypot(a.x - b.x, a.y - b.y) / pinchStart);
     }
@@ -1399,7 +1399,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     if (state === 'over' || state === 'won') overT += dt;
     var out_ = state === 'play' && P.out, cvx = out_ ? D.vx : svx;
-    var zoomControls = document.getElementById('zoomControls'); if (zoomControls) zoomControls.hidden = !out_;
+    var zoomControls = document.getElementById('zoomControls'); if (zoomControls) zoomControls.hidden = state !== 'play';
     camX += ((out_ ? D.x : sx + 6) - W / 2 + cvx * 0.4 - camX) * Math.min(1, 4 * dt);
     camY += ((out_ ? D.y : sy) - H / 2 - camY) * Math.min(1, 3 * dt);
   }
@@ -2337,7 +2337,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
     ctx.save();
     var shx = shake > 0 ? rand(-1, 1) * shake * 12 : 0, shy = shake > 0 ? rand(-1, 1) * shake * 12 : 0;
-    var worldZoom = state === 'play' && P.out ? viewZoom : 1;
+    var worldZoom = state === 'play' ? viewZoom : 1;
     ctx.translate(W / 2, H / 2); ctx.scale(worldZoom, worldZoom); ctx.translate(-W / 2, -H / 2);
     ctx.translate(-camX + shx, -camY + shy);
     drawCave(); if (!sonarOn()) drawIce(ctx, 0); drawGoal(); drawPods(); drawSites(); drawWrecks(); drawBeacons(); drawOutposts(); drawThals(); if (!sonarOn()) { drawCrates(); drawPlants(); drawBCrates(); } drawNest(); if (!sonarOn()) drawOres();
