@@ -155,6 +155,56 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   var DISP = "'Big Shoulders Display', Impact, sans-serif";
   var ROOMN = ['Машинное', 'Реактор', 'Насосная', 'Орудийный', 'Рубка'];
   var STN = ['hatch', 'reactor', 'pump', 'gun', 'helm'];
+  /* Independent Dugong replacement model. Legacy simulation adapters are migrated in later stages. */
+  var DUGONG_BLUEPRINT = {
+    id: 'dugong', length: 34, height: 8,
+    decks: [
+      { id: 'upper', y: -3, rooms: ['airlock', 'command', 'upper_gun_mount'] },
+      { id: 'main', y: 0, rooms: ['engine', 'command', 'medical', 'armory'] },
+      { id: 'lower', y: 3, rooms: ['ballast_fore', 'ballast_aft', 'reactor', 'electrical', 'oxygen'] }
+    ],
+    compartments: [
+      { id: 'airlock', deck: 'upper', role: 'airlock' },
+      { id: 'command', deck: 'main', role: 'helm' },
+      { id: 'engine', deck: 'main', role: 'engine' },
+      { id: 'medical', deck: 'main', role: 'medical' },
+      { id: 'armory', deck: 'main', role: 'armory' },
+      { id: 'ballast_fore', deck: 'lower', role: 'ballast' },
+      { id: 'ballast_aft', deck: 'lower', role: 'ballast' },
+      { id: 'reactor', deck: 'lower', role: 'reactor' },
+      { id: 'electrical', deck: 'lower', role: 'electrical' },
+      { id: 'oxygen', deck: 'lower', role: 'oxygen_generator' }
+    ],
+    connections: [],
+    hardpoints: [
+      { id: 'coilgun_upper_aft', weapon: 'coilgun', deck: 'upper', side: 'top', installed: true },
+      { id: 'coilgun_lower_mid', weapon: 'coilgun', deck: 'lower', side: 'bottom', installed: true },
+      { id: 'weapon_mount_upper_starboard', weapon: null, deck: 'upper', side: 'top', installed: false }
+    ],
+    systems: ['reactor', 'oxygen', 'electrical', 'ballast', 'hull_damage', 'flooding']
+  };
+  function validateDugongBlueprint(model) {
+    var ids = Object.create(null), deckIds = Object.create(null), errors = [];
+    model.decks.forEach(function (deck) { deckIds[deck.id] = true; });
+    model.compartments.forEach(function (room) {
+      if (ids[room.id]) errors.push('duplicate compartment: ' + room.id);
+      ids[room.id] = true;
+      if (!deckIds[room.deck]) errors.push('unknown deck: ' + room.id);
+    });
+    model.decks.forEach(function (deck) {
+      deck.rooms.forEach(function (id) {
+        var room = model.compartments.filter(function (item) { return item.id === id && item.deck === deck.id; });
+        if (room.length !== 1) errors.push('deck/compartment mismatch: ' + id);
+      });
+    });
+    model.hardpoints.forEach(function (mount) {
+      if (!deckIds[mount.deck]) errors.push('hardpoint references unknown deck: ' + mount.id);
+    });
+    return errors;
+  }
+  var DUGONG_BLUEPRINT_ERRORS = validateDugongBlueprint(DUGONG_BLUEPRINT);
+  if (DUGONG_BLUEPRINT_ERRORS.length && window.console) console.error('Dugong blueprint invalid:', DUGONG_BLUEPRINT_ERRORS);
+
   var STNAME = { fab: 'Фабрикатор', hatch: 'Шлюз', reactor: 'Реактор', pump: 'Насосы', gun: 'Орудие', helm: 'Штурвал' };
   var LEVELS = [
     { name: 'Первый рейс', short: 'Дойти до станции', brief: 'Найдите станцию «Донная» и пришвартуйтесь снизу', type: 'dock', goal: 7000, ev: 1500, den: 0.3, roam: [90, 130], pk: { sw: 3, je: 3, ee: 1 } },
