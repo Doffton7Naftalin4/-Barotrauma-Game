@@ -408,7 +408,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     for (var i = 0; i < n; i++) {
       rr_ = Math.max(390, r0 * (1 - i / n * 0.12) + 34 * Math.sin(i * 0.3 + a)) * rand(0.98, 1.05);
       if (nearZonesMargin(x, y, rr_, diverZones, 70)) break;
-      carve(x, y, rr_); if (i > 5) boatZones.push({ x: x, y: y, r: rr_ });
+      carve(x, y, rr_); boatZones.push({ x: x, y: y, r: rr_ });
       a += drift + rand(-0.05, 0.05); if (Math.random() < 0.05) drift = rand(-0.05, 0.05);
       var nx = x + Math.cos(a) * st, ny = y + Math.sin(a) * st;
       if (nx < wx0 + 800 || nx > wx0 + GW * CS - 800 || ny < wy0 + 800 || ny > wy0 + GH * CS - 800) { a += 0.6; continue; }
