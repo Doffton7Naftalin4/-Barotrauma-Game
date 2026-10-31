@@ -349,6 +349,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     for (var k = 0; k <= n; k++) { var t = k / n; zones.push({ x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t, r: r }); }
   }
   function nearZones(x, y, r, zones) { return nearZonesMargin(x, y, r, zones, 180); }
+  function nearZonesMarginExcept(x, y, r, zones, margin, own) { for (var zi = 0; zi < zones.length; zi++) { var z = zones[zi]; if (own.indexOf(z) >= 0) continue; if (Math.hypot(x - z.x, y - z.y) < r + z.r + margin) return true; } return false; }
   function airPt(cx, cy, r) { for (var q = 0; q < 30; q++) { var x = cx + rand(-r, r), y = cy + rand(-r, r); if (!solidAt(x, y) && !solidAt(x + 18, y) && !solidAt(x - 18, y) && !solidAt(x, y + 18) && !solidAt(x, y - 18)) return { x: x, y: y }; } return { x: cx, y: cy }; }
   function oreIn(cx, cy, r, n) {
     for (var q = 0; q < n; q++) {
@@ -447,7 +448,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var cr = rr_; if (!nearZones(x, y, cr, diverZones)) { boatZones.push({ x: x, y: y, r: cr }); chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'boat' }); if (Math.random() < 0.04) plantIn(x, y, cr); }
   }
   function tunnel(x, y, a, len, r0, dep, pg) {
-    var st = 50, n = Math.round(len / st), rr_, pi = dep ? 8 : 9, made = 0, priorDiverZones = diverZones.slice();
+    var st = 50, n = Math.round(len / st), rr_, pi = dep ? 8 : 9, made = 0, ownZones = [];
     for (var i = 0; i < n; i++) {
       rr_ = Math.max(48, r0 * (1 - i / n * 0.25)) * rand(0.94, 1.06);
       /* Узкое горлышко у входа: лодка не должна проходить в пещеру водолаза. */
@@ -457,8 +458,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
          для легального присоединения боковой ветви к её родительскому тоннелю. */
       if (i > 4 && (nearZonesMargin(x, y, cutR, mainZones, 55) ||
           nearZonesMargin(x, y, cutR, boatZones, 55) ||
-          nearZonesMargin(x, y, cutR, diverZones, 35))) break;
-      carve(x, y, cutR); if (i > 4) diverZones.push({ x: x, y: y, r: cutR }); made++;
+          nearZonesMarginExcept(x, y, cutR, diverZones, 35, ownZones))) break;
+      carve(x, y, cutR); if (i > 4) { var dz = { x: x, y: y, r: cutR }; diverZones.push(dz); ownZones.push(dz); } made++;
       a += rand(-0.12, 0.12);
       var nx = x + Math.cos(a) * st, ny = y + Math.sin(a) * st;
       /* За границей мира прекращаем тоннель: нельзя повторно вырезать одну точку
@@ -474,7 +475,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
        или у границы тоннель не оставляет круглую комнату в случайной точке. */
     if (made >= 10 && !nearZones(x, y, cr, boatZones) &&
         !nearZonesMargin(x, y, cr, mainZones, 55) &&
-        !nearZonesMargin(x, y, cr, priorDiverZones, 35)) {
+        !nearZonesMarginExcept(x, y, cr, diverZones, 35, ownZones)) {
       diverZones.push({ x: x, y: y, r: cr });
       oreIn(x, y, Math.max(70, cr), 4 + ((Math.random() * 4) | 0));
       chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'diver' });
