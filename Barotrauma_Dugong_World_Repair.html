@@ -90,6 +90,8 @@ kbd { font-family: var(--mono); color: var(--fg); border: 1px solid var(--line);
 .act button.wide { grid-column: 1 / 3; }
 .pad button { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--fg); background: var(--panel); border: 1px solid var(--line); touch-action: none; -webkit-tap-highlight-color: transparent; }
 .act button { height: 58px; }
+.act button[data-lamp] { font-size: 13px; letter-spacing: 0.02em; }
+.act button[data-lamp].active { color: #101b20; background: #f2c76a; border-color: #ffe4a0; }
 .act button.wide { border-color: var(--amber); color: var(--amber); }
 .pad button:active, .pad button.down { background: #123042; border-color: var(--sonar); }
 .mobile-panels{display:none;gap:6px;flex-wrap:wrap}.mobile-panels button{flex:1 1 22%;padding:8px;background:var(--panel);border:1px solid var(--line);color:var(--fg);font:700 14px var(--mono)}
@@ -136,6 +138,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       <button data-k="space">Гарпун / огонь</button>
       <button data-k="q">Режим / сдать</button>
       <button data-k="h">Лекарство</button>
+      <button type="button" data-lamp>ФОНАРЬ: ВЫКЛ</button>
     </div>
   </div>
   <div class="mobile-panels"><button type="button" data-panel="inventory">Инвентарь</button><button type="button" data-panel="health">Здоровье</button><button type="button" data-inv="use">Применить</button><button type="button" data-inv="grab">Взять</button><button type="button" data-inv="split">Разделить</button><button type="button" data-inv="drop">Выбросить</button><button type="button" data-inv="sort">Сортировка</button><button type="button" data-inv="filter">Фильтр</button></div>
@@ -1011,6 +1014,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
   /* ---------- input ---------- */
   var K = { left: 0, right: 0, up: 0, down: 0, e: 0, space: 0, q: 0, h: 0 }; var diverLampOn = false;
+  var lampButton = document.querySelector('[data-lamp]');
+  function toggleDiverLamp() { diverLampOn = !diverLampOn; if (lampButton) { lampButton.textContent = diverLampOn ? 'ФОНАРЬ: ВКЛ' : 'ФОНАРЬ: ВЫКЛ'; lampButton.classList.toggle('active', diverLampOn); } sfx.door(); toast(diverLampOn ? 'ФОНАРЬ ВКЛЮЧЁН' : 'ФОНАРЬ ВЫКЛЮЧЕН'); }
   var PR = { e: 0, space: 0, q: 0, h: 0, up: 0, down: 0, left: 0, right: 0 };
   var map = {
     ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left',
@@ -1027,7 +1032,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       else if(e.code==='KeyJ')togglePanel('health');
       else if(e.code==='Escape'&&uiPanel){if(uiPanel==='inventory'&&invMenu)invMenu=null;else if(uiPanel==='inventory'&&invGrab)invReturnGrab();else closePanel();}
       else if(uiPanel==='inventory'&&!shop)invKey(e);
-      else if(!uiPanel&&!shop&&e.code==='KeyF'&&P.out){diverLampOn=!diverLampOn;sfx.door();toast(diverLampOn?'ФОНАРЬ ВКЛЮЧЁН':'ФОНАРЬ ВЫКЛЮЧЕН');}
+      else if(!uiPanel&&!shop&&e.code==='KeyF'&&P.out){toggleDiverLamp();}
       else if(!uiPanel&&!shop&&e.code.indexOf('Digit')===0){var qk=INV_Q[+e.code.slice(5)-1];if(qk)invQuick(qk);}
     }
 if (e.code === 'KeyM') muted = !muted;
@@ -1068,6 +1073,7 @@ if (e.code === 'KeyM') muted = !muted;
   cv.addEventListener('pointerup', endTouchZoom); cv.addEventListener('pointercancel', endTouchZoom);
   Array.prototype.forEach.call(document.querySelectorAll('.pad button'), function (b) {
     var k = b.getAttribute('data-k');
+    if (b.hasAttribute('data-lamp')) { b.addEventListener('click', function (e) { e.preventDefault(); if (P.out && !uiPanel && !shop) { initAudio(); toggleDiverLamp(); } else toast('ФОНАРЬ ДОСТУПЕН СНАРУЖИ ЛОДКИ'); }); return; }
     b.addEventListener('pointerdown', function (e) {
       e.preventDefault();
       try { b.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1138,7 +1144,7 @@ if (e.code === 'KeyM') muted = !muted;
   for (var si = 0; si < 60; si++) snow.push({ x: Math.random() * W, y: Math.random() * H, z: 0.3 + Math.random() * 0.7 });
 
   function reset() {
-    diverLampOn = false; var LV0 = LEVELS[cur]; GOAL = LV0.goal;
+    diverLampOn = false; if (lampButton) { lampButton.textContent = 'ФОНАРЬ: ВЫКЛ'; lampButton.classList.remove('active'); } var LV0 = LEVELS[cur]; GOAL = LV0.goal;
     sx = 0; sy = 0; svx = 0; svy = 0; hull = 100;
     w = [0, 0, 0, 0, 0]; dugongFlood = [0,0,0,0,0,0,0,0,0,0,0,0]; doors = [1, 1, 1, 1];
     leaks = []; fires = []; shots = []; spits = []; parts = []; drops = [];
