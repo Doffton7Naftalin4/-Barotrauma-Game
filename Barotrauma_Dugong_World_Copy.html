@@ -1111,8 +1111,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (PR.e) { P.seat = null; exited = true; }
       else if (P.seat === 'helm') { hIn.x = K.right - K.left; hIn.y = K.down - K.up; hint = 'WASD — курс · E — встать'; }
       else if (P.seat === 'gun') {
-        if (PR.q) Gs = 1 - Gs; var GT = Gs ? G2 : G; GT.ang += (K.down - K.up) * 1.8 * dt; clampArc(GT);
-        hint = (Gs ? 'Нижняя' : 'Верхняя') + ' пушка · W/S — поворот · Q — сменить пушку · Пробел — огонь · E — встать';
+        if (PR.q) Gs = 1 - Gs; var GT = Gs ? G2 : G; GT.ang += (K.right - K.left) * 1.8 * dt; clampArc(GT);
+        hint = (Gs ? 'Нижняя' : 'Верхняя') + ' пушка · A/D — поворот · Q — сменить пушку · Пробел — огонь · E — встать';
         if ((PR.space || K.space) && pw.ratio > 0.25) {
           fireG(GT, false);
           
@@ -2219,7 +2219,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#e3c3a0'; ctx.beginPath(); ctx.arc(0, -28, 5, 0, 6.283); ctx.fill();
     ctx.fillStyle = '#3d5563'; ctx.beginPath(); ctx.arc(0, -29, 5.4, Math.PI, 0); ctx.fill();
     if (P.work) { var toolSwing=Math.sin(t*18)*4; ctx.strokeStyle = '#cfe4ea'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(13+toolSwing, -14-Math.abs(toolSwing)*0.25); ctx.stroke(); ctx.fillStyle = '#9ff4ff'; ctx.beginPath(); ctx.arc(14+toolSwing, -14-Math.abs(toolSwing)*0.25, 2.6, 0, 6.283); ctx.fill(); }
-    else { var armSwing=P.seat==='helm'?Math.sin(t*4)*3:P.seat==='gun'?Math.sin(t*8)*4:Math.sin(P.step)*3; ctx.strokeStyle = '#e8a23a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(4, -20); ctx.lineTo(8+armSwing, -14+Math.abs(armSwing)*0.25); ctx.stroke(); }
+    else { ctx.strokeStyle = '#e8a23a'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(4, -20); if (P.seat === 'helm') { ctx.lineTo(10, -18); ctx.lineTo(13, -16); } else if (P.seat === 'gun') { ctx.lineTo(11, -17); ctx.lineTo(14, -15); } else { var armSwing = Math.sin(P.step) * 2.5; ctx.lineTo(8 + armSwing, -14); } ctx.stroke(); if (P.seat === 'helm' || P.seat === 'gun') { ctx.fillStyle = '#e3c3a0'; ctx.beginPath(); ctx.arc(P.seat === 'helm' ? 13 : 14, P.seat === 'helm' ? -16 : -15, 2.2, 0, 6.283); ctx.fill(); } }
     ctx.restore();
   }
 
