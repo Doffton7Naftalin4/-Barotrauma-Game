@@ -2129,7 +2129,7 @@ function drawInventory() {
     invIcon(it.id, IV.dx + 36, IV.dy + 36, 1.6);
     ivT(it.name, IV.dx + 72, IV.dy + 28, '700 20px ' + DISP, '#f0e8cf');
     ivT(INV_FILTERS[it.cat].toUpperCase(), IV.dx + 72, IV.dy + 45, '700 11px ' + DISP, INV_CATC[it.cat]);
-    var sm=itemMassList(D,it.id).slice(0,st.n).reduce(function(a,b){return a+b;},0)/1000;ivT('В стопке ×'+st.n+' · вес '+sm.toFixed(3)+' кг · всего ×'+it.get(), IV.dx + 72, IV.dy + 60, '500 12px ' + DISP, '#9fb4bd');
+    var massOffset=0;for(var mi=0;mi<shown;mi++)if(invSlots[mi]&&invSlots[mi].id===it.id)massOffset+=invSlots[mi].n;var sm=itemMassList(D,it.id).slice(massOffset,massOffset+st.n).reduce(function(a,b){return a+b;},0)/1000;ivT('В стопке ×'+st.n+' · вес '+sm.toFixed(3)+' кг · всего ×'+it.get(), IV.dx + 72, IV.dy + 60, '500 12px ' + DISP, '#9fb4bd');
     c.font = '500 14px ' + DISP; var ln = wrapTxt(it.desc, 258);
     for (k = 0; k < ln.length && k < 5; k++) ivT(ln[k], IV.dx + 12, IV.dy + 86 + k * 17, '500 14px ' + DISP, '#c5d4da');
   } else ivT(invGrab ? 'Выберите ячейку, чтобы положить предмет' : 'Ячейка пуста', IV.dx + 14, IV.dy + 32, '700 15px ' + DISP, '#718792');
