@@ -218,6 +218,44 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   var DUGONG_BLUEPRINT_ERRORS = validateDugongBlueprint(DUGONG_BLUEPRINT);
   if (DUGONG_BLUEPRINT_ERRORS.length && window.console) console.error('Dugong blueprint invalid:', DUGONG_BLUEPRINT_ERRORS);
 
+
+  /* Runtime layout for the three-deck Dugong. Coordinates are local to the sub. */
+  var DUGONG_DECK_LAYOUT = [
+    { id: 'upper', x: -71.4, y: -68, h: 48, widths: [54.3, 88.5], names: ['ШЛЮЗ', 'ВЕРХНИЙ ПРОХОД'], colors: ['#24414c', '#1a303a'] },
+    { id: 'main', x: -210, y: -20, h: 48, widths: [86, 76, 76, 78, 104], names: ['МАШИННОЕ', 'РУБКА', 'КОСТЮМЫ', 'МЕДБЛОК', 'ОРУЖЕЙНАЯ'], colors: ['#263943', '#244653', '#203a45', '#24414a', '#263943'] },
+    { id: 'lower', x: -210, y: 28, h: 48, widths: [74, 78, 76, 82, 110], names: ['БАЛЛАСТ КОРМА', 'РЕАКТОР', 'ЭЛЕКТРО', 'КИСЛОРОД', 'БАЛЛАСТ НОС'], colors: ['#173b48', '#293943', '#203943', '#24414a', '#173b48'] }
+  ];
+  var deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
+  function dugongDoorX(deck, index) {
+    var row = DUGONG_DECK_LAYOUT[deck], x = row.x;
+    for (var i = 0; i <= index; i++) x += row.widths[i];
+    return x;
+  }
+  function dugongRoomAt(deck, lx) {
+    var row = DUGONG_DECK_LAYOUT[deck], x = row.x;
+    for (var i = 0; i < row.widths.length; i++) {
+      x += row.widths[i];
+      if (lx < x || i === row.widths.length - 1) return i;
+    }
+    return 0;
+  }
+  function dugongStationAt(deck, lx) {
+    var stations = [
+      { deck: 0, x: 0, type: 'hatch', name: 'Шлюз' },
+      { deck: 1, x: -167, type: 'fab', name: 'Фабрикатор' },
+      { deck: 1, x: -86, type: 'helm', name: 'Штурвал' },
+      { deck: 1, x: 158, type: 'gun', name: 'Орудийный пост' },
+      { deck: 2, x: -93, type: 'reactor', name: 'Реактор' },
+      { deck: 2, x: -16, type: 'pump', name: 'Насосы' }
+    ];
+    var best = null, dist = 23;
+    for (var i = 0; i < stations.length; i++) {
+      var s = stations[i], d = Math.abs(lx - s.x);
+      if (s.deck === deck && d < dist) { best = s; dist = d; }
+    }
+    return best;
+  }
+
   var STNAME = { fab: 'Фабрикатор', hatch: 'Шлюз', reactor: 'Реактор', pump: 'Насосы', gun: 'Орудие', helm: 'Штурвал' };
   var LEVELS = [
     { name: 'Первый рейс', short: 'Дойти до станции', brief: 'Найдите станцию «Донная» и пришвартуйтесь снизу', type: 'dock', goal: 7000, ev: 1500, den: 0.3, roam: [90, 130], pk: { sw: 3, je: 3, ee: 1 } },
@@ -861,7 +899,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     sx = 0; sy = 0; svx = 0; svy = 0; hull = 100;
     w = [0, 0, 0, 0, 0]; doors = [1, 1, 1, 1];
     leaks = []; fires = []; shots = []; spits = []; parts = [];
-    P = { dis: { t: 0, i: 0, b: 0 }, lx: 144, face: 1, hp: 100, o2: 100, seat: null, work: 0, step: 0, out: false };
+    P = { dis: { t: 0, i: 0, b: 0 }, lx: 0, deck: 1, face: 1, hp: 100, o2: 100, seat: null, work: 0, step: 0, out: false };
+    deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
     D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
@@ -979,23 +1018,36 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
 
     if (!P.seat && !P.out) {
+      var deck = clamp(P.deck == null ? 1 : P.deck, 0, 2), row = DUGONG_DECK_LAYOUT[deck];
       var dir = K.right - K.left, spd = 72 * (w[room] * RH > 8 ? 0.55 : 1) * (1 - 0.4 * P.dis.b);
-      var nx = P.lx + dir * spd * dt;
-      for (var k = 0; k < 4; k++) {
-        if (doors[k]) continue;
-        var b = -HL + (k + 1) * RW;
-        if (P.lx <= b && nx > b - 6) nx = b - 6;
-        if (P.lx >= b && nx < b + 6) nx = b + 6;
+      var nx = P.lx + dir * spd * dt, k, boundary;
+      for (k = 0; k < row.widths.length - 1; k++) {
+        boundary = dugongDoorX(deck, k);
+        if (!deckDoors[deck][k]) {
+          if (P.lx <= boundary && nx > boundary - 7) nx = boundary - 7;
+          if (P.lx >= boundary && nx < boundary + 7) nx = boundary + 7;
+        }
       }
-      nx = clamp(nx, -HL + 8, HL - 8);
+      nx = clamp(nx, row.x + 8, row.x + row.widths.reduce(function (a, b) { return a + b; }, 0) - 8);
       if (dir) { P.face = dir; P.step += Math.abs(nx - P.lx) * 0.25; }
       P.lx = nx; room = roomOf(P.lx);
+
+      /* Ladder transitions: central ladder joins all three decks; the two
+         outer floor hatches connect only main deck to their own ballast rooms. */
+      var ladderX = Math.abs(P.lx) < 13;
+      var aftHatchX = Math.abs(P.lx - (-176)) < 13;
+      var foreHatchX = Math.abs(P.lx - 168) < 13;
+      if (PR.up && ((deck === 2 && (ladderX || aftHatchX || foreHatchX)) || (deck === 1 && ladderX))) {
+        P.deck = deck - 1; deck = P.deck; row = DUGONG_DECK_LAYOUT[deck]; sfx.door();
+      } else if (PR.down && ((deck === 0 && ladderX) || (deck === 1 && (ladderX || aftHatchX || foreHatchX)))) {
+        P.deck = deck + 1; deck = P.deck; row = DUGONG_DECK_LAYOUT[deck]; sfx.door();
+      }
 
       var tl = null, tf = null, i;
       for (i = 0; i < leaks.length; i++) if (leaks[i].room === room && Math.abs(leaks[i].lx - P.lx) < 26) tl = leaks[i];
       for (i = 0; i < fires.length; i++) if (fires[i].room === room && Math.abs(fires[i].lx - P.lx) < 24) tf = fires[i];
       if (tf || tl) {
-        hint = tf ? 'Удерживайте E — тушить огонь' : (S.fuel > 0 || S.cyl > 0 ? 'Удерживайте E — заварить пробоину · баллон ' + Math.round(S.fuel) + '% · запас ' + S.cyl : 'БАЛЛОН ПУСТ, запасных нет — изготовьте в фабрикаторе (машинное)');
+        hint = tf ? 'Удерживайте E — тушить огонь' : (S.fuel > 0 || S.cyl > 0 ? 'Удерживайте E — заварить пробоину · баллон ' + Math.round(S.fuel) + '% · запас ' + S.cyl : 'БАЛЛОН ПУСТ, запасных нет — изготовьте в фабрикаторе');
         if (K.e) {
           P.work = 1;
           if (tf) { tf.hp -= 1.1 * dt; spark(sx + tf.lx, sy + RH / 2 - 8, 1); if (tf.hp <= 0) fires.splice(fires.indexOf(tf), 1); }
@@ -1003,16 +1055,22 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
           if (Math.random() < 0.3) sfx.weld();
         }
       } else {
-        var dk = -1;
-        for (k = 0; k < 4; k++) if (Math.abs(P.lx - (-HL + (k + 1) * RW)) < 18) dk = k;
-        var st = STN[room], nearSt = st && Math.abs(P.lx - postX(room)) < 22; if (room === 0 && Math.abs(P.lx - (roomCx(0) + 16)) < 18) { st = 'fab'; nearSt = true; }
-        if (dk >= 0) {
-          hint = 'E — ' + (doors[dk] ? 'закрыть' : 'открыть') + ' переборку';
-          if (PR.e && !exited) { doors[dk] = doors[dk] ? 0 : 1; sfx.door(); }
-        } else if (nearSt) {
-          hint = st === 'hatch' ? 'E — выйти наружу (шлюз)' : 'E — занять пост: ' + STNAME[st];
-          if (PR.e && !exited) { if (st === 'hatch') exitSub(); else { P.seat = st; P.lx = st === 'fab' ? roomCx(0) + 16 : postX(room); } }
-        } else hint = 'A/D — идти · ' + ROOMN[room];
+        var doorIndex = -1;
+        for (k = 0; k < row.widths.length - 1; k++) if (Math.abs(P.lx - dugongDoorX(deck, k)) < 18) doorIndex = k;
+        var station = dugongStationAt(deck, P.lx);
+        if (doorIndex >= 0) {
+          hint = 'E — ' + (deckDoors[deck][doorIndex] ? 'закрыть' : 'открыть') + ' переборку';
+          if (PR.e && !exited) { deckDoors[deck][doorIndex] = deckDoors[deck][doorIndex] ? 0 : 1; sfx.door(); }
+        } else if (station) {
+          hint = station.type === 'hatch' ? 'E — выйти наружу (верхний шлюз)' : 'E — занять пост: ' + station.name;
+          if (PR.e && !exited) {
+            if (station.type === 'hatch') exitSub();
+            else { P.seat = station.type; P.lx = station.x; }
+          }
+        } else {
+          var ladderHint = (ladderX || aftHatchX || foreHatchX) ? 'W/S — подняться или спуститься по лестнице' : 'A/D — идти';
+          hint = ladderHint + ' · ' + row.names[dugongRoomAt(deck, P.lx)];
+        }
       }
     }
 
@@ -1796,106 +1854,86 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function drawInterior() {
-    /* Dugong deck proportions: two full-length main decks and one shorter upper deck.
-       A single continuous ladder shaft sits at the exact centre of all three. */
-    var x0 = sx - HL, fullW = HL * 2, centerX = sx;
-    var upperW = fullW * 0.34, upperX = centerX - upperW / 2;
-    var top = sy - 68, deckH = 48, upperH = deckH;
-    var decks = [
-      { x: upperX, y: top, w: upperW, h: upperH, rooms: [
-        { n: 'ВОЗДУШНЫЙ ШЛЮЗ', w: upperW * 0.38, c: '#24414c' },
-        { n: 'ВЕРХНИЙ ПРОХОД', w: upperW * 0.62, c: '#1a303a' }
-      ]},
-      { x: x0, y: top + upperH, w: fullW, h: deckH, rooms: [
-        { n: 'МАШИННОЕ', w: 86, c: '#263943' },
-        { n: 'РУБКА', w: 76, c: '#244653' },
-        { n: 'КОСТЮМЫ', w: 76, c: '#203a45' },
-        { n: 'МЕДБЛОК', w: 78, c: '#24414a' },
-        { n: 'ОРУЖЕЙНАЯ', w: 104, c: '#263943' }
-      ]},
-      { x: x0, y: top + upperH + deckH, w: fullW, h: deckH, rooms: [
-        { n: 'БАЛЛАСТ КОРМА', w: 74, c: '#173b48' },
-        { n: 'РЕАКТОР', w: 78, c: '#293943' },
-        { n: 'ЭЛЕКТРО', w: 76, c: '#203943' },
-        { n: 'КИСЛОРОД', w: 82, c: '#24414a' },
-        { n: 'БАЛЛАСТ НОС', w: 110, c: '#173b48' }
-      ]}
-    ];
+    /* Three actual deck rows. Adjacent compartments are separated by internal
+       bulkheads with door-sized openings, never by the outer pressure hull. */
     ctx.save();
-    for (var d = 0; d < decks.length; d++) {
-      var deck = decks[d], rx = deck.x;
-      for (var r = 0; r < deck.rooms.length; r++) {
-        var room = deck.rooms[r], rw = room.w;
-        ctx.fillStyle = room.c; ctx.fillRect(rx, deck.y, rw, deck.h);
-        ctx.fillStyle = 'rgba(8,18,24,0.55)'; ctx.fillRect(rx, deck.y + deck.h - 5, rw, 5);
-        ctx.strokeStyle = '#70848e'; ctx.lineWidth = 1.4;
-        ctx.strokeRect(rx + 0.5, deck.y + 0.5, rw - 1, deck.h - 1);
+    for (var d = 0; d < DUGONG_DECK_LAYOUT.length; d++) {
+      var deck = DUGONG_DECK_LAYOUT[d], rx = deck.x;
+      for (var r = 0; r < deck.widths.length; r++) {
+        var rw = deck.widths[r];
+        ctx.fillStyle = deck.colors[r]; ctx.fillRect(sx + rx, sy + deck.y, rw, deck.h);
+        ctx.fillStyle = 'rgba(8,18,24,0.45)'; ctx.fillRect(sx + rx, sy + deck.y + deck.h - 5, rw, 5);
         ctx.fillStyle = '#d0e0e5'; ctx.font = '700 8px ' + DISP;
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(room.n, rx + rw / 2, deck.y + Math.min(13, deck.h / 2));
+        ctx.fillText(deck.names[r], sx + rx + rw / 2, sy + deck.y + 12);
         if (d === 1) {
           ctx.fillStyle = r === 1 ? '#4c7d8d' : '#536b76';
-          ctx.fillRect(rx + 10, deck.y + 25, Math.max(12, rw - 20), 13);
-          ctx.fillStyle = '#a4c4ce'; ctx.fillRect(rx + 13, deck.y + 28, Math.max(6, rw - 26), 2);
+          ctx.fillRect(sx + rx + 10, sy + deck.y + 25, Math.max(12, rw - 20), 13);
         } else if (d === 2) {
-          ctx.fillStyle = '#415d68'; ctx.fillRect(rx + 12, deck.y + 25, Math.max(8, rw - 24), 12);
-          ctx.fillStyle = '#6fa6b5'; ctx.fillRect(rx + 15, deck.y + 28, Math.max(5, rw - 30), 2);
+          ctx.fillStyle = '#415d68'; ctx.fillRect(sx + rx + 12, sy + deck.y + 25, Math.max(8, rw - 24), 12);
+          ctx.fillStyle = '#6fa6b5'; ctx.fillRect(sx + rx + 15, sy + deck.y + 28, Math.max(5, rw - 30), 2);
         }
         rx += rw;
       }
+      /* Deck perimeter rails. */
+      ctx.strokeStyle = '#81949a'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(sx + deck.x, sy + deck.y + 1); ctx.lineTo(sx + deck.x + deck.widths.reduce(function (a,b) { return a+b; },0), sy + deck.y + 1);
+      ctx.moveTo(sx + deck.x, sy + deck.y + deck.h - 1); ctx.lineTo(sx + deck.x + deck.widths.reduce(function (a,b) { return a+b; },0), sy + deck.y + deck.h - 1);
+      ctx.stroke();
+      /* Internal bulkheads with an 18-unit passage. Closed doors fill only
+         the passage; the surrounding wall remains visible as a partition. */
+      for (var k = 0; k < deck.widths.length - 1; k++) {
+        var bx = sx + dugongDoorX(d, k), gapY = sy + deck.y + 14, gapH = 22;
+        ctx.strokeStyle = '#81949a'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(bx, sy + deck.y + 2); ctx.lineTo(bx, gapY);
+        ctx.moveTo(bx, gapY + gapH); ctx.lineTo(bx, sy + deck.y + deck.h - 2); ctx.stroke();
+        ctx.fillStyle = '#9aadb2';
+        ctx.fillRect(bx - 5, gapY - 1, 3, 3); ctx.fillRect(bx + 2, gapY - 1, 3, 3);
+        if (!deckDoors[d][k]) {
+          ctx.fillStyle = '#b57b35'; ctx.fillRect(bx - 2, gapY, 4, gapH);
+          ctx.fillStyle = '#26343a';
+          for (var sl = 0; sl < 3; sl++) ctx.fillRect(bx - 2, gapY + 3 + sl * 6, 4, 2);
+        } else {
+          ctx.fillStyle = 'rgba(120,205,215,0.18)'; ctx.fillRect(bx - 7, gapY, 14, gapH);
+        }
+      }
     }
-    /* One ladder only: a single central shaft joining upper, main and lower decks. */
-    var ladderX = centerX, ladderTop = top + upperH - 2, ladderBottom = top + upperH + deckH * 2 + 2;
-    ctx.fillStyle = '#101f28'; ctx.fillRect(ladderX - 7, ladderTop, 14, ladderBottom - ladderTop);
-    ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(ladderX - 4, ladderTop + 2); ctx.lineTo(ladderX - 4, ladderBottom - 2);
-    ctx.moveTo(ladderX + 4, ladderTop + 2); ctx.lineTo(ladderX + 4, ladderBottom - 2);
-    for (var rung = 0; rung < 9; rung++) {
-      var yy = ladderTop + 5 + rung * ((ladderBottom - ladderTop - 10) / 8);
-      ctx.moveTo(ladderX - 4, yy); ctx.lineTo(ladderX + 4, yy);
+    /* Central ladder shaft and its continuous rungs. */
+    var ladderTop = sy - 22, ladderBottom = sy + 78;
+    ctx.fillStyle = '#101f28'; ctx.fillRect(sx - 7, ladderTop, 14, ladderBottom - ladderTop);
+    ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1.2; ctx.beginPath();
+    ctx.moveTo(sx - 4, ladderTop + 2); ctx.lineTo(sx - 4, ladderBottom - 2);
+    ctx.moveTo(sx + 4, ladderTop + 2); ctx.lineTo(sx + 4, ladderBottom - 2);
+    for (var rung = 0; rung < 13; rung++) {
+      var yy = ladderTop + 4 + rung * ((ladderBottom - ladderTop - 8) / 12);
+      ctx.moveTo(sx - 4, yy); ctx.lineTo(sx + 4, yy);
     }
     ctx.stroke();
-
-    /* Ballast compartments are part of deck 3, at its two outer ends.
-       Access hatches are on the outer edges of deck 2; dedicated ladders descend
-       into the matching ballast rooms. There is no fourth deck. */
-    var deck2FloorY = top + upperH + deckH;
-    var deck3Y = deck2FloorY;
-    var ballastAccess = [
-      { x: x0 + 34, roomX: x0, roomW: 74 },
-      { x: x0 + fullW - 42, roomX: x0 + fullW - 110, roomW: 110 }
-    ];
-    for (var ba = 0; ba < ballastAccess.length; ba++) {
-      var access = ballastAccess[ba], hatchW = 18;
-      /* Individual floor hatch at the edge of deck 2. */
-      ctx.fillStyle = '#07131a';
-      ctx.fillRect(access.x - hatchW / 2, deck2FloorY - 4, hatchW, 8);
-      ctx.strokeStyle = '#c0d0d6'; ctx.lineWidth = 1.8;
-      ctx.strokeRect(access.x - hatchW / 2, deck2FloorY - 4, hatchW, 8);
-      /* Separate ladder descends into the ballast compartment on deck 3. */
-      ctx.strokeStyle = '#a9bbc3'; ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(access.x - 5, deck3Y + 5);
-      ctx.lineTo(access.x - 5, deck3Y + deckH - 5);
-      ctx.moveTo(access.x + 5, deck3Y + 5);
-      ctx.lineTo(access.x + 5, deck3Y + deckH - 5);
-      for (var rung = 0; rung < 7; rung++) {
-        var rungY = deck3Y + 8 + rung * ((deckH - 16) / 6);
-        ctx.moveTo(access.x - 5, rungY);
-        ctx.lineTo(access.x + 5, rungY);
-      }
-      ctx.stroke();
-      /* Water level stays inside the deck-3 ballast room and inside the hull. */
-      ctx.fillStyle = 'rgba(37,133,157,0.28)';
-      ctx.fillRect(access.roomX + 3, deck3Y + 25, access.roomW - 6, 19);
-      ctx.strokeStyle = 'rgba(111,190,205,0.8)'; ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(access.roomX + 5, deck3Y + 25);
-      ctx.lineTo(access.roomX + access.roomW - 5, deck3Y + 25);
+    /* Independent floor hatches and ladders for the two ballast rooms. */
+    var ballastXs = [-176, 168];
+    for (var ba = 0; ba < ballastXs.length; ba++) {
+      var ax = sx + ballastXs[ba], hatchY = sy + 27;
+      ctx.fillStyle = '#07131a'; ctx.fillRect(ax - 9, hatchY - 4, 18, 8);
+      ctx.strokeStyle = '#c0d0d6'; ctx.lineWidth = 1.8; ctx.strokeRect(ax - 9, hatchY - 4, 18, 8);
+      ctx.strokeStyle = '#a9bbc3'; ctx.lineWidth = 1.5; ctx.beginPath();
+      ctx.moveTo(ax - 5, sy + 31); ctx.lineTo(ax - 5, sy + 72);
+      ctx.moveTo(ax + 5, sy + 31); ctx.lineTo(ax + 5, sy + 72);
+      for (var br = 0; br < 6; br++) { var by = sy + 34 + br * 7; ctx.moveTo(ax - 5, by); ctx.lineTo(ax + 5, by); }
       ctx.stroke();
     }
-
+    /* Equipment consoles are drawn where their interaction points live. */
+    var consoles = [
+      { x: -167, deck: 1, c: '#4c7d8d' }, { x: -86, deck: 1, c: '#668b91' },
+      { x: 158, deck: 1, c: '#526d79' }, { x: -93, deck: 2, c: '#b56d45' },
+      { x: -16, deck: 2, c: '#4d8990' }, { x: 0, deck: 0, c: '#4c7d8d' }
+    ];
+    for (var ci = 0; ci < consoles.length; ci++) {
+      var con = consoles[ci], cy = sy + DUGONG_DECK_LAYOUT[con.deck].y + 27;
+      ctx.fillStyle = '#172832'; ctx.fillRect(sx + con.x - 9, cy - 8, 18, 14);
+      ctx.fillStyle = con.c; ctx.fillRect(sx + con.x - 7, cy - 6, 14, 7);
+      ctx.fillStyle = '#a8d2d7'; ctx.fillRect(sx + con.x - 5, cy - 4, 10, 2);
+    }
     ctx.restore();
   }
 
@@ -1935,22 +1973,12 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function drawDoors() {
-    var y0 = sy - RH / 2;
-    for (var k = 0; k < 4; k++) {
-      var bx = sx - HL + (k + 1) * RW;
-      if (doors[k]) {
-        ctx.fillStyle = '#3d5563'; ctx.fillRect(bx - 2, y0, 4, 9); ctx.fillRect(bx - 2, y0 + RH - 15, 4, 9);
-      } else {
-        ctx.fillStyle = '#f0a73c'; ctx.fillRect(bx - 3, y0, 6, RH - 6);
-        ctx.fillStyle = '#1a2229';
-        for (var s = 0; s < 6; s++) ctx.fillRect(bx - 3, y0 + 4 + s * 11, 6, 4);
-      }
-    }
+    /* Door leaves are rendered by drawInterior at each deck's real bulkhead. */
   }
 
   function drawPlayer() {
     if (P.out) return;
-    var x = sx + P.lx, y = sy + RH / 2 - 6;
+    var playerDeck = clamp(P.deck == null ? 1 : P.deck, 0, 2), x = sx + P.lx, y = sy + DUGONG_DECK_LAYOUT[playerDeck].y + 40;
     ctx.save(); ctx.translate(x, y); ctx.scale(P.face * 0.656, 0.656);
     var sw = P.seat ? 0 : Math.sin(P.step) * 4;
     ctx.strokeStyle = '#243746'; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
