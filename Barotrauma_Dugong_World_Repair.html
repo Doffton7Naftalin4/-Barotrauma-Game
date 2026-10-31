@@ -362,13 +362,46 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
   }
   var PLN = { t: 'синий мох', i: 'бурая водоросль', b: 'алая губка' }, PLC = { t: '#5fb7ff', i: '#d6b04a', b: '#ff6a7a' };
-  function plantIn(cx, cy, r) {
+  function plantIn(cx, cy, r, boatWall) {
     for (var q = 0; q < 8; q++) {
       var a = rand(0, 6.283), d = 0; while (d < r + 30 && !solidAt(cx + Math.cos(a) * d, cy + Math.sin(a) * d)) d += 5;
-      // Ставим растение в найденную твёрдую клетку, не смещая его обратно в воду.
       if (d >= r + 30 || d < 21) continue;
-      plants.push({ x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, k: ['t', 'i', 'b'][(Math.random() * 3) | 0], got: 0 }); return;
+      plants.push({ x: cx + Math.cos(a) * d, y: cy + Math.sin(a) * d, k: ['t', 'i', 'b'][(Math.random() * 3) | 0], got: 0, boatWall: !!boatWall }); return;
     }
+  }
+  /* Re-anchor resources only after every cave, wreck, outpost and ice plug has
+     finished modifying the cell map. Later carving used to leave old deposits
+     suspended in newly excavated water. */
+  function settleResource(p, allowBoat) {
+    var ci = Math.round((p.x - wx0) / CS), cj = Math.round((p.y - wy0) / CS), best = null;
+    for (var r = 0; r <= 4; r++) for (var j = cj - r; j <= cj + r; j++) for (var i = ci - r; i <= ci + r; i++) {
+      if (Math.max(Math.abs(i - ci), Math.abs(j - cj)) !== r || cell(i, j) !== 1) continue;
+      var nx = 0, ny = 0, nn = 0, nearest = null;
+      for (var d = 0; d < 4; d++) {
+        var dx = d === 0 ? 1 : d === 1 ? -1 : 0, dy = d === 2 ? 1 : d === 3 ? -1 : 0;
+        if (cell(i + dx, j + dy) !== 0) continue;
+        nx += dx; ny += dy; nn++;
+        var wx = wx0 + i * CS + dx * (CS / 2 - 6), wy = wy0 + j * CS + dy * (CS / 2 - 6), wd = Math.hypot(wx - p.x, wy - p.y);
+        if (!nearest || wd < nearest.d) nearest = { x: wx, y: wy, d: wd, nx: dx, ny: dy };
+      }
+      if (!nn) continue;
+      var nm = Math.hypot(nx, ny);
+      if (nm < 0.01) { nx = nearest.nx; ny = nearest.ny; nm = 1; }
+      nx /= nm; ny /= nm;
+      var px = wx0 + i * CS + nx * (CS / 2 - 6), py = wy0 + j * CS + ny * (CS / 2 - 6);
+      function inside(zones) { for (var zi = 0; zi < zones.length; zi++) { var z = zones[zi]; if (Math.hypot(px - z.x, py - z.y) < z.r - 16) return true; } return false; }
+      if (inside(mainZones) || (!allowBoat && inside(boatZones))) continue;
+      var dist = Math.hypot(px - p.x, py - p.y);
+      if (!best || dist < best.d) best = { x: px, y: py, d: dist, nx: nx, ny: ny };
+    }
+    if (!best) return false;
+    p.x = best.x; p.y = best.y;
+    if (p.k) p.a = Math.atan2(best.ny, best.nx) + Math.PI / 2;
+    return true;
+  }
+  function settleResources() {
+    ores = ores.filter(function (o) { return settleResource(o, false); });
+    plants = plants.filter(function (p) { return settleResource(p, !!p.boatWall); });
   }
   function nook(x, y, a, wr) {
     var dx = Math.cos(a), dy = Math.sin(a), cr = rand(135, 195);
@@ -445,7 +478,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       /* boat cave: no ore nooks; resources are reserved for diver caves */
       if (dep < 1 && n - i > 24 && Math.random() < 0.025) boatCave(x, y, a + (Math.random() < 0.5 ? 1 : -1) * rand(0.7, 1.1), (n - i) * st * 0.7, r0 * 0.92, dep + 1, pg);
     }
-    var cr = rr_; if (!nearZones(x, y, cr, diverZones)) { boatZones.push({ x: x, y: y, r: cr }); chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'boat' }); if (Math.random() < 0.04) plantIn(x, y, cr); }
+    var cr = rr_; if (!nearZones(x, y, cr, diverZones)) { boatZones.push({ x: x, y: y, r: cr }); chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'boat' }); if (Math.random() < 0.04) plantIn(x, y, cr, true); }
   }
   function tunnel(x, y, a, len, r0, dep, pg, parentZone) {
     var st = 50, n = Math.round(len / st), rr_, pi = dep ? 8 : 9, made = 0, ownZones = parentZone ? [parentZone] : [];
@@ -601,6 +634,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       stB = wy0 + jb * CS + CS / 2; stT = wy0 + jt * CS - CS / 2;
     }
     plugs.forEach(applyPlug);
+    settleResources();
     for (var ds = 1500 + rand(0, 300); ds < L - 900; ds += LV.ev * rand(0.8, 1.25)) {
       var ki = Math.min(path.length - 1, Math.round(ds / 70)), q = path[ki], t2 = tg(ki), o = rand(-0.4, 0.4) * q.r;
       spawnPack(pickPack(LV, ds / L), q.x + Math.cos(t2 + 1.571) * o, q.y + Math.sin(t2 + 1.571) * o, 0);
@@ -2146,17 +2180,19 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     for (var i = 0; i < plants.length; i++) {
       var p = plants[i]; if (p.got || Math.abs(p.x - camX - W / 2) > 460 || Math.abs(p.y - camY - H / 2) > 270) continue;
       var pu = 0.6 + 0.4 * Math.sin(t * 2 + i), c = PLC[p.k];
-      ctx.globalAlpha = 0.18 * pu; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(p.x, p.y, 22, 0, 6.283); ctx.fill(); ctx.globalAlpha = 1;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a || 0);
+      ctx.globalAlpha = 0.18 * pu; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(0, 0, 22, 0, 6.283); ctx.fill(); ctx.globalAlpha = 1;
       ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineCap = 'round';
       for (var k = -1; k <= 1; k++) {
-        var bx = p.x + k * 6, h = 7 - (k === 0 ? 0 : 1.5), px_ = bx, py_ = p.y + 6;
+        var bx = k * 6, h = 7 - (k === 0 ? 0 : 1.5), px_ = bx, py_ = 6;
         ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(px_, py_);
         var nodes = [];
-        for (var j = 1; j <= h; j++) { px_ = bx + Math.sin(t * 1.6 + j * 0.75 + k * 1.3 + i) * (0.8 + j * 0.55); py_ = p.y + 6 - j * 4.4; ctx.lineTo(px_, py_); nodes.push([px_, py_]); }
+        for (var j = 1; j <= h; j++) { px_ = bx + Math.sin(t * 1.6 + j * 0.75 + k * 1.3 + i) * (0.8 + j * 0.55); py_ = 6 - j * 4.4; ctx.lineTo(px_, py_); nodes.push([px_, py_]); }
         ctx.stroke();
         for (var n = 1; n < nodes.length; n += 2) { var sd = (n % 4 === 1) ? 1 : -1; ctx.beginPath(); ctx.ellipse(nodes[n][0] + sd * 3.5, nodes[n][1] - 0.5, 4, 1.7, sd * -0.6, 0, 6.283); ctx.fill(); }
         if (p.k !== 't') { ctx.beginPath(); ctx.arc(px_, py_ - 1.5, p.k === 'b' ? 3 : 2.2, 0, 6.283); ctx.fill(); }
       }
+      ctx.restore();
     }
   }
   function drawSites() {
