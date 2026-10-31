@@ -220,6 +220,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
 
   /* Runtime layout for the three-deck Dugong. Coordinates are local to the sub. */
+  var DUGONG_HULL_LEFT = 250, DUGONG_HULL_RIGHT = 264, DUGONG_HULL_TOP = 88, DUGONG_HULL_BOTTOM = 88;
   var DUGONG_DECK_LAYOUT = [
     { id: 'upper', x: -71.4, y: -68, h: 48, widths: [54.3, 88.5], names: ['ШЛЮЗ', 'ВЕРХНИЙ ПРОХОД'], colors: ['#24414c', '#1a303a'] },
     { id: 'main', x: -210, y: -20, h: 48, widths: [86, 76, 76, 78, 104], names: ['МАШИННОЕ', 'РУБКА', 'КОСТЮМЫ', 'МЕДБЛОК', 'ОРУЖЕЙНАЯ'], colors: ['#263943', '#244653', '#203a45', '#24414a', '#263943'] },
@@ -541,14 +542,14 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     });
   }
   function subHit(x, y) {
-    var i0 = Math.round((x - 240 - wx0) / CS), i1 = Math.round((x + 240 - wx0) / CS), j0 = Math.round((y - SH - wy0) / CS), j1 = Math.round((y + SH - wy0) / CS), s = 0, n = 0;
+    var i0 = Math.round((x - DUGONG_HULL_LEFT - wx0) / CS), i1 = Math.round((x + DUGONG_HULL_RIGHT - wx0) / CS), j0 = Math.round((y - DUGONG_HULL_TOP - wy0) / CS), j1 = Math.round((y + DUGONG_HULL_BOTTOM - wy0) / CS), s = 0, n = 0;
     for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) if (cell(i, j) > 0) { s += wx0 + i * CS - x; n++; }
     return n ? s / n : null;
   }
   function dHit(x, y) { return solidAt(x, y) || solidAt(x + 7, y) || solidAt(x - 7, y) || solidAt(x, y + 8) || solidAt(x, y - 8); }
   function postX(r) { return r === 0 ? -HL + 16 : roomCx(r); }
   function toast(s) { msg = s; msgT = 3.5; }
-  function exitSub() { P.out = true; P.seat = null; D.x = sx; D.y = sy - SH - 16; D.vx = D.vy = 0; D.aim = -1.57; D.face = 1; toast('Вы вышли наружу'); }
+  function exitSub() { P.out = true; P.seat = null; D.x = sx; D.y = sy - DUGONG_HULL_TOP - 16; D.vx = D.vy = 0; D.aim = -1.57; D.face = 1; toast('Вы вышли наружу'); }
   function stored() { return S.ore + S.crt * 2 + plN() + S.harp * 0.5 + S.rods + S.cyl + S.med.t + S.med.i + S.med.b + S.med.h; }
   function capSub() { return SUBS[S.sub].cap; }
   function dLoad() { return D.carry + D.cargo * 3 + D.bcargo * 2 + D.pl.t + D.pl.i + D.pl.b; }
@@ -652,7 +653,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function outAt(x, y, r) { for (var i = 0; i < outposts.length; i++) if (Math.hypot(x - outposts[i].door.x, y - outposts[i].door.y) < r) return outposts[i]; return null; }
   function arcT(T) { return T.oy < 0 ? [-3.04, -0.1] : [0.1, 3.04]; }
   function clampArc(T) { var r = arcT(T); T.ang = clamp(T.ang, r[0], r[1]); }
-  function inHull(x, y) { return x > sx - HL - 18 && x < sx + HL + 28 && y > sy - RH / 2 - 6 && y < sy + RH / 2 + 6; }
+  function inHull(x, y) { return x > sx - DUGONG_HULL_LEFT && x < sx + DUGONG_HULL_RIGHT && y > sy - DUGONG_HULL_TOP && y < sy + DUGONG_HULL_BOTTOM; }
   function hurtP(n, k) { P.hp -= n; if (k && Math.random() < (k === 't' ? 0.8 : 0.35)) { P.dis[k] = Math.min(1, P.dis[k] + (k === 't' ? 0.5 : 0.4)); toast(k === 't' ? 'Отравление! Нужен антидот (H)' : 'Рана заражена! Нужен антибиотик (H)'); } flash = Math.max(flash, 0.22); shake = Math.min(0.5, shake + 0.15); sfx.hit(); }
   function dive(dt) {
     var ax = K.right - K.left, ay = K.down - K.up, l = Math.hypot(ax, ay), i;
@@ -660,9 +661,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     D.vx += ax * 430 * dt; D.vy += ay * 430 * dt; var dr = Math.max(0, 1 - 3.3 * dt); D.vx *= dr; D.vy *= dr;
     var nx = D.x + D.vx * dt; if (dHit(nx, D.y)) D.vx *= -0.2; else D.x = nx;
     var ny = D.y + D.vy * dt; if (dHit(D.x, ny)) D.vy *= -0.2; else D.y = ny;
-    var bx = sx + 6, l0 = bx - SW - 7, r0 = bx + SW + 7, t0 = sy - SH - 7, b0 = sy + SH + 7;
+    var bx = sx, l0 = bx - DUGONG_HULL_LEFT - 7, r0 = bx + DUGONG_HULL_RIGHT + 7, t0 = sy - DUGONG_HULL_TOP - 7, b0 = sy + DUGONG_HULL_BOTTOM + 7;
     if (D.x > l0 && D.x < r0 && D.y > t0 && D.y < b0) { var a1 = D.x - l0, a2 = r0 - D.x, a3 = D.y - t0, a4 = b0 - D.y, mn = Math.min(a1, a2, a3, a4); if (mn === a1) D.x = l0; else if (mn === a2) D.x = r0; else if (mn === a3) D.y = t0; else D.y = b0; }
-    if (dHit(D.x, D.y)) { D.x = sx + postX(0); D.y = sy + SH + 16; }
+    if (dHit(D.x, D.y)) { D.x = sx; D.y = sy - DUGONG_HULL_TOP - 16; }
     D.cool -= dt;
     if ((PR.space || K.space) && D.cool <= 0) {
       if (D.ammo > 0) { D.ammo--; D.cool = 0.5; shots.push({ x: D.x + Math.cos(D.aim) * 12, y: D.y + Math.sin(D.aim) * 12, vx: Math.cos(D.aim) * 440 + D.vx * 0.3, vy: Math.sin(D.aim) * 440 + D.vy * 0.3, life: 0.85, dmg: 1 }); D.vx -= Math.cos(D.aim) * 30; D.vy -= Math.sin(D.aim) * 30; sfx.harp(); }
@@ -670,7 +671,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     var tgt = null, bd = 52;
     for (i = 0; i < ores.length; i++) { var o = ores[i]; if (o.got) continue; var dd = Math.hypot(o.x - D.x, o.y - D.y); if (dd < bd) { bd = dd; tgt = o; } if (o.prog > 0 && !(K.e && o === tgt)) o.prog = Math.max(0, o.prog - dt * 0.4); }
-    var nearH = Math.hypot(D.x - (sx + postX(0)), D.y - (sy + SH + 10)) < 46, ic = iceNear(D.x, D.y, 46);
+    var nearH = Math.hypot(D.x - sx, D.y - (sy - DUGONG_HULL_TOP - 10)) < 46, ic = iceNear(D.x, D.y, 46);
     var opn = outAt(D.x, D.y, 64);
     if (opn) { hint = 'E — войти в аванпост «' + opn.name + '»'; if (PR.e) openShop(opn); }
     else if (tgt) {
@@ -956,15 +957,23 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function roomOf(lx) { return clamp(Math.floor((lx + HL) / RW), 0, NR - 1); }
   function roomCx(i) { return -HL + i * RW + RW / 2; }
   function hurt(n) { hull -= n * (1 - 0.2 * S.hu - SUBS[S.sub].arm); shake = Math.min(0.7, shake + 0.25); flash = 0.2; }
-  function dugongDamageSpot(room) {
-    var spots = [
-      { deck: 1, x: -167 }, /* machine room */
-      { deck: 2, x: -93 },  /* reactor */
-      { deck: 2, x: -16 },  /* electrical / pumps */
-      { deck: 1, x: 158 },  /* armory */
-      { deck: 1, x: -86 }   /* command */
-    ];
-    return spots[clamp(room | 0, 0, spots.length - 1)];
+  var DUGONG_DAMAGE_SPOTS = [
+    { deck: 1, x: -167 }, /* machine room */
+    { deck: 2, x: -93 },  /* reactor */
+    { deck: 2, x: -16 },  /* electrical / pumps */
+    { deck: 1, x: 158 },  /* armory */
+    { deck: 1, x: -86 }   /* command */
+  ];
+  function dugongDamageSpot(room) { return DUGONG_DAMAGE_SPOTS[clamp(room | 0, 0, DUGONG_DAMAGE_SPOTS.length - 1)]; }
+  function dugongWaterRoomAt(deck, lx) {
+    var best = -1, distance = 1e9;
+    for (var i = 0; i < DUGONG_DAMAGE_SPOTS.length; i++) {
+      var spot = DUGONG_DAMAGE_SPOTS[i];
+      if (spot.deck !== deck) continue;
+      var d = Math.abs(lx - spot.x);
+      if (d < distance) { distance = d; best = i; }
+    }
+    return best;
   }
   function dugongEffectY(deck, top) {
     var row = DUGONG_DECK_LAYOUT[deck];
@@ -974,8 +983,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (leaks.length >= 14) return;
     var spot = dugongDamageSpot(room), deck = spot.deck, x = spot.x;
     var isTop = top == null ? Math.random() < 0.5 : top;
-    leaks.push({ room: roomOf(x), waterRoom: room, deck: deck, lx: x,
-      y: dugongEffectY(deck, isTop), size: size, top: isTop });
+    var leak = { room: roomOf(x), waterRoom: room, deck: deck, lx: x,
+      y: dugongEffectY(deck, isTop), size: size, top: isTop };
+    leaks.push(leak); return leak;
   }
   function addFire(room, lx) {
     var n = 0; for (var i = 0; i < fires.length; i++) if (fires[i].waterRoom === room) n++;
@@ -1005,7 +1015,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   /* ---------- simulation ---------- */
   function updatePlay(dt) {
     elapsed += dt; if (PR.h) useMed();
-    var hIn = { x: 0, y: 0 }, room = roomOf(P.lx), exited = false;
+    var hIn = { x: 0, y: 0 }, room = roomOf(P.lx), waterRoom = dugongWaterRoomAt(P.deck, P.lx), exited = false;
     hint = ''; P.work = 0;
 
     if (P.out) dive(dt);
@@ -1035,7 +1045,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
     if (!P.seat && !P.out) {
       var deck = clamp(P.deck == null ? 1 : P.deck, 0, 2), row = DUGONG_DECK_LAYOUT[deck];
-      var dir = K.right - K.left, spd = 72 * (w[room] * RH > 8 ? 0.55 : 1) * (1 - 0.4 * P.dis.b);
+      var dir = K.right - K.left, spd = 72 * (waterRoom >= 0 && w[waterRoom] * RH > 8 ? 0.55 : 1) * (1 - 0.4 * P.dis.b);
       var nx = P.lx + dir * spd * dt, k, boundary;
       for (k = 0; k < row.widths.length - 1; k++) {
         boundary = dugongDoorX(deck, k);
@@ -1046,7 +1056,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       }
       nx = clamp(nx, row.x + 8, row.x + row.widths.reduce(function (a, b) { return a + b; }, 0) - 8);
       if (dir) { P.face = dir; P.step += Math.abs(nx - P.lx) * 0.25; }
-      P.lx = nx; room = roomOf(P.lx);
+      P.lx = nx; room = roomOf(P.lx); waterRoom = dugongWaterRoomAt(deck, P.lx);
 
       /* Ladder transitions: central ladder joins all three decks; the two
          outer floor hatches connect only main deck to their own ballast rooms. */
@@ -1136,8 +1146,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
 
     /* crew */
-    var rm = roomOf(P.lx);
-    if (P.out) P.o2 -= 2.1 * dt / (1 + 0.5 * S.tu); else { if (w[rm] * RH > 26) P.o2 -= 14 * dt; else { P.o2 = Math.min(100, P.o2 + 30 * dt); if (P.o2 > 30) P.hp = Math.min(100, P.hp + (P.dis.i > 0.05 || P.dis.t > 0.05 ? 0 : 1.5) * dt); } }
+    var rm = dugongWaterRoomAt(P.deck, P.lx);
+    if (P.out) P.o2 -= 2.1 * dt / (1 + 0.5 * S.tu); else { if (rm >= 0 && w[rm] * RH > 26) P.o2 -= 14 * dt; else { P.o2 = Math.min(100, P.o2 + 30 * dt); if (P.o2 > 30) P.hp = Math.min(100, P.hp + (P.dis.i > 0.05 || P.dis.t > 0.05 ? 0 : 1.5) * dt); } }
     var dz = P.dis; dz.t = Math.max(0, dz.t - 0.03 * dt); dz.b = Math.max(0, dz.b - 0.01 * dt); if (dz.i > 0) dz.i = Math.min(1, dz.i + 0.008 * dt);
     P.hp -= (dz.t * 1.6 + dz.i * 1.2 + dz.b * 0.8) * dt;
     if (P.o2 <= 0) { P.o2 = 0; P.hp -= 25 * dt; }
@@ -1273,8 +1283,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function crash(imp, x, top) {
     if (imp > 28 && tcool <= 0) {
-      tcool = 1; hurt(imp * 0.07); addLeak(roomOf(x), 0.5, x, top); sfx.hit();
-      spark(sx + x, sy + (top ? -RH / 2 - 7 : RH / 2 + 7), 10);
+      tcool = 1; hurt(imp * 0.07); var leak = addLeak(roomOf(x), 0.5, x, top); sfx.hit();
+      if (leak) spark(sx + leak.lx, sy + leak.y, 10);
     }
   }
   function updateAmbient(dt) {
@@ -2049,23 +2059,43 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function drawWater() {
-    var x0 = sx - HL, y0 = sy - RH / 2;
+    /* Render the legacy five water volumes inside their mapped Dugong rooms,
+       not in the old one-deck rectangle. */
     for (var i = 0; i < NR; i++) {
       if (w[i] < 0.01) continue;
-      var hgt = w[i] * (RH - 6), top = y0 + RH - 6 - hgt, rx = x0 + i * RW;
+      var spot = dugongDamageSpot(i), row = DUGONG_DECK_LAYOUT[spot.deck];
+      var roomIndex = dugongRoomAt(spot.deck, spot.x), left = row.x;
+      for (var q = 0; q < roomIndex; q++) left += row.widths[q];
+      var right = left + row.widths[roomIndex], floor = row.y + row.h - 4;
+      var hgt = w[i] * (row.h - 8), top = floor - hgt;
+      var rx = sx + left + 3, rw = right - left - 6;
       ctx.fillStyle = 'rgba(40,120,175,0.5)';
-      ctx.beginPath(); ctx.moveTo(rx, y0 + RH - 6);
-      for (var x = 0; x <= RW; x += 8) ctx.lineTo(rx + x, top + Math.sin(t * 3 + (rx + x) * 0.15) * 1.5);
-      ctx.lineTo(rx + RW, y0 + RH - 6); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(rx, sy + floor);
+      for (var x = 0; x <= rw; x += 8) ctx.lineTo(rx + x, sy + top + Math.sin(t * 3 + (rx + x) * 0.15) * 1.2);
+      ctx.lineTo(rx + rw, sy + floor); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = 'rgba(190,235,250,0.5)'; ctx.lineWidth = 1;
-      ctx.beginPath(); for (var x2 = 0; x2 <= RW; x2 += 8) { var yy = top + Math.sin(t * 3 + (rx + x2) * 0.15) * 1.5; if (x2 === 0) ctx.moveTo(rx, yy); else ctx.lineTo(rx + x2, yy); } ctx.stroke();
+      ctx.beginPath();
+      for (var x2 = 0; x2 <= rw; x2 += 8) {
+        var yy = sy + top + Math.sin(t * 3 + (rx + x2) * 0.15) * 1.2;
+        if (x2 === 0) ctx.moveTo(rx, yy); else ctx.lineTo(rx + x2, yy);
+      }
+      ctx.stroke();
     }
   }
 
   function drawLights() {
     var L = pw.short ? 0.25 : 0.5 + 0.5 * pw.ratio;
-    if (L < 1) { ctx.fillStyle = 'rgba(0,4,10,' + ((1 - L) * 0.6).toFixed(3) + ')'; ctx.fillRect(sx - HL, sy - RH / 2, NR * RW, RH); }
-    if (pw.short && Math.sin(t * 20) > 0.3) spark(sx + roomCx(1) + rand(-14, 14), sy + RH / 2 - 20, 1);
+    if (L < 1) {
+      ctx.fillStyle = 'rgba(0,4,10,' + ((1 - L) * 0.6).toFixed(3) + ')';
+      for (var d = 0; d < DUGONG_DECK_LAYOUT.length; d++) {
+        var row = DUGONG_DECK_LAYOUT[d], width = row.widths.reduce(function (a,b) { return a+b; },0);
+        ctx.fillRect(sx + row.x, sy + row.y, width, row.h);
+      }
+    }
+    if (pw.short && Math.sin(t * 20) > 0.3) {
+      var lower = DUGONG_DECK_LAYOUT[2];
+      spark(sx - 16 + rand(-8, 8), sy + lower.y + 27, 1);
+    }
   }
 
   function drawRadar() {
