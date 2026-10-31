@@ -664,7 +664,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function toast(s) { msg = s; msgT = 3.5; }
   function dugongAirlockDoor(){var row=DUGONG_DECK_LAYOUT[0];return {x:sx+row.x,y:sy+row.y+row.h/2};}
   function dugongAirlockOutsidePoint(){var door=dugongAirlockDoor();return {x:door.x-15,y:door.y};}
-  function exitSub(){var p=dugongAirlockOutsidePoint();P.out=true;P.seat=null;D.x=p.x;D.y=p.y;D.vx=D.vy=0;D.aim=Math.PI;D.face=-1;toast('Вы вышли через левую дверь шлюза');}
+  function exitSub(){var p=dugongAirlockOutsidePoint();P.out=true;P.seat=null;D.x=p.x;D.y=p.y;D.vx=D.vy=0;D.aim=D.aimTarget=Math.PI;D.bodyAngle=D.bodyTargetAngle=Math.PI;D.bodyFlip=false;D.backView=false;D.face=-1;toast('Вы вышли через левую дверь шлюза');}
   /* Индивидуальная масса каждой единицы (г). Природные ресурсы получают небольшую вариацию. */
   var ITEM_MASS_G={ore:[680,1080],moss:[85,155],algae:[110,205],sponge:[145,265],medkit:460,antidote:125,antibiotic:135,ointment:90,harpoon:180,weld:1250,fuel:1450,crate:2000,cargo:3000};
   function itemCount(o,id){if(id==='ore')return o===D?D.carry:S.ore;if(id==='crate')return o===D?D.bcargo:S.crt;if(id==='cargo')return o===D?D.cargo:0;if(id==='moss'||id==='algae'||id==='sponge')return o.pl[id==='moss'?'t':id==='algae'?'i':'b']||0;if(id==='medkit'||id==='antidote'||id==='antibiotic'||id==='ointment')return o.med[id==='medkit'?'h':id==='antidote'?'t':id==='antibiotic'?'i':'b']||0;if(id==='harpoon')return o===D?D.ammo:S.harp;if(id==='weld')return o.cyl||0;if(id==='fuel')return o.rods||0;return 0;}
@@ -837,8 +837,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var distance=Math.sqrt(best);if(!inside&&distance>=radius)return null;var push=inside?radius+distance+1:radius-distance+1;return {x:x+nx*push,y:y+ny*push,nx:nx,ny:ny};
   }
   function hurtP(n, k) { P.hp -= n; if (k && Math.random() < (k === 't' ? 0.8 : 0.35)) { P.dis[k] = Math.min(1, P.dis[k] + (k === 't' ? 0.5 : 0.4)); toast(k === 't' ? 'Отравление! Нужен антидот (H)' : 'Рана заражена! Нужен антибиотик (H)'); } flash = Math.max(flash, 0.22); shake = Math.min(0.5, shake + 0.15); sfx.hit(); }
+  function smoothAngle(current,target,dt,speed){var diff=Math.atan2(Math.sin(target-current),Math.cos(target-current));return current+diff*(1-Math.exp(-speed*dt));}
   function dive(dt){
-    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action='idle';D.actionT=0;if(l){D.action='swim';D.actionT+=dt;ax/=l;ay/=l;var swimAngle=Math.atan2(ay,ax);D.aim=Math.round(swimAngle/(Math.PI/4))*(Math.PI/4);D.bodyFlip=ax< -0.001;D.bodyAngle=swimAngle;if(D.bodyFlip)D.bodyAngle+=swimAngle>0?-Math.PI:Math.PI;D.backView=Math.abs(ax)<0.35;if(D.backView)D.bodyAngle=ay>0?Math.PI/2:-Math.PI/2;if(ax)D.face=ax>0?1:-1;}
+    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action='idle';D.actionT=0;if(l){D.action='swim';D.actionT+=dt;ax/=l;ay/=l;var swimAngle=Math.atan2(ay,ax);D.aimTarget=Math.round(swimAngle/(Math.PI/4))*(Math.PI/4);D.bodyTargetAngle=swimAngle;if(ax< -0.001)D.bodyTargetAngle+=swimAngle>0?-Math.PI:Math.PI;D.bodyFlip=ax< -0.001;D.backView=Math.abs(ax)<0.35;if(D.backView)D.bodyTargetAngle=ay>0?Math.PI/2:-Math.PI/2;if(ax)D.face=ax>0?1:-1;}
+    D.aim=smoothAngle(D.aim==null?D.aimTarget:D.aim,D.aimTarget==null?D.aim:D.aimTarget,dt,9);
+    D.bodyAngle=smoothAngle(D.bodyAngle==null?D.bodyTargetAngle:D.bodyAngle,D.bodyTargetAngle==null?D.bodyAngle:D.bodyTargetAngle,dt,7);
     D.vx+=ax*430*dt;D.vy+=ay*430*dt;var drag=Math.exp(-5.8*dt);D.vx*=drag;D.vy*=drag;
     var nx=D.x+D.vx*dt,ny=D.y+D.vy*dt;
     /* Скала гасит только скорость по нормали столкновения. Касательная скорость
@@ -1144,7 +1147,7 @@ if (e.code === 'KeyM') muted = !muted;
     leaks = []; fires = []; shots = []; spits = []; parts = []; drops = [];
     P = { dis: { t: 0, i: 0, b: 0 }, lx: 0, deck: 1, face: 1, hp: 100, o2: 120, seat: null, work: 0, step: 0, out: false };
     deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
-    D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, action: 'idle', actionT: 0, pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 0 }, cyl: 0, rods: 0, mass: {} }; shop = null;
+    D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, aimTarget: 0, bodyAngle: 0, bodyTargetAngle: 0, bodyFlip: false, backView: false, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, action: 'idle', actionT: 0, pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 0 }, cyl: 0, rods: 0, mass: {} }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
     G = { ang: -0.3, cool: 0, ox: -150, oy: -22, i: 0, cap: 100, dry: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 88, i: 1, cap: 100, dry: 0 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0, mass: {} }; cargoGot = 0;
