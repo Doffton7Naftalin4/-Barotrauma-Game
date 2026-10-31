@@ -1887,7 +1887,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function drawPlayer() {
     if (P.out) return;
     var x = sx + P.lx, y = sy + RH / 2 - 6;
-    ctx.save(); ctx.translate(x, y); ctx.scale(P.face, 1);
+    ctx.save(); ctx.translate(x, y); ctx.scale(P.face * 0.82, 0.82);
     var sw = P.seat ? 0 : Math.sin(P.step) * 4;
     ctx.strokeStyle = '#243746'; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
     if (P.seat) { ctx.beginPath(); ctx.moveTo(-1, -9); ctx.lineTo(5, -8); ctx.lineTo(5, -1); ctx.stroke(); }
