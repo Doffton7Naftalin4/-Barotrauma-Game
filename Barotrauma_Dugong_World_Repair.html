@@ -461,7 +461,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (Math.random() < 0.012) nook(x, y, a + (Math.random() < 0.5 ? 1.571 : -1.571), rr_);
       if (dep < 2 && n - i > 12 && Math.random() < 0.022) tunnel(x, y, a + (Math.random() < 0.5 ? 1 : -1) * rand(0.7, 1.3), (n - i) * st * 0.65, Math.min(82, r0 * 0.78), dep + 1, pg);
     }
-    var cr = rr_; if (!nearZones(x, y, cr, boatZones)) { diverZones.push({ x: x, y: y, r: cr }); oreIn(x, y, Math.max(70, cr), 4 + ((Math.random() * 4) | 0)); chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'diver' }); }
+    var cr = rr_; /* Не создаём камеру, если тоннель оборвался у защитной оболочки лодочного хода. */ if (i >= 10 && !nearZones(x, y, cr, boatZones)) { diverZones.push({ x: x, y: y, r: cr }); oreIn(x, y, Math.max(70, cr), 4 + ((Math.random() * 4) | 0)); chambers.push({ x: x, y: y, r: cr, pg: pg, kind: 'diver' }); }
   }
   function beaconAt(x, y) { for (var i = 0; i < beacons.length; i++) { var b = beacons[i]; if (Math.abs(x - b.x) < b.w / 2 && Math.abs(y - b.y) < b.h / 2) return b; } return null; }
   function beaconBlind() { return state === 'play' && P.out && !!beaconAt(D.x, D.y) && !beaconAt(D.x, D.y).active; }
@@ -526,7 +526,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (P0.s > nbt && P0.s < L - 2200 && Math.hypot(P0.x - gx, P0.y - gy) > 2200) { nbt = P0.s + rand(2400, 3800); boatCave(P0.x, P0.y, t + sd * rand(0.55, 0.95), rand(2600, 5000), rand(390, 430), 0, P0.s / L); }
       if (P0.s > nb && P0.s < L - 900 && Math.hypot(P0.x - gx, P0.y - gy) > 1100) {
         nb = P0.s + rand(1500, 2600); var rb = Math.random() < 0.35 ? rand(110, 150) : rand(70, 100);
-        tunnel(P0.x + Math.cos(t + sd * 1.571) * (P0.r + 34), P0.y + Math.sin(t + sd * 1.571) * (P0.r + 34), t + sd * rand(0.9, 1.5), rand(1800, 3600), Math.min(82, rb * 0.58), 0, P0.s / L);
+        tunnel(P0.x + Math.cos(t + sd * 1.571) * (P0.r + 34), P0.y + Math.sin(t + sd * 1.571) * (P0.r + 34), t + sd * rand(1.2, 1.57), rand(1800, 3600), Math.min(82, rb * 0.58), 0, P0.s / L);
       }
     }
     if (LV.sites) for (var si = 1; si <= LV.sites; si++) {
