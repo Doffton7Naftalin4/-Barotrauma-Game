@@ -731,7 +731,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function hurtP(n, k) { P.hp -= n; if (k && Math.random() < (k === 't' ? 0.8 : 0.35)) { P.dis[k] = Math.min(1, P.dis[k] + (k === 't' ? 0.5 : 0.4)); toast(k === 't' ? 'Отравление! Нужен антидот (H)' : 'Рана заражена! Нужен антибиотик (H)'); } flash = Math.max(flash, 0.22); shake = Math.min(0.5, shake + 0.15); sfx.hit(); }
   function dive(dt){
-    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action='idle';D.actionT=0;if(l){D.action='swim';D.actionT+=dt;ax/=l;ay/=l;D.aim=Math.round(Math.atan2(ay,ax)/(Math.PI/4))*(Math.PI/4);if(ax)D.face=ax>0?1:-1;}
+    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action='idle';D.actionT=0;if(!l){D.bodyAngle=D.bodyAngle==null?D.aim:D.bodyAngle;D.bodyFlip=false;D.backView=false;}if(l){D.action='swim';D.actionT+=dt;ax/=l;ay/=l;var swimAngle=Math.atan2(ay,ax);D.aim=Math.round(swimAngle/(Math.PI/4))*(Math.PI/4);D.bodyFlip=ax< -0.001;D.bodyAngle=swimAngle;if(D.bodyFlip)D.bodyAngle+=swimAngle>0?-Math.PI:Math.PI;D.backView=Math.abs(ax)<0.35;if(D.backView)D.bodyAngle=ay>0?Math.PI/2:-Math.PI/2;if(ax)D.face=ax>0?1:-1;}
     D.vx+=ax*430*dt;D.vy+=ay*430*dt;var drag=Math.exp(-5.8*dt);D.vx*=drag;D.vy*=drag;
     var nx=D.x+D.vx*dt,ny=D.y+D.vy*dt,wallContact=false;
     if(!dHit(nx,D.y))D.x=nx;else{D.vx=0;wallContact=true;}
@@ -1578,7 +1578,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (!P.out) return;
     var g = ctx.createRadialGradient(D.x, D.y, 4, D.x, D.y, 110); g.addColorStop(0, 'rgba(255,246,207,0.18)'); g.addColorStop(1, 'rgba(255,246,207,0)');
     ctx.fillStyle = g; ctx.fillRect(D.x - 110, D.y - 110, 220, 220);
-    ctx.save(); ctx.translate(D.x, D.y); ctx.rotate(D.aim); var action=D.action||'idle',phase=action==='swim'?Math.sin(t*11):Math.sin((D.actionT||t)*18),sw=action==='swim'?phase*3.8:action==='idle'?Math.sin(t*2)*0.5:phase*1.8;
+    var bodyAngle=D.bodyAngle==null?D.aim:D.bodyAngle,bodyFlip=D.bodyFlip?-1:1,backView=!!D.backView;ctx.save();ctx.translate(D.x,D.y);ctx.rotate(bodyAngle);ctx.scale(bodyFlip,1);var action=D.action||'idle',phase=action==='swim'?Math.sin(t*11):Math.sin((D.actionT||t)*18),sw=action==='swim'?phase*3.8:action==='idle'?Math.sin(t*2)*0.5:phase*1.8;
     // Баллон и рама снаряжения
     ctx.fillStyle = '#263d49'; rr(-11, -5, 7, 10, 2); ctx.fill();
     ctx.fillStyle = '#718994'; rr(-10, -4, 4, 8, 1.5); ctx.fill();
@@ -1603,7 +1603,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     // Шлем, стекло и блик
     ctx.fillStyle = '#243b49'; ctx.beginPath(); ctx.arc(9, -1, 6.2, 0, 6.283); ctx.fill();
     ctx.fillStyle = '#c8d9df'; ctx.beginPath(); ctx.arc(10, -1, 4.8, 0, 6.283); ctx.fill();
-    ctx.fillStyle = '#34758a'; ctx.beginPath(); ctx.ellipse(11, -1.2, 3.5, 3.8, -0.25, 0, 6.283); ctx.fill();
+    ctx.fillStyle = backView ? '#263d49' : '#34758a'; ctx.beginPath(); ctx.ellipse(11, -1.2, 3.5, 3.8, -0.25, 0, 6.283); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.ellipse(10, -3, 1.4, 0.8, -0.5, 0, 6.283); ctx.fill();
     // Перчатка и нагрудный фонарь
     ctx.fillStyle = '#d8e1e3'; ctx.beginPath(); ctx.arc(5, 5, 2, 0, 6.283); ctx.fill();
