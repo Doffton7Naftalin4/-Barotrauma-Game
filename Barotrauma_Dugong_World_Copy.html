@@ -683,7 +683,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     return points;
   }
   var DUGONG_MAIN_HULL_POLY=dugongMakeHullPolygon([-224,-22],[ [228,-22],{c:[258,-22],p:[260,-2]},{c:[264,24],p:[240,48]},{c:[226,86],p:[230,86]},[-220,86],{c:[-248,86],p:[-248,48]},{c:[-250,22],p:[-232,-2]},{c:[-228,-22],p:[-224,-22]} ]);
-  var DUGONG_BRIDGE_HULL_POLY=dugongMakeHullPolygon([-99,-22],[ [-84,-68],{c:[-79,-83],p:[-55,-83]},[55,-83],{c:[79,-83],p:[84,-68]},[99,-22] ]);
+  var DUGONG_BRIDGE_HULL_POLY=dugongMakeHullPolygon([-74,-22],[ [-74,-48],{c:[-71,-83],p:[-55,-83]},[55,-83],{c:[75,-83],p:[75,-48]},[75,-22] ]);
   function dugongPointInPolygon(x,y,poly){
     var inside=false;
     for(var i=0,j=poly.length-1;i<poly.length;j=i++){
@@ -2074,10 +2074,16 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         else{ctx.strokeRect(cx-7,floor-h-8,14,6);ctx.moveTo(cx-5,floor-h-5);ctx.lineTo(cx+5,floor-h-5);}
         ctx.stroke();
       }else if(kind==='engine'){
-        var ew=Math.min(innerW-4,roomW*0.72),eh=Math.min(25,innerH-2),ex=sx+left+(roomW-ew)/2;
+        var ew=Math.min(innerW*0.48,roomW*0.48),eh=Math.min(25,innerH-2),ex=sx+left+roomW*0.48-ew/2;
         ctx.fillStyle='#263d49';rr(ex,floor-eh,ew,eh,4);ctx.fill();
         ctx.strokeStyle='#6a8696';ctx.lineWidth=2;ctx.beginPath();ctx.arc(ex+ew/2,floor-eh/2,Math.min(8,eh*.32),0,6.283);ctx.stroke();
         ctx.strokeStyle='#f0a73c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ex+5,floor-eh+5);ctx.lineTo(ex+ew-5,floor-eh+5);ctx.stroke();
+      }else if(kind==='fab'){
+        var fw=Math.min(25,innerW*0.34),fh=Math.min(19,innerH-3),fx=sx+left+roomW*0.23-fw/2;
+        ctx.fillStyle='#172832';rr(fx,floor-fh,fw,fh,3);ctx.fill();
+        ctx.fillStyle='#4c7d8d';ctx.fillRect(fx+3,floor-fh+3,fw-6,6);
+        ctx.fillStyle='#f0a73c';ctx.fillRect(fx+5,floor-fh+5,4,2);
+        ctx.strokeStyle='#9ab4b7';ctx.lineWidth=1;ctx.strokeRect(fx+fw-8,floor-fh+4,4,fh-8);
       }else if(kind==='reactor'){
         var rw0=Math.min(innerW-4,roomW*0.62),rh=Math.min(32,innerH-1),rx0=sx+left+(roomW-rw0)/2;
         ctx.fillStyle='#233744';rr(rx0,floor-rh,rw0,rh,4);ctx.fill();
@@ -2092,6 +2098,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       ctx.restore();
     }
     drawRoomMachine(1,0,'engine');
+    drawRoomMachine(1,0,'fab');
     drawRoomMachine(1,1,'helm','left');
     drawRoomMachine(1,1,'gun','right');
     drawRoomMachine(2,1,'reactor');
