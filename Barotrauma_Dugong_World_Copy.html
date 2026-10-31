@@ -731,7 +731,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function hurtP(n, k) { P.hp -= n; if (k && Math.random() < (k === 't' ? 0.8 : 0.35)) { P.dis[k] = Math.min(1, P.dis[k] + (k === 't' ? 0.5 : 0.4)); toast(k === 't' ? 'Отравление! Нужен антидот (H)' : 'Рана заражена! Нужен антибиотик (H)'); } flash = Math.max(flash, 0.22); shake = Math.min(0.5, shake + 0.15); sfx.hit(); }
   function dive(dt){
-    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action=l?'swim':'idle';D.actionT+=dt;if(l){ax/=l;ay/=l;D.aim=Math.round(Math.atan2(ay,ax)/(Math.PI/4))*(Math.PI/4);if(ax)D.face=ax>0?1:-1;}
+    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action='idle';D.actionT=0;if(l){D.action='swim';D.actionT+=dt;ax/=l;ay/=l;D.aim=Math.round(Math.atan2(ay,ax)/(Math.PI/4))*(Math.PI/4);if(ax)D.face=ax>0?1:-1;}
     D.vx+=ax*430*dt;D.vy+=ay*430*dt;var drag=Math.exp(-5.8*dt);D.vx*=drag;D.vy*=drag;
     var nx=D.x+D.vx*dt,ny=D.y+D.vy*dt,wallContact=false;
     if(!dHit(nx,D.y))D.x=nx;else{D.vx=0;wallContact=true;}
@@ -2210,7 +2210,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function drawPlayer() {
     if (P.out) return;
     var playerDeck = clamp(P.deck == null ? 1 : P.deck, 0, 2), x = sx + P.lx, y = sy + DUGONG_DECK_LAYOUT[playerDeck].y + DUGONG_DECK_LAYOUT[playerDeck].h;
-    ctx.save(); ctx.translate(x, y); ctx.scale(P.face * 0.656, 0.656);
+    ctx.save(); ctx.translate(x, y + (!P.seat ? Math.abs(Math.sin(P.step)) * 1.2 : 0)); ctx.scale(P.face * 0.656, 0.656);
     var sw = P.seat ? 0 : Math.sin(P.step) * 4;
     ctx.strokeStyle = '#243746'; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
     if (P.seat) { ctx.beginPath(); ctx.moveTo(-1, -9); ctx.lineTo(5, -8); ctx.lineTo(5, -1); ctx.stroke(); }
@@ -2219,7 +2219,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#e3c3a0'; ctx.beginPath(); ctx.arc(0, -28, 5, 0, 6.283); ctx.fill();
     ctx.fillStyle = '#3d5563'; ctx.beginPath(); ctx.arc(0, -29, 5.4, Math.PI, 0); ctx.fill();
     if (P.work) { var toolSwing=Math.sin(t*18)*4; ctx.strokeStyle = '#cfe4ea'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(4, -18); ctx.lineTo(13+toolSwing, -14-Math.abs(toolSwing)*0.25); ctx.stroke(); ctx.fillStyle = '#9ff4ff'; ctx.beginPath(); ctx.arc(14+toolSwing, -14-Math.abs(toolSwing)*0.25, 2.6, 0, 6.283); ctx.fill(); }
-    else { var armSwing=P.seat==='helm'?Math.sin(t*4)*2:P.seat==='gun'?Math.sin(t*8)*3:Math.sin(t*3)*0.8; ctx.strokeStyle = '#e8a23a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(4, -20); ctx.lineTo(8+armSwing, -14+Math.abs(armSwing)*0.25); ctx.stroke(); }
+    else { var armSwing=P.seat==='helm'?Math.sin(t*4)*3:P.seat==='gun'?Math.sin(t*8)*4:Math.sin(P.step)*3; ctx.strokeStyle = '#e8a23a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(4, -20); ctx.lineTo(8+armSwing, -14+Math.abs(armSwing)*0.25); ctx.stroke(); }
     ctx.restore();
   }
 
