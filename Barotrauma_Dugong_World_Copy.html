@@ -772,9 +772,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
                  mostly scrape the hull; dangerous species have a higher chance. */
               var breachChance = T.hp <= 1 ? 0.08 : T.hp <= 3 ? 0.16 : T.hp <= 5 ? 0.28 : 0.48;
               if (Math.random() < breachChance) {
-                var rm_ = roomOf(clamp(m.x - sx, -HL, HL));
-                addLeak(rm_, big ? 0.65 : T.hp <= 1 ? 0.12 : T.hp <= 3 ? 0.22 : 0.38, null, null);
-                if (big && Math.random() < 0.25) addLeak(rm_, 0.35, null, null);
+                var hitX = clamp(m.x - sx, -HL, HL), hitTop = m.y < sy, rm_ = roomOf(hitX);
+                addLeak(rm_, big ? 0.65 : T.hp <= 1 ? 0.12 : T.hp <= 3 ? 0.22 : 0.38, hitX, hitTop);
+                if (big && Math.random() < 0.25) addLeak(rm_, 0.35, hitX, hitTop);
               }
               shake = big ? 0.7 : 0.28; sfx.hit();
             }
