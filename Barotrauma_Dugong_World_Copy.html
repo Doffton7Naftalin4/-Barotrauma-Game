@@ -2002,8 +2002,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     drawCave(); if (!sonarOn()) drawIce(ctx, 0); drawGoal(); drawPods(); drawSites(); drawWrecks(); drawBeacons(); drawOutposts(); drawThals(); if (!sonarOn()) { drawCrates(); drawPlants(); drawBCrates(); } drawNest(); if (!sonarOn()) drawOres();
     var i;
     for (i = 0; i < mons.length; i++) if (!mons[i].att && !sonarOn()) drawMon(mons[i]);
+    /* Enlarge the Dugong hull and all three deck visuals together, keeping the diver at the original screen scale. */
+    ctx.save(); ctx.translate(sx, sy); ctx.scale(1.25, 1.25); ctx.translate(-sx, -sy);
     drawSubShell(); drawInterior(); drawDoors();
     if (S.sub) { ctx.font = '700 12px ' + DISP; ctx.textAlign = 'center'; ctx.fillStyle = '#9ff4ff'; ctx.fillText(SUBS[S.sub].n.toUpperCase(), sx + 6, sy - SH - 12); ctx.textAlign = 'left'; }
+    ctx.restore();
     drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights(); drawDiver();
     for (i = 0; i < mons.length; i++) if (mons[i].att && !sonarOn()) drawMon(mons[i]);
     for (i = 0; i < shots.length; i++) {
