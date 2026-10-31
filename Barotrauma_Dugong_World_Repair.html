@@ -1630,7 +1630,7 @@ if (e.code === 'KeyM') muted = !muted;
   }
   function drawCave() {
     var son = sonarOn(), c = ctx;
-    var wz = state === 'play' && P.out ? viewZoom : 1, vx0 = camX + W / 2 - W / (2 * wz), vx1 = camX + W / 2 + W / (2 * wz), vy0 = camY + H / 2 - H / (2 * wz), vy1 = camY + H / 2 + H / (2 * wz), i0 = Math.max(0, Math.floor((vx0 - wx0) / CS) - 1), i1 = Math.min(GW - 2, Math.ceil((vx1 - wx0) / CS) + 1), j0 = Math.max(0, Math.floor((vy0 - wy0) / CS) - 1), j1 = Math.min(GH - 2, Math.ceil((vy1 - wy0) / CS) + 1), i, j, k, ln = [];
+    var wz = state === 'play' ? viewZoom : 1, vx0 = camX + W / 2 - W / (2 * wz), vx1 = camX + W / 2 + W / (2 * wz), vy0 = camY + H / 2 - H / (2 * wz), vy1 = camY + H / 2 + H / (2 * wz), i0 = Math.max(0, Math.floor((vx0 - wx0) / CS) - 1), i1 = Math.min(GW - 2, Math.ceil((vx1 - wx0) / CS) + 1), j0 = Math.max(0, Math.floor((vy0 - wy0) / CS) - 1), j1 = Math.min(GH - 2, Math.ceil((vy1 - wy0) / CS) + 1), i, j, k, ln = [];
     if (son) { sbx = Math.floor(camX / GQ) * GQ; sby = Math.floor(camY / GQ) * GQ; c = scx; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, sc.width, sc.height); c.setTransform(1 / SK, 0, 0, 1 / SK, -sbx / SK, -sby / SK); }
     c.fillStyle = son ? '#04121b' : '#08161e'; c.beginPath();
     for (j = j0; j <= j1; j++) for (i = i0; i <= i1; i++) {
@@ -1730,7 +1730,7 @@ if (e.code === 'KeyM') muted = !muted;
   }
   function drawBeaconCover(shx, shy) {
     if (!beaconBlind()) return; var b = beaconAt(D.x, D.y);
-    var wz = state === 'play' && P.out ? viewZoom : 1;
+    var wz = state === 'play' ? viewZoom : 1;
     ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(wz, wz); ctx.translate(-W / 2, -H / 2); ctx.translate(-camX + shx, -camY + shy); ctx.fillStyle = '#000'; ctx.beginPath(); ctx.rect(camX - 60, camY - 60, W + 120, H + 120); ctx.rect(b.x - b.w / 2, b.y - b.h / 2, b.w, b.h); ctx.fill('evenodd'); ctx.restore();
   }
   function drawOres() {
@@ -2267,7 +2267,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
   function drawDark(shx, shy) {
     var d = dk.getContext('2d'), i, so = sonarOn();
     d.setTransform(1, 0, 0, 1, 0, 0); d.globalCompositeOperation = 'source-over'; d.fillStyle = 'rgba(1,5,9,0.95)'; d.fillRect(0, 0, dk.width, dk.height);
-    var wz = state === 'play' && P.out ? viewZoom : 1;
+    var wz = state === 'play' ? viewZoom : 1;
     d.setTransform(scale * wz, 0, 0, scale * wz,
       scale * (W / 2 * (1 - wz) + (-camX + shx) * wz),
       scale * (H / 2 * (1 - wz) + (-camY + shy) * wz));
