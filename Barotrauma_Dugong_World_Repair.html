@@ -526,7 +526,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       if (P0.s > nbt && P0.s < L - 2200 && Math.hypot(P0.x - gx, P0.y - gy) > 2200) { nbt = P0.s + rand(2400, 3800); boatCave(P0.x, P0.y, t + sd * rand(0.55, 0.95), rand(2600, 5000), rand(390, 430), 0, P0.s / L); }
       if (P0.s > nb && P0.s < L - 900 && Math.hypot(P0.x - gx, P0.y - gy) > 1100) {
         nb = P0.s + rand(1500, 2600); var rb = Math.random() < 0.35 ? rand(110, 150) : rand(70, 100);
-        tunnel(P0.x + Math.cos(t + sd * 1.571) * (P0.r + 34), P0.y + Math.sin(t + sd * 1.571) * (P0.r + 34), t - sd * rand(0.9, 1.5), rand(1800, 3600), Math.min(82, rb * 0.58), 0, P0.s / L);
+        tunnel(P0.x + Math.cos(t + sd * 1.571) * (P0.r + 34), P0.y + Math.sin(t + sd * 1.571) * (P0.r + 34), t + sd * rand(0.9, 1.5), rand(1800, 3600), Math.min(82, rb * 0.58), 0, P0.s / L);
       }
     }
     if (LV.sites) for (var si = 1; si <= LV.sites; si++) {
