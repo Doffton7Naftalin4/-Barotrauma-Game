@@ -1689,7 +1689,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function drawSubShell() {
     /* New Dugong exterior: a three-deck pressure hull, not the old single-box shell. */
-    var x0 = sx - HL, x1 = sx + HL + 8, top = sy - 82, bottom = sy + 132;
+    var x0 = sx - HL, x1 = sx + HL + 8, top = sy - 82, bottom = sy + 82;
     var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (w[0] < 0.5 ? 1 : 0))) * 8;
     var lg = ctx.createLinearGradient(x1 + 12, 0, x1 + 250, 0);
     lg.addColorStop(0, 'rgba(255,246,207,0.16)'); lg.addColorStop(1, 'rgba(255,246,207,0)');
@@ -1750,11 +1750,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         { n: 'ОРУЖЕЙНАЯ', w: 104, c: '#263943' }
       ]},
       { x: x0, y: top + upperH + deckH, w: fullW, h: deckH, rooms: [
-        { n: 'БАЛЛАСТ', w: 74, c: '#1d3540' },
+        { n: 'НИЖНИЙ ОТСЕК', w: 74, c: '#1d3540' },
         { n: 'РЕАКТОР', w: 78, c: '#293943' },
         { n: 'ЭЛЕКТРО', w: 76, c: '#203943' },
         { n: 'КИСЛОРОД', w: 82, c: '#24414a' },
-        { n: 'БАЛЛАСТ', w: 110, c: '#1d3540' }
+        { n: 'СНАБЖЕНИЕ', w: 110, c: '#1d3540' }
       ]}
     ];
     ctx.save();
@@ -1793,46 +1793,39 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     ctx.stroke();
 
-    /* Two real ballast compartments sit below the lower deck.
-       Each has its own floor opening and ladder; neither touches the central shaft. */
+    /* Two ballast tanks are compact bilge compartments INSIDE the existing hull,
+       not a fourth deck. Their separate floor hatches and short ladders remain visible. */
     var lowerFloorY = top + upperH + deckH * 2;
     var ballastTanks = [
-      { id: 'AFT', x: x0 + 7, w: 60, ladderX: x0 + 37 },
-      { id: 'FORE', x: x0 + fullW - 96, w: 88, ladderX: x0 + fullW - 52 }
+      { x: x0 + 7, w: 60, ladderX: x0 + 37 },
+      { x: x0 + fullW - 96, w: 88, ladderX: x0 + fullW - 52 }
     ];
     for (var bt = 0; bt < ballastTanks.length; bt++) {
-      var tank = ballastTanks[bt], tankTop = lowerFloorY + 5, tankBottom = tankTop + 52;
-      /* Separate pressure compartment below the deck. */
+      var tank = ballastTanks[bt], tankTop = lowerFloorY + 3, tankBottom = sy + 80;
       ctx.fillStyle = '#102630';
       ctx.fillRect(tank.x, tankTop, tank.w, tankBottom - tankTop);
       ctx.fillStyle = '#1d414d';
-      ctx.fillRect(tank.x + 3, tankTop + 4, tank.w - 6, tankBottom - tankTop - 8);
-      ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1.8;
+      ctx.fillRect(tank.x + 2, tankTop + 2, tank.w - 4, tankBottom - tankTop - 4);
+      ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1.5;
       ctx.strokeRect(tank.x + 0.5, tankTop + 0.5, tank.w - 1, tankBottom - tankTop - 1);
-      /* Dark rectangular floor hatch, clearly cut through the deck floor. */
+      /* Independent floor hatch and ladder, with no connection to the central shaft. */
       var hatchW = 20, hatchX = tank.ladderX - hatchW / 2;
       ctx.fillStyle = '#020a10';
-      ctx.fillRect(hatchX - 2, lowerFloorY - 3, hatchW + 4, 9);
-      ctx.strokeStyle = '#c0d0d6'; ctx.lineWidth = 2;
-      ctx.strokeRect(hatchX - 2, lowerFloorY - 3, hatchW + 4, 8);
-      ctx.strokeStyle = '#8299a3'; ctx.lineWidth = 1.6;
+      ctx.fillRect(hatchX - 2, lowerFloorY - 3, hatchW + 4, 8);
+      ctx.strokeStyle = '#c0d0d6'; ctx.lineWidth = 1.8;
+      ctx.strokeRect(hatchX - 2, lowerFloorY - 3, hatchW + 4, 7);
+      ctx.strokeStyle = '#a9bbc3'; ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(tank.ladderX - 7, lowerFloorY + 3);
-      ctx.lineTo(tank.ladderX - 7, tankBottom - 7);
-      ctx.moveTo(tank.ladderX + 7, lowerFloorY + 3);
-      ctx.lineTo(tank.ladderX + 7, tankBottom - 7);
-      for (var step = 0; step < 6; step++) {
-        var stepY = lowerFloorY + 8 + step * 7;
-        ctx.moveTo(tank.ladderX - 7, stepY);
-        ctx.lineTo(tank.ladderX + 7, stepY);
+      ctx.moveTo(tank.ladderX - 6, lowerFloorY + 3);
+      ctx.lineTo(tank.ladderX - 6, tankBottom - 2);
+      ctx.moveTo(tank.ladderX + 6, lowerFloorY + 3);
+      ctx.lineTo(tank.ladderX + 6, tankBottom - 2);
+      for (var step = 0; step < 3; step++) {
+        var stepY = lowerFloorY + 6 + step * 4;
+        ctx.moveTo(tank.ladderX - 6, stepY);
+        ctx.lineTo(tank.ladderX + 6, stepY);
       }
       ctx.stroke();
-      /* Tank equipment and a legible compartment label. */
-      ctx.fillStyle = '#547783';
-      ctx.fillRect(tank.x + 5, tankBottom - 13, tank.w - 10, 5);
-      ctx.fillStyle = '#d0e0e5'; ctx.font = '700 8px ' + DISP;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(bt === 0 ? 'БАЛЛАСТ А' : 'БАЛЛАСТ Б', tank.x + tank.w / 2, tankTop + 13);
     }
 
     ctx.restore();
