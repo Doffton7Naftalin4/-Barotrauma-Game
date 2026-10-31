@@ -671,6 +671,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function itemMassList(o,id){if(!o.mass)o.mass={};var a=o.mass[id]||(o.mass[id]=[]),n=Math.max(0,itemCount(o,id)|0),sp=ITEM_MASS_G[id];while(a.length>n)a.pop();while(a.length<n)a.push(Array.isArray(sp)?Math.round(rand(sp[0],sp[1])):(sp||1000));return a;}
   function takeItemMass(o,id,n){return itemMassList(o,id).splice(0,Math.max(0,n|0));}
   function putItemMass(o,id,items){if(!o.mass)o.mass={};var a=o.mass[id]||(o.mass[id]=[]);o.mass[id]=a.concat(items||[]);}
+  function moveItemMass(from,to,id,n){var src=itemMassList(from,id),dst=itemMassList(to,id),m=src.splice(0,Math.max(0,n|0));dst.push.apply(dst,m);}
   function massTotal(o,ids){var g=0;for(var i=0;i<ids.length;i++){var a=itemMassList(o,ids[i]);for(var j=0;j<a.length;j++)g+=a[j];}return g/1000;}
   function stored(){return massTotal(S,['ore','crate','moss','algae','sponge','harpoon','fuel','weld','medkit','antidote','antibiotic','ointment']);}
   function packLoad(){return massTotal(D,['ore','cargo','crate','weld','fuel','moss','algae','sponge','antidote','antibiotic','ointment','medkit','harpoon']);}
@@ -679,10 +680,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function dLoad() { return packLoad(); }
   function dCap() { return SUBS[S.sub].carry + 4 * S.bp; }
   function enterSub(){P.out=false;PR.e=0;P.lx=-50.4;P.deck=0;P.face=-1;var door=dugongAirlockDoor();D.x=door.x-15;D.y=door.y;D.vx=D.vy=0;
-    var free = capSub() - stored(), n, got = [];
-    n = Math.min(D.carry, Math.max(0, Math.floor(free))); if (n) { S.ore += n; oreTot += n; D.carry -= n; free -= n; got.push('руда ' + n); }
-    ['t', 'i', 'b'].forEach(function (k) { var m = Math.min(D.pl[k], Math.max(0, Math.floor(free))); if (m) { S.pl[k] += m; D.pl[k] -= m; free -= m; got.push(PLN[k] + ' ' + m); } });
-    n = Math.min(D.bcargo, Math.max(0, Math.floor(free / 2))); if (n) { S.crt += n; D.bcargo -= n; free -= n * 2; got.push('ящики ' + n); }
+    var free=capSub()-stored(),n,got=[],oreList=itemMassList(D,'ore'),oreG=0;n=0;while(n<D.carry&&oreG+oreList[n]<=free*1000){oreG+=oreList[n];n++;}if(n){moveItemMass(D,S,'ore',n);S.ore+=n;oreTot+=n;D.carry-=n;free-=oreG/1000;got.push('руда '+n);}
+    ['t','i','b'].forEach(function(k){var id=k==='t'?'moss':k==='i'?'algae':'sponge',list=itemMassList(D,id),g=0,m=0;while(m<D.pl[k]&&g+list[m]<=free*1000){g+=list[m];m++;}if(m){moveItemMass(D,S,id,m);S.pl[k]+=m;D.pl[k]-=m;free-=g/1000;got.push(PLN[k]+' '+m);}});
+    var crateN=Math.min(D.bcargo,Math.max(0,Math.floor(free/2)));if(crateN){moveItemMass(D,S,'crate',crateN);S.crt+=crateN;D.bcargo-=crateN;free-=crateN*2;got.push('ящики '+crateN);}
     if (D.cargo) { cargoGot += D.cargo; got.push('контейнеры ' + D.cargo + ' (груз ' + cargoGot + '/' + crates.length + ')'); D.cargo = 0; }
     var tk = Math.min(SUBS[S.sub].harp - D.ammo, S.harp); if (tk > 0) { D.ammo += tk; S.harp -= tk; }
     var left = dLoad();
