@@ -1021,7 +1021,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function roomOf(lx) { return clamp(Math.floor((lx + HL) / RW), 0, NR - 1); }
   function roomCx(i) { return -HL + i * RW + RW / 2; }
   function hurt(n) { hull -= n * (1 - 0.2 * S.hu - SUBS[S.sub].arm); shake = Math.min(0.7, shake + 0.25); flash = 0.2; }
-  /* Eleven independent pressure compartments; legacy volumes are mirrored below. */
+  /* Twelve independent pressure compartments, including the upper-deck passage; legacy volumes are mirrored below. */
   var DUGONG_ROOM_SPECS=[
     {id:'airlock',deck:0,room:0,x:-50.4},{id:'engine',deck:1,room:0,x:-167},
     {id:'command',deck:1,room:1,x:-86},{id:'diving_suits',deck:1,room:2,x:-10},
@@ -2177,8 +2177,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function drawWater() {
-    /* Render the legacy five water volumes inside their mapped Dugong rooms,
-       not in the old one-deck rectangle. */
+    /* Render every independent pressure volume inside its matching Dugong room. */
     for (var i = 0; i < DUGONG_ROOM_SPECS.length; i++) {
       var spot = DUGONG_ROOM_SPECS[i], level = dugongFlood[i]; if (level < 0.01) continue;
       var row = DUGONG_DECK_LAYOUT[spot.deck], roomIndex = spot.room, left = row.x;
