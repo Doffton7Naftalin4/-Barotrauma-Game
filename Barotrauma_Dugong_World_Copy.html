@@ -159,12 +159,13 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   var DUGONG_BLUEPRINT = {
     id: 'dugong', length: 34, height: 8,
     decks: [
-      { id: 'upper', y: -3, rooms: ['airlock'] },
+      { id: 'upper', y: -3, rooms: ['airlock', 'upper_passage'] },
       { id: 'main', y: 0, rooms: ['engine', 'command', 'diving_suits', 'medical', 'armory'] },
       { id: 'lower', y: 3, rooms: ['ballast_aft', 'reactor', 'electrical', 'oxygen', 'ballast_fore'] }
     ],
     compartments: [
       { id: 'airlock', deck: 'upper', role: 'airlock' },
+      { id: 'upper_passage', deck: 'upper', role: 'passage' },
       { id: 'engine', deck: 'main', role: 'engine' },
       { id: 'command', deck: 'main', role: 'command_and_weapons' },
       { id: 'diving_suits', deck: 'main', role: 'diving_equipment' },
@@ -177,10 +178,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       { id: 'ballast_fore', deck: 'lower', role: 'ballast' }
     ],
     connections: [
-      { id: 'central_ladder_upper_main', type: 'ladder', from: 'upper', to: 'main', x: 0, traversable: false, purpose: 'deck_transition' },
-      { id: 'central_ladder_main_lower', type: 'ladder', from: 'main', to: 'lower', x: 0, traversable: false, purpose: 'deck_transition' },
-      { id: 'ballast_aft_floor_hatch', type: 'floor_hatch_ladder', from: 'lower', to: 'ballast_aft', access: 'floor_hatch', ladder: 'ballast_aft_ladder', traversable: false },
-      { id: 'ballast_fore_floor_hatch', type: 'floor_hatch_ladder', from: 'lower', to: 'ballast_fore', access: 'floor_hatch', ladder: 'ballast_fore_ladder', traversable: false }
+      { id: 'central_ladder_upper_main', type: 'ladder', from: 'upper', to: 'main', x: 0, traversable: true, purpose: 'deck_transition' },
+      { id: 'central_ladder_main_lower', type: 'ladder', from: 'main', to: 'lower', x: 0, traversable: true, purpose: 'deck_transition' },
+      { id: 'ballast_aft_floor_hatch', type: 'floor_hatch_ladder', from: 'main', to: 'ballast_aft', access: 'floor_hatch', ladder: 'ballast_aft_ladder', traversable: true },
+      { id: 'ballast_fore_floor_hatch', type: 'floor_hatch_ladder', from: 'main', to: 'ballast_fore', access: 'floor_hatch', ladder: 'ballast_fore_ladder', traversable: true }
     ],
     hardpoints: [
       { id: 'coilgun_upper_aft', weapon: 'coilgun', deck: 'upper', side: 'top', installed: true },
@@ -210,6 +211,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       var deck = model.decks.filter(function (item) { return item.id === room.deck; })[0];
       if (deck && deck.rooms.indexOf(room.id) < 0) errors.push('compartment missing from deck: ' + room.id);
     });
+    model.connections.forEach(function (connection) {
+      if (!deckIds[connection.from] && !ids[connection.from]) errors.push('connection has unknown source: ' + connection.id);
+      if (!deckIds[connection.to] && !ids[connection.to]) errors.push('connection has unknown destination: ' + connection.id);
+      if (connection.type === 'ladder' && !connection.traversable) errors.push('deck ladder is not traversable: ' + connection.id);
+    });
     model.hardpoints.forEach(function (mount) {
       if (!deckIds[mount.deck]) errors.push('hardpoint references unknown deck: ' + mount.id);
     });
@@ -220,7 +226,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
 
   /* Runtime layout for the three-deck Dugong. Coordinates are local to the sub. */
-  var DUGONG_HULL_LEFT = 250, DUGONG_HULL_RIGHT = 264, DUGONG_HULL_TOP = 88, DUGONG_HULL_BOTTOM = 88;
+  var DUGONG_HULL_LEFT = 248, DUGONG_HULL_RIGHT = 264, DUGONG_HULL_TOP = 83, DUGONG_HULL_BOTTOM = 88;
   var DUGONG_DECK_LAYOUT = [
     { id: 'upper', x: -71.4, y: -68, h: 48, widths: [42, 100.8], names: ['ШЛЮЗ', 'ВЕРХНИЙ ПРОХОД'], colors: ['#24414c', '#1a303a'] },
     { id: 'main', x: -210, y: -20, h: 48, widths: [86, 76, 76, 78, 104], names: ['МАШИННОЕ', 'РУБКА', 'КОСТЮМЫ', 'МЕДБЛОК', 'ОРУЖЕЙНАЯ'], colors: ['#263943', '#244653', '#203a45', '#24414a', '#263943'] },
@@ -545,10 +551,15 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       for (var q = 0; q < n; q++) { var kd = PK[pickPack(LV, clamp(hd / LV.goal, 0, 1))], p = airPt(c.x, c.y, c.r * 0.6); mons.push(mk(kd[1][0], p.x, p.y, pkc, 0)); }
     });
   }
-  function subHit(x, y) {
-    var i0 = Math.round((x - DUGONG_HULL_LEFT - wx0) / CS), i1 = Math.round((x + DUGONG_HULL_RIGHT - wx0) / CS), j0 = Math.round((y - DUGONG_HULL_TOP - wy0) / CS), j1 = Math.round((y + DUGONG_HULL_BOTTOM - wy0) / CS), s = 0, n = 0;
-    for (var j = j0; j <= j1; j++) for (var i = i0; i <= i1; i++) if (cell(i, j) > 0) { s += wx0 + i * CS - x; n++; }
-    return n ? s / n : null;
+  function subHit(x,y){
+    var i0=Math.floor((x-DUGONG_HULL_LEFT-wx0)/CS),i1=Math.ceil((x+DUGONG_HULL_RIGHT-wx0)/CS);
+    var j0=Math.floor((y-DUGONG_HULL_TOP-wy0)/CS),j1=Math.ceil((y+DUGONG_HULL_BOTTOM-wy0)/CS),sum=0,count=0;
+    for(var j=j0;j<=j1;j++)for(var i=i0;i<=i1;i++)if(cell(i,j)>0){
+      var tx=wx0+i*CS,ty=wy0+j*CS,hit=dugongPointInPolygon(tx-x,ty-y,DUGONG_MAIN_HULL_POLY)||dugongPointInPolygon(tx-x,ty-y,DUGONG_BRIDGE_HULL_POLY);
+      if(!hit){var corners=[[-CS/2,-CS/2],[CS/2,-CS/2],[-CS/2,CS/2],[CS/2,CS/2]];for(var c=0;c<corners.length&&!hit;c++)hit=dugongPointInPolygon(tx+corners[c][0]-x,ty+corners[c][1]-y,DUGONG_MAIN_HULL_POLY)||dugongPointInPolygon(tx+corners[c][0]-x,ty+corners[c][1]-y,DUGONG_BRIDGE_HULL_POLY);}
+      if(hit){sum+=tx-x;count++;}
+    }
+    return count?sum/count:null;
   }
   function dHit(x, y) { return solidAt(x, y) || solidAt(x + 7, y) || solidAt(x - 7, y) || solidAt(x, y + 8) || solidAt(x, y - 8); }
   function postX(r) { return r === 0 ? -HL + 16 : roomCx(r); }
@@ -657,13 +668,56 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function outAt(x, y, r) { for (var i = 0; i < outposts.length; i++) if (Math.hypot(x - outposts[i].door.x, y - outposts[i].door.y) < r) return outposts[i]; return null; }
   function arcT(T) { return T.oy < 0 ? [-3.04, -0.1] : [0.1, 3.04]; }
   function clampArc(T) { var r = arcT(T); T.ang = clamp(T.ang, r[0], r[1]); }
-  function inHull(x, y) {
-    var lx = x - sx, ly = y - sy;
-    /* Match the actual stepped Dugong silhouette: the main pressure hull
-       starts above the long decks, while only the central bridge rises higher. */
-    var inMainHull = ly >= -22 && ly <= 86 && lx >= -248 && lx <= 264;
-    var inBridge = ly >= -83 && ly < -22 && lx >= -83 && lx <= 83;
-    return inMainHull || inBridge;
+  function dugongMakeHullPolygon(start,segments){
+    var points=[start.slice()],current=start.slice();
+    for(var i=0;i<segments.length;i++){
+      var seg=segments[i];
+      if(seg.c){
+        for(var step=1;step<=10;step++){
+          var u=step/10,v=1-u;
+          points.push([v*v*current[0]+2*v*u*seg.c[0]+u*u*seg.p[0],v*v*current[1]+2*v*u*seg.c[1]+u*u*seg.p[1]]);
+        }
+        current=seg.p.slice();
+      }else{points.push(seg.slice());current=seg.slice();}
+    }
+    return points;
+  }
+  var DUGONG_MAIN_HULL_POLY=dugongMakeHullPolygon([-224,-22],[ [228,-22],{c:[258,-22],p:[260,-2]},{c:[264,24],p:[240,48]},{c:[226,86],p:[230,86]},[-220,86],{c:[-248,86],p:[-248,48]},{c:[-250,22],p:[-232,-2]},{c:[-228,-22],p:[-224,-22]} ]);
+  var DUGONG_BRIDGE_HULL_POLY=dugongMakeHullPolygon([-99,-22],[ [-84,-68],{c:[-79,-83],p:[-55,-83]},[55,-83],{c:[79,-83],p:[84,-68]},[99,-22] ]);
+  function dugongPointInPolygon(x,y,poly){
+    var inside=false;
+    for(var i=0,j=poly.length-1;i<poly.length;j=i++){
+      var a=poly[i],b=poly[j];
+      if(((a[1]>y)!==(b[1]>y))&&(x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]))inside=!inside;
+    }
+    return inside;
+  }
+  function inHull(x,y){
+    var lx=x-sx,ly=y-sy;
+    return dugongPointInPolygon(lx,ly,DUGONG_MAIN_HULL_POLY)||dugongPointInPolygon(lx,ly,DUGONG_BRIDGE_HULL_POLY);
+  }
+  function dugongPushOutsideHull(x,y,poly){
+    var best=Infinity,bx=0,by=0,cx=0,cy=0;
+    for(var i=0;i<poly.length;i++){cx+=poly[i][0];cy+=poly[i][1];}
+    cx/=poly.length;cy/=poly.length;
+    for(var j=0;j<poly.length;j++){
+      var a=poly[j],b=poly[(j+1)%poly.length],dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy;
+      var t0=den?clamp(((x-sx-a[0])*dx+(y-sy-a[1])*dy)/den,0,1):0;
+      var qx=a[0]+dx*t0,qy=a[1]+dy*t0,dd=(x-sx-qx)*(x-sx-qx)+(y-sy-qy)*(y-sy-qy);
+      if(dd<best){best=dd;bx=qx;by=qy;}
+    }
+    var nx=bx-cx,ny=by-cy,nl=Math.hypot(nx,ny)||1;
+    return {x:sx+bx+nx/nl*5,y:sy+by+ny/nl*5};
+  }
+  function dugongHullDistance(x,y){
+    if(inHull(x,y))return 0;
+    var best=Infinity,polys=[DUGONG_MAIN_HULL_POLY,DUGONG_BRIDGE_HULL_POLY];
+    for(var p=0;p<polys.length;p++)for(var i=0;i<polys[p].length;i++){
+      var a=polys[p][i],b=polys[p][(i+1)%polys[p].length],dx=b[0]-a[0],dy=b[1]-a[1],den=dx*dx+dy*dy;
+      var t0=den?clamp(((x-sx-a[0])*dx+(y-sy-a[1])*dy)/den,0,1):0;
+      best=Math.min(best,Math.hypot(x-(sx+a[0]+dx*t0),y-(sy+a[1]+dy*t0)));
+    }
+    return best;
   }
   function hurtP(n, k) { P.hp -= n; if (k && Math.random() < (k === 't' ? 0.8 : 0.35)) { P.dis[k] = Math.min(1, P.dis[k] + (k === 't' ? 0.5 : 0.4)); toast(k === 't' ? 'Отравление! Нужен антидот (H)' : 'Рана заражена! Нужен антибиотик (H)'); } flash = Math.max(flash, 0.22); shake = Math.min(0.5, shake + 0.15); sfx.hit(); }
   function dive(dt) {
@@ -672,8 +726,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     D.vx += ax * 430 * dt; D.vy += ay * 430 * dt; var dr = Math.max(0, 1 - 3.3 * dt); D.vx *= dr; D.vy *= dr;
     var nx = D.x + D.vx * dt; if (dHit(nx, D.y)) D.vx *= -0.2; else D.x = nx;
     var ny = D.y + D.vy * dt; if (dHit(D.x, ny)) D.vy *= -0.2; else D.y = ny;
-    var bx = sx, l0 = bx - DUGONG_HULL_LEFT - 7, r0 = bx + DUGONG_HULL_RIGHT + 7, t0 = sy - DUGONG_HULL_TOP - 7, b0 = sy + DUGONG_HULL_BOTTOM + 7;
-    if (D.x > l0 && D.x < r0 && D.y > t0 && D.y < b0) { var a1 = D.x - l0, a2 = r0 - D.x, a3 = D.y - t0, a4 = b0 - D.y, mn = Math.min(a1, a2, a3, a4); if (mn === a1) D.x = l0; else if (mn === a2) D.x = r0; else if (mn === a3) D.y = t0; else D.y = b0; }
+    if(inHull(D.x,D.y)){var poly=dugongPointInPolygon(D.x-sx,D.y-sy,DUGONG_BRIDGE_HULL_POLY)?DUGONG_BRIDGE_HULL_POLY:DUGONG_MAIN_HULL_POLY;var exit=dugongPushOutsideHull(D.x,D.y,poly);D.x=exit.x;D.y=exit.y;}
     if (dHit(D.x, D.y)) { D.x = sx; D.y = sy - DUGONG_HULL_TOP - 16; }
     D.cool -= dt;
     if ((PR.space || K.space) && D.cool <= 0) {
@@ -701,7 +754,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       else { hint = 'Удерживайте E — вставить стержень (запас ' + S.rods + ') и запустить сонар'; if (K.e) { bb.prog += dt / 2.5; if (Math.random() < 0.3) sfx.weld(); if (bb.prog >= 1) { bb.active = 1; beaconUp = 1; S.rods--; sfx.pick(); toast('Сонар маяка запущен!'); } } else bb.prog = Math.max(0, bb.prog - dt * 0.5); }
     }
   }
-  function sd_(x, y) { return Math.hypot(x - clamp(x, sx - DUGONG_HULL_LEFT, sx + DUGONG_HULL_RIGHT), y - clamp(y, sy - DUGONG_HULL_TOP, sy + DUGONG_HULL_BOTTOM)); }
+  function sd_(x,y){return dugongHullDistance(x,y);}
   function los(a, b, c, d) { var n = Math.ceil(Math.hypot(c - a, d - b) / 16); for (var i = 1; i < n; i++) if (solidAt(a + (c - a) * i / n, b + (d - b) * i / n)) return 0; return 1; }
   function mv(m, dx, dy, v, dt) {
     var l = Math.hypot(dx, dy) || 1; dx = dx / l * v * dt; dy = dy / l * v * dt; m.fx = dx >= 0 ? 1 : -1;
@@ -909,7 +962,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function reset() {
     var LV0 = LEVELS[cur]; GOAL = LV0.goal;
     sx = 0; sy = 0; svx = 0; svy = 0; hull = 100;
-    w = [0, 0, 0, 0, 0]; dugongFlood = [0,0,0,0,0,0,0,0,0,0,0]; doors = [1, 1, 1, 1];
+    w = [0, 0, 0, 0, 0]; dugongFlood = [0,0,0,0,0,0,0,0,0,0,0,0]; doors = [1, 1, 1, 1];
     leaks = []; fires = []; shots = []; spits = []; parts = [];
     P = { dis: { t: 0, i: 0, b: 0 }, lx: 0, deck: 1, face: 1, hp: 100, o2: 100, seat: null, work: 0, step: 0, out: false };
     deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
@@ -975,9 +1028,28 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     {id:'medical',deck:1,room:3,x:67},{id:'armory',deck:1,room:4,x:158},
     {id:'ballast_aft',deck:2,room:0,x:-173},{id:'reactor',deck:2,room:1,x:-93},
     {id:'electrical',deck:2,room:2,x:-16},{id:'oxygen',deck:2,room:3,x:63},
-    {id:'ballast_fore',deck:2,room:4,x:165}
+    {id:'ballast_fore',deck:2,room:4,x:165},{id:'upper_passage',deck:0,room:1,x:21}
   ];
   var DUGONG_LEGACY_FLOOD_MAP=[1,7,8,5,2],DUGONG_DAMAGE_SPOTS=DUGONG_ROOM_SPECS;
+  function validateDugongRuntimeLayout(){
+    var errors=[];
+    for(var d=0;d<DUGONG_DECK_LAYOUT.length;d++){
+      var row=DUGONG_DECK_LAYOUT[d];
+      for(var r=0;r<row.widths.length;r++){
+        var count=DUGONG_ROOM_SPECS.filter(function(q){return q.deck===d&&q.room===r;}).length;
+        if(count!==1)errors.push('runtime room mapping '+row.id+':'+r+' has '+count+' specs');
+      }
+    }
+    DUGONG_ROOM_SPECS.forEach(function(q){
+      var row=DUGONG_DECK_LAYOUT[q.deck];
+      if(!row||q.room<0||q.room>=row.widths.length)errors.push('room spec outside runtime layout: '+q.id);
+      var bp=DUGONG_BLUEPRINT.compartments.filter(function(c){return c.id===q.id;});
+      if(bp.length!==1||!bp[0]||DUGONG_BLUEPRINT.decks.filter(function(d){return d.id===row.id&&d.rooms.indexOf(q.id)>=0;}).length!==1)errors.push('blueprint/runtime mismatch: '+q.id);
+    });
+    return errors;
+  }
+  var DUGONG_RUNTIME_LAYOUT_ERRORS=validateDugongRuntimeLayout();
+  if(DUGONG_RUNTIME_LAYOUT_ERRORS.length&&window.console)console.error('Dugong runtime layout invalid:',DUGONG_RUNTIME_LAYOUT_ERRORS);
   function dugongFloodIndex(deck,ri){for(var i=0;i<DUGONG_ROOM_SPECS.length;i++){var q=DUGONG_ROOM_SPECS[i];if(q.deck===deck&&q.room===ri)return i;}return -1;}
   function dugongRoomSpecAt(deck,lx){var ri=dugongRoomAt(deck,lx);for(var i=0;i<DUGONG_ROOM_SPECS.length;i++){var q=DUGONG_ROOM_SPECS[i];if(q.deck===deck&&q.room===ri)return q;}return null;}
   function dugongDamageSpot(room){return DUGONG_ROOM_SPECS[DUGONG_LEGACY_FLOOD_MAP[clamp(room|0,0,4)]];}
@@ -1781,8 +1853,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, dn < 0 ? Math.PI : 0, dn < 0 ? 0 : Math.PI); ctx.fill();
   }
   function drawSubShell() {
-    /* Dugong silhouette: a long, low capsule-shaped pressure hull with a
-       compact raised bridge, rather than a broad central superstructure. */
+    /* Dugong silhouette and all collision geometry share the same local coordinate space. */
     var x0 = sx - HL, x1 = sx + HL + 8;
     var upperW = HL * 2 * 0.34, upperX = sx - upperW / 2;
     var mainTop = sy - 30, top = sy - 88, bottom = sy + 88;
@@ -1830,11 +1901,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
        the long pressure hull. */
     ctx.beginPath();
     ctx.moveTo(upperX - 12, mainTop + 8);
-    ctx.lineTo(upperX - 3, top + 20);
-    ctx.quadraticCurveTo(upperX, top + 5, upperX + 16, top + 5);
+    ctx.lineTo(upperX - 13, top + 20);
+    ctx.quadraticCurveTo(upperX - 8, top + 5, upperX + 16, top + 5);
     ctx.lineTo(upperX + upperW - 18, top + 5);
-    ctx.quadraticCurveTo(upperX + upperW - 2, top + 5, upperX + upperW + 4, top + 21);
-    ctx.lineTo(upperX + upperW + 12, mainTop + 8);
+    ctx.quadraticCurveTo(upperX + upperW + 8, top + 5, upperX + upperW + 13, top + 20);
+    ctx.lineTo(upperX + upperW + 28, mainTop + 8);
     ctx.closePath();
     ctx.fillStyle = '#34494f';
     ctx.fill();
@@ -1987,7 +2058,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       {p:4,d:1,r:1},
       /* The gun-control console shares the command room with the helm,
          but is wall-mounted above it so both instruments fit inside the room. */
-      {p:3,d:1,r:1,lift:24},
+      {p:3,d:1,r:1,lift:30},
       {p:1,d:2,r:1},
       {p:2,d:2,r:2}
     ];
@@ -1999,12 +2070,12 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     /* Central ladder is drawn last among interior fixtures: neutral grey like
        the ballast ladders, with a hatch at each deck crossing. */
-    var ladderTop=sy-22,ladderBottom=sy+78;
+    var ladderTop=sy-66,ladderBottom=sy+78;
     ctx.strokeStyle='#a9bbc3';ctx.lineWidth=1.5;ctx.beginPath();
     ctx.moveTo(sx-5,ladderTop+2);ctx.lineTo(sx-5,ladderBottom-2);
     ctx.moveTo(sx+5,ladderTop+2);ctx.lineTo(sx+5,ladderBottom-2);
-    for(var rung=0;rung<15;rung++){
-      var yy=ladderTop+3+rung*((ladderBottom-ladderTop-6)/14);
+    for(var rung=0;rung<23;rung++){
+      var yy=ladderTop+3+rung*((ladderBottom-ladderTop-6)/22);
       ctx.moveTo(sx-5,yy);ctx.lineTo(sx+5,yy);
     }
     ctx.stroke();
@@ -2201,9 +2272,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     drawCave(); if (!sonarOn()) drawIce(ctx, 0); drawGoal(); drawPods(); drawSites(); drawWrecks(); drawBeacons(); drawOutposts(); drawThals(); if (!sonarOn()) { drawCrates(); drawPlants(); drawBCrates(); } drawNest(); if (!sonarOn()) drawOres();
     var i;
     for (i = 0; i < mons.length; i++) if (!mons[i].att && !sonarOn()) drawMon(mons[i]);
-    /* One shared transform keeps hull, decks, mounted guns, player position,
-       flooding, leaks, fire and electrical sparks in the same submarine space. */
-    ctx.save(); ctx.translate(sx, sy); ctx.scale(1.25, 1.25); ctx.translate(-sx, -sy);
+    /* Hull, decks, mounted guns, player, flooding and damage now use one unscaled coordinate system. */
+    ctx.save();
     drawSubShell(); drawInterior(); drawDoors();
     if (S.sub) { ctx.font = '700 12px ' + DISP; ctx.textAlign = 'center'; ctx.fillStyle = '#9ff4ff'; ctx.fillText(SUBS[S.sub].n.toUpperCase(), sx + 6, sy - DUGONG_HULL_TOP - 12); ctx.textAlign = 'left'; }
     drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights();
