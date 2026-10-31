@@ -776,7 +776,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function capSub() { return SUBS[S.sub].cap; }
   function dLoad() { return packLoad(); }
   function dCap() { return SUBS[S.sub].carry + 4 * S.bp; }
-  function enterSub(){P.out=false;PR.e=0;P.lx=-50.4;P.deck=0;P.face=-1;var door=dugongAirlockDoor();D.x=door.x-15;D.y=door.y;D.vx=D.vy=0;
+  function enterSub(){P.out=false; if (typeof updateLampButton === 'function') updateLampButton();PR.e=0;P.lx=-50.4;P.deck=0;P.face=-1;var door=dugongAirlockDoor();D.x=door.x-15;D.y=door.y;D.vx=D.vy=0;
     var free=capSub()-stored(),n,got=[],oreList=itemMassList(D,'ore'),oreG=0;n=0;while(n<D.carry&&oreG+oreList[n]<=free*1000){oreG+=oreList[n];n++;}if(n){moveItemMass(D,S,'ore',n);S.ore+=n;oreTot+=n;D.carry-=n;free-=oreG/1000;got.push('руда '+n);}
     ['t','i','b'].forEach(function(k){var id=k==='t'?'moss':k==='i'?'algae':'sponge',list=itemMassList(D,id),g=0,m=0;while(m<D.pl[k]&&g+list[m]<=free*1000){g+=list[m];m++;}if(m){moveItemMass(D,S,id,m);S.pl[k]+=m;D.pl[k]-=m;free-=g/1000;got.push(PLN[k]+' '+m);}});
     var crateN=Math.min(D.bcargo,Math.max(0,Math.floor(free/2)));if(crateN){moveItemMass(D,S,'crate',crateN);S.crt+=crateN;D.bcargo-=crateN;free-=crateN*2;got.push('ящики '+crateN);}
