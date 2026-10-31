@@ -1625,31 +1625,90 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, dn < 0 ? Math.PI : 0, dn < 0 ? 0 : Math.PI); ctx.fill();
   }
   function drawSubShell() {
+    /*
+      Dugong hull pass 01.
+      Preserve the original simulation bounds (HL/RH/NR) in this pass:
+      movement, flooding, leaks and weapon physics continue using them.
+    */
     var x0 = sx - HL, y0 = sy - RH / 2, wt = NR * RW, i;
     var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (w[0] < 0.5 ? 1 : 0))) * 11;
+
+    // Aft propulsion housings.
     for (i = -1; i <= 1; i += 2) {
       var ny = sy + i * 24;
-      ctx.fillStyle = '#2f3d46'; rr(x0 - 26, ny - 8, 30, 16, 5); ctx.fill(); ctx.strokeStyle = '#5f717c'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x0 - 29, ny - pa * 0.8); ctx.lineTo(x0 - 29, ny + pa * 0.8); ctx.stroke();
+      ctx.fillStyle = '#2f3d46'; rr(x0 - 27, ny - 8, 31, 16, 4); ctx.fill();
+      ctx.strokeStyle = '#718692'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = '#a5b8c1'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x0 - 30, ny - pa * 0.8); ctx.lineTo(x0 - 30, ny + pa * 0.8); ctx.stroke();
     }
-    var lg = ctx.createLinearGradient(x0 + wt + 20, 0, x0 + wt + 280, 0);
-    lg.addColorStop(0, 'rgba(255,246,207,0.18)'); lg.addColorStop(1, 'rgba(255,246,207,0)');
-    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(x0 + wt + 22, sy - 3); ctx.lineTo(x0 + wt + 280, sy - 80); ctx.lineTo(x0 + wt + 280, sy + 80); ctx.lineTo(x0 + wt + 22, sy + 3); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#3a4a54'; ctx.beginPath(); ctx.moveTo(x0 - 4, y0 - 7); ctx.lineTo(x0 - 30, y0 - 22); ctx.lineTo(x0 + 24, y0 - 7); ctx.fill();
-    rr(x0 + 40, y0 + RH + 6, 46, 7, 3); ctx.fill(); rr(x0 + wt - 120, y0 + RH + 6, 46, 7, 3); ctx.fill();
-    var g = ctx.createLinearGradient(0, y0 - 8, 0, y0 + RH + 8);
-    g.addColorStop(0, SUBS[S.sub].c0); g.addColorStop(1, SUBS[S.sub].c1);
-    ctx.fillStyle = g; ctx.strokeStyle = '#6f838f'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x0 - 6, y0 - 7); ctx.lineTo(x0 + wt - 20, y0 - 7);
-    ctx.quadraticCurveTo(x0 + wt + 30, y0 - 8, x0 + wt + 30, sy);
-    ctx.quadraticCurveTo(x0 + wt + 30, y0 + RH + 8, x0 + wt - 20, y0 + RH + 7); ctx.lineTo(x0 - 6, y0 + RH + 7);
-    ctx.quadraticCurveTo(x0 - 18, y0 + RH + 3, x0 - 18, sy); ctx.quadraticCurveTo(x0 - 18, y0 - 3, x0 - 6, y0 - 7); ctx.closePath(); ctx.fill(); ctx.stroke();
-    rr(x0 + 110, y0 - 13, 150, 9, 4); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = SUBS[S.sub].ac; ctx.fillRect(x0 + 118, y0 - 12, 134, 2); ctx.fillRect(x0 - 2, y0 + RH + 1, wt - 6, 3);
-    ctx.fillStyle = '#46555f'; rr(sx + 6 - 17, y0 - 19, 34, 8, 3); ctx.fill(); ctx.fillStyle = dockT > 0 ? '#4fe0b6' : '#f0a73c'; ctx.fillRect(sx + 6 - 12, y0 - 20, 24, 2);
-    ctx.fillStyle = 'rgba(79,170,200,0.55)'; ctx.beginPath(); ctx.moveTo(x0 + wt - 6, y0 + 6); ctx.quadraticCurveTo(x0 + wt + 24, y0 + 10, x0 + wt + 26, sy); ctx.quadraticCurveTo(x0 + wt + 24, y0 + RH - 10, x0 + wt - 6, y0 + RH - 6); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#2a3a44'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + wt + 8, y0 + 8); ctx.lineTo(x0 + wt + 8, y0 + RH - 8); ctx.stroke();
-    drawTur(G, -1); drawTur(G2, 1);
+
+    // Forward searchlight.
+    var lg = ctx.createLinearGradient(x0 + wt + 18, 0, x0 + wt + 270, 0);
+    lg.addColorStop(0, 'rgba(255,246,207,0.18)');
+    lg.addColorStop(1, 'rgba(255,246,207,0)');
+    ctx.fillStyle = lg; ctx.beginPath();
+    ctx.moveTo(x0 + wt + 18, sy - 2); ctx.lineTo(x0 + wt + 270, sy - 76);
+    ctx.lineTo(x0 + wt + 270, sy + 76); ctx.lineTo(x0 + wt + 18, sy + 2);
+    ctx.closePath(); ctx.fill();
+
+    // Continuous pressure hull with a squared center, chamfered stern,
+    // rounded bow and reinforced lower keel.
+    var hull = ctx.createLinearGradient(0, y0 - 22, 0, y0 + RH + 24);
+    hull.addColorStop(0, SUBS[S.sub].c0);
+    hull.addColorStop(1, SUBS[S.sub].c1);
+    ctx.beginPath();
+    ctx.moveTo(x0 + 12, y0 - 10);
+    ctx.lineTo(x0 + wt - 46, y0 - 10);
+    ctx.quadraticCurveTo(x0 + wt + 18, y0 - 8, x0 + wt + 24, sy + 10);
+    ctx.lineTo(x0 + wt + 18, sy + RH - 10);
+    ctx.quadraticCurveTo(x0 + wt + 10, y0 + RH + 20, x0 + wt - 48, y0 + RH + 20);
+    ctx.lineTo(x0 + 30, y0 + RH + 17);
+    ctx.quadraticCurveTo(x0 - 14, y0 + RH + 14, x0 - 20, sy + RH - 20);
+    ctx.lineTo(x0 - 20, sy - 18);
+    ctx.quadraticCurveTo(x0 - 16, y0 - 7, x0 + 12, y0 - 10);
+    ctx.closePath();
+    ctx.fillStyle = hull; ctx.fill();
+    ctx.strokeStyle = '#8299a4'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    // Keel seam and reinforcement.
+    ctx.strokeStyle = '#172a35'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 22, y0 + RH + 5);
+    ctx.lineTo(x0 + wt - 54, y0 + RH + 8);
+    ctx.quadraticCurveTo(x0 + wt + 3, y0 + RH + 7, x0 + wt + 10, sy + RH - 13);
+    ctx.stroke();
+    ctx.fillStyle = '#3d505b';
+    ctx.fillRect(x0 + 34, y0 + RH + 10, wt - 92, 5);
+    ctx.fillStyle = SUBS[S.sub].ac;
+    ctx.fillRect(x0 + 42, y0 + RH + 11, wt - 110, 2);
+
+    // Upper service rail and airlock housing.
+    ctx.fillStyle = '#344955'; ctx.strokeStyle = '#8499a3'; ctx.lineWidth = 1.5;
+    rr(x0 + 38, y0 - 19, 72, 9, 3); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#526873'; rr(x0 + 55, y0 - 27, 34, 10, 3); ctx.fill();
+    ctx.fillStyle = '#a5b8c1'; ctx.fillRect(x0 + 61, y0 - 28, 22, 2);
+
+    // Forward observation window and bow plating.
+    ctx.fillStyle = 'rgba(79,170,200,0.48)';
+    ctx.beginPath();
+    ctx.moveTo(x0 + wt - 18, y0 + 7);
+    ctx.quadraticCurveTo(x0 + wt + 13, y0 + 12, x0 + wt + 17, sy + 8);
+    ctx.quadraticCurveTo(x0 + wt + 12, y0 + RH - 12, x0 + wt - 18, y0 + RH - 5);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#263c48'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0 + wt + 5, y0 + 12); ctx.lineTo(x0 + wt + 5, y0 + RH - 12); ctx.stroke();
+
+    // Third upper hardpoint: empty mounting ring, no weapon installed.
+    var hx = x0 + wt - 72, hy = y0 - 17;
+    ctx.fillStyle = '#202f38'; ctx.strokeStyle = '#9aabb3'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(hx, hy, 17, 7, 0, 0, 6.283); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#526773'; ctx.fillRect(hx - 12, hy - 7, 24, 5);
+    ctx.strokeStyle = '#b4c2c8'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(hx, hy - 5, 5, Math.PI, 0); ctx.stroke();
+
+    // Existing upper and lower Coilguns retain their simulation objects.
+    drawTur(G, -1);
+    drawTur(G2, 1);
   }
 
   function drawInterior() {
