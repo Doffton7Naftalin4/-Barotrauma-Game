@@ -860,7 +860,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
-    G = { ang: -0.3, cool: 0, ox: roomCx(3), oy: -RH / 2 - 8, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: roomCx(2), oy: RH / 2 + 8, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
+    G = { ang: -0.3, cool: 0, ox: roomCx(3), oy: -80, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: roomCx(2), oy: 80, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
     turbo = false; shake = 0; flash = 0; tcool = 0; elapsed = 0; alarmT = 0; fireT = 0; kills = 0; shockT = 0; shockImm = 0; dockT = 0; dockMsg = ''; oreTot = 0; menuS = 0;
     roamT = rand(LV0.roam[0], LV0.roam[1]) * 0.7;
     genWorld(LV0);
@@ -1677,49 +1677,115 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function drawTur(T, dn) {
-    var tx = sx + T.ox, by = sy + dn * (RH / 2 + 7);
+    var tx = sx + T.ox, by = sy + dn * 80;
     ctx.save(); ctx.translate(tx, sy + T.oy); ctx.rotate(T.ang);
     var wq_ = WP[S.subs[S.sub].wp[T.i]]; ctx.fillStyle = '#6a7b86'; ctx.fillRect(0, -wq_.bw / 2, 28 + wq_.bl, wq_.bw); ctx.fillStyle = T.cool > 0 ? '#f0a73c' : '#8fa1ad'; ctx.fillRect(22 + wq_.bl, -wq_.bw / 2 - 1, 8, wq_.bw + 2); ctx.fillStyle = pw.ratio > 0.3 && !pw.short ? '#fff6cf' : '#4a5660'; ctx.beginPath(); ctx.arc(32 + wq_.bl, 0, 2.4, 0, 6.283); ctx.fill(); ctx.restore();
     ctx.fillStyle = '#56666f'; ctx.beginPath(); ctx.arc(tx, by, 9, dn < 0 ? Math.PI : 0, dn < 0 ? 0 : Math.PI); ctx.fill();
   }
   function drawSubShell() {
-    var x0 = sx - HL, y0 = sy - RH / 2, wt = NR * RW, i;
-    var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (w[0] < 0.5 ? 1 : 0))) * 11;
-    for (i = -1; i <= 1; i += 2) {
-      var ny = sy + i * 24;
-      ctx.fillStyle = '#2f3d46'; rr(x0 - 26, ny - 8, 30, 16, 5); ctx.fill(); ctx.strokeStyle = '#5f717c'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.strokeStyle = '#8fa1ad'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x0 - 29, ny - pa * 0.8); ctx.lineTo(x0 - 29, ny + pa * 0.8); ctx.stroke();
+    /* New Dugong exterior: a three-deck pressure hull, not the old single-box shell. */
+    var x0 = sx - HL, x1 = sx + HL + 8, top = sy - 82, bottom = sy + 82;
+    var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (w[0] < 0.5 ? 1 : 0))) * 8;
+    var lg = ctx.createLinearGradient(x1 + 12, 0, x1 + 250, 0);
+    lg.addColorStop(0, 'rgba(255,246,207,0.16)'); lg.addColorStop(1, 'rgba(255,246,207,0)');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(x1 + 8, sy); ctx.lineTo(x1 + 250, sy - 74); ctx.lineTo(x1 + 250, sy + 74); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#263943'; ctx.strokeStyle = '#82949d'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x0 + 12, top + 18); ctx.lineTo(x0 + 54, top + 18);
+    ctx.lineTo(x0 + 70, top); ctx.lineTo(x0 + 330, top);
+    ctx.lineTo(x0 + 356, top + 12); ctx.lineTo(x1 - 26, top + 12);
+    ctx.quadraticCurveTo(x1 + 14, top + 14, x1 + 12, sy);
+    ctx.quadraticCurveTo(x1 + 14, bottom - 14, x1 - 26, bottom - 12);
+    ctx.lineTo(x0 + 330, bottom - 12); ctx.lineTo(x0 + 300, bottom);
+    ctx.lineTo(x0 + 76, bottom); ctx.lineTo(x0 + 58, bottom - 15);
+    ctx.lineTo(x0 + 12, bottom - 15);
+    ctx.quadraticCurveTo(x0 - 12, bottom - 18, x0 - 12, sy);
+    ctx.quadraticCurveTo(x0 - 12, top + 18, x0 + 12, top + 18);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    /* Upper and lower external reinforcing rails. */
+    ctx.strokeStyle = '#9aabb2'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x0 + 70, top + 5); ctx.lineTo(x1 - 30, top + 17);
+    ctx.moveTo(x0 + 76, bottom - 5); ctx.lineTo(x1 - 30, bottom - 17); ctx.stroke();
+    ctx.fillStyle = '#465b66'; rr(x0 + 38, top - 12, 112, 13, 4); ctx.fill();
+    ctx.fillStyle = '#607782'; rr(x0 + 44, top - 10, 98, 3, 2); ctx.fill();
+    /* Stern propulsion pods. */
+    for (var d = -1; d <= 1; d += 2) {
+      var ny = sy + d * 42;
+      ctx.fillStyle = '#2f3d46'; rr(x0 - 28, ny - 8, 32, 16, 5); ctx.fill();
+      ctx.strokeStyle = '#718590'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.strokeStyle = '#a4b4bb'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(x0 - 30, ny - pa); ctx.lineTo(x0 - 30, ny + pa); ctx.stroke();
     }
-    var lg = ctx.createLinearGradient(x0 + wt + 20, 0, x0 + wt + 280, 0);
-    lg.addColorStop(0, 'rgba(255,246,207,0.18)'); lg.addColorStop(1, 'rgba(255,246,207,0)');
-    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(x0 + wt + 22, sy - 3); ctx.lineTo(x0 + wt + 280, sy - 80); ctx.lineTo(x0 + wt + 280, sy + 80); ctx.lineTo(x0 + wt + 22, sy + 3); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = '#3a4a54'; ctx.beginPath(); ctx.moveTo(x0 - 4, y0 - 7); ctx.lineTo(x0 - 30, y0 - 22); ctx.lineTo(x0 + 24, y0 - 7); ctx.fill();
-    rr(x0 + 40, y0 + RH + 6, 46, 7, 3); ctx.fill(); rr(x0 + wt - 120, y0 + RH + 6, 46, 7, 3); ctx.fill();
-    var g = ctx.createLinearGradient(0, y0 - 8, 0, y0 + RH + 8);
-    g.addColorStop(0, SUBS[S.sub].c0); g.addColorStop(1, SUBS[S.sub].c1);
-    ctx.fillStyle = g; ctx.strokeStyle = '#6f838f'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(x0 - 6, y0 - 7); ctx.lineTo(x0 + wt - 20, y0 - 7);
-    ctx.quadraticCurveTo(x0 + wt + 30, y0 - 8, x0 + wt + 30, sy);
-    ctx.quadraticCurveTo(x0 + wt + 30, y0 + RH + 8, x0 + wt - 20, y0 + RH + 7); ctx.lineTo(x0 - 6, y0 + RH + 7);
-    ctx.quadraticCurveTo(x0 - 18, y0 + RH + 3, x0 - 18, sy); ctx.quadraticCurveTo(x0 - 18, y0 - 3, x0 - 6, y0 - 7); ctx.closePath(); ctx.fill(); ctx.stroke();
-    rr(x0 + 110, y0 - 13, 150, 9, 4); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = SUBS[S.sub].ac; ctx.fillRect(x0 + 118, y0 - 12, 134, 2); ctx.fillRect(x0 - 2, y0 + RH + 1, wt - 6, 3);
-    ctx.fillStyle = '#46555f'; rr(sx + 6 - 17, y0 - 19, 34, 8, 3); ctx.fill(); ctx.fillStyle = dockT > 0 ? '#4fe0b6' : '#f0a73c'; ctx.fillRect(sx + 6 - 12, y0 - 20, 24, 2);
-    ctx.fillStyle = 'rgba(79,170,200,0.55)'; ctx.beginPath(); ctx.moveTo(x0 + wt - 6, y0 + 6); ctx.quadraticCurveTo(x0 + wt + 24, y0 + 10, x0 + wt + 26, sy); ctx.quadraticCurveTo(x0 + wt + 24, y0 + RH - 10, x0 + wt - 6, y0 + RH - 6); ctx.closePath(); ctx.fill();
-    ctx.strokeStyle = '#2a3a44'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x0 + wt + 8, y0 + 8); ctx.lineTo(x0 + wt + 8, y0 + RH - 8); ctx.stroke();
+    /* Bow airlock collar and underside keel. */
+    ctx.fillStyle = '#435762'; rr(x0 + 4, sy - 17, 18, 34, 5); ctx.fill();
+    ctx.fillStyle = '#293b45'; rr(x0 + 16, bottom - 1, 48, 9, 3); ctx.fill();
+    ctx.fillStyle = '#293b45'; rr(x1 - 128, bottom - 1, 58, 9, 3); ctx.fill();
     drawTur(G, -1); drawTur(G2, 1);
+    /* Empty upper weapon hardpoint: mount only, no third gun. */
+    ctx.fillStyle = '#526a75'; rr(x0 + 270, top - 8, 30, 9, 3); ctx.fill();
+    ctx.strokeStyle = '#a0b0b7'; ctx.lineWidth = 1; ctx.strokeRect(x0 + 276, top - 13, 18, 7);
   }
 
   function drawInterior() {
-    var x0 = sx - HL, y0 = sy - RH / 2, i;
-    for (i = 0; i < NR; i++) {
-      var rx = x0 + i * RW;
-      ctx.fillStyle = i % 2 ? '#152731' : '#17303b'; ctx.fillRect(rx, y0, RW, RH);
-      ctx.fillStyle = '#0d1b23'; ctx.fillRect(rx, y0 + RH - 6, RW, 6);
-      ctx.fillStyle = 'rgba(207,228,234,0.35)'; ctx.font = '700 9px ' + DISP; ctx.fillText(ROOMN[i].toUpperCase(), rx + 5, y0 + 11);
-      drawProps(i, rx, y0);
-      if (i === 0) { var fx = rx + RW / 2 + 16, fyy = y0 + RH - 6; ctx.fillStyle = '#2c4150'; rr(fx - 10, fyy - 26, 20, 26, 3); ctx.fill(); ctx.fillStyle = S.ore > 0 ? '#4fe0b6' : '#f0a73c'; ctx.fillRect(fx - 7, fyy - 22, 14, 4); ctx.fillStyle = '#6a8696'; ctx.fillRect(fx - 5, fyy - 14, 10, 10); }
+    /* Three real visible deck bands with individual compartment boundaries. */
+    var x0 = sx - HL, deckH = 48, top = sy - 72;
+    var decks = [
+      { y: top, rooms: [
+        { n: 'ВОЗДУШНЫЙ ШЛЮЗ', w: 76, c: '#24414c' },
+        { n: 'ВЕРХНИЙ ПРОХОД', w: 344, c: '#1a303a' }
+      ]},
+      { y: top + deckH, rooms: [
+        { n: 'МАШИННОЕ', w: 86, c: '#263943' },
+        { n: 'РУБКА', w: 76, c: '#244653' },
+        { n: 'КОСТЮМЫ', w: 76, c: '#203a45' },
+        { n: 'МЕДБЛОК', w: 78, c: '#24414a' },
+        { n: 'ОРУЖЕЙНАЯ', w: 104, c: '#263943' }
+      ]},
+      { y: top + deckH * 2, rooms: [
+        { n: 'БАЛЛАСТ', w: 74, c: '#1d3540' },
+        { n: 'РЕАКТОР', w: 78, c: '#293943' },
+        { n: 'ЭЛЕКТРО', w: 76, c: '#203943' },
+        { n: 'КИСЛОРОД', w: 82, c: '#24414a' },
+        { n: 'БАЛЛАСТ', w: 110, c: '#1d3540' }
+      ]}
+    ];
+    ctx.save();
+    for (var d = 0; d < decks.length; d++) {
+      var deck = decks[d], rx = x0;
+      for (var r = 0; r < deck.rooms.length; r++) {
+        var room = deck.rooms[r];
+        ctx.fillStyle = room.c; ctx.fillRect(rx, deck.y, room.w, deckH);
+        ctx.fillStyle = 'rgba(8,18,24,0.55)'; ctx.fillRect(rx, deck.y + deckH - 5, room.w, 5);
+        ctx.strokeStyle = '#70848e'; ctx.lineWidth = 1.4;
+        ctx.strokeRect(rx + 0.5, deck.y + 0.5, room.w - 1, deckH - 1);
+        ctx.fillStyle = '#d0e0e5'; ctx.font = '700 8px ' + DISP;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(room.n, rx + room.w / 2, deck.y + 12);
+        /* Small lit equipment blocks make each compartment legible at game scale. */
+        if (d === 1) {
+          ctx.fillStyle = r === 1 ? '#4c7d8d' : '#536b76';
+          ctx.fillRect(rx + 10, deck.y + 24, Math.max(12, room.w - 20), 13);
+          ctx.fillStyle = '#a4c4ce'; ctx.fillRect(rx + 13, deck.y + 27, Math.max(6, room.w - 26), 2);
+        } else if (d === 2) {
+          ctx.fillStyle = '#415d68'; ctx.fillRect(rx + 12, deck.y + 25, room.w - 24, 12);
+          ctx.fillStyle = '#6fa6b5'; ctx.fillRect(rx + 15, deck.y + 28, Math.max(5, room.w - 30), 2);
+        }
+        rx += room.w;
+      }
     }
+    /* Ladder trunks connect the decks visually; they are not yet movement portals. */
+    [x0 + 112, x0 + 264, x0 + 356].forEach(function (lx) {
+      ctx.fillStyle = '#101f28'; ctx.fillRect(lx - 5, top + deckH - 1, 10, deckH * 2 + 2);
+      ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(lx - 3, top + deckH + 2); ctx.lineTo(lx - 3, top + deckH * 3 - 2);
+      ctx.moveTo(lx + 3, top + deckH + 2); ctx.lineTo(lx + 3, top + deckH * 3 - 2);
+      for (var rung = 0; rung < 7; rung++) {
+        var yy = top + deckH + 5 + rung * 13;
+        ctx.moveTo(lx - 3, yy); ctx.lineTo(lx + 3, yy);
+      }
+      ctx.stroke();
+    });
+    ctx.restore();
   }
 
   function drawProps(i, rx, y0) {
