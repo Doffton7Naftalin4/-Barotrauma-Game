@@ -1750,11 +1750,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
         { n: 'ОРУЖЕЙНАЯ', w: 104, c: '#263943' }
       ]},
       { x: x0, y: top + upperH + deckH, w: fullW, h: deckH, rooms: [
-        { n: 'НИЖНИЙ ОТСЕК', w: 74, c: '#1d3540' },
+        { n: 'БАЛЛАСТ КОРМА', w: 74, c: '#173b48' },
         { n: 'РЕАКТОР', w: 78, c: '#293943' },
         { n: 'ЭЛЕКТРО', w: 76, c: '#203943' },
         { n: 'КИСЛОРОД', w: 82, c: '#24414a' },
-        { n: 'СНАБЖЕНИЕ', w: 110, c: '#1d3540' }
+        { n: 'БАЛЛАСТ НОС', w: 110, c: '#173b48' }
       ]}
     ];
     ctx.save();
@@ -1793,38 +1793,42 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     ctx.stroke();
 
-    /* Two ballast tanks are compact bilge compartments INSIDE the existing hull,
-       not a fourth deck. Their separate floor hatches and short ladders remain visible. */
-    var lowerFloorY = top + upperH + deckH * 2;
-    var ballastTanks = [
-      { x: x0 + 7, w: 60, ladderX: x0 + 37 },
-      { x: x0 + fullW - 96, w: 88, ladderX: x0 + fullW - 52 }
+    /* Ballast compartments are part of deck 3, at its two outer ends.
+       Access hatches are on the outer edges of deck 2; dedicated ladders descend
+       into the matching ballast rooms. There is no fourth deck. */
+    var deck2FloorY = top + upperH + deckH;
+    var deck3Y = deck2FloorY;
+    var ballastAccess = [
+      { x: x0 + 34, roomX: x0, roomW: 74 },
+      { x: x0 + fullW - 42, roomX: x0 + fullW - 110, roomW: 110 }
     ];
-    for (var bt = 0; bt < ballastTanks.length; bt++) {
-      var tank = ballastTanks[bt], tankTop = lowerFloorY + 3, tankBottom = sy + 80;
-      ctx.fillStyle = '#102630';
-      ctx.fillRect(tank.x, tankTop, tank.w, tankBottom - tankTop);
-      ctx.fillStyle = '#1d414d';
-      ctx.fillRect(tank.x + 2, tankTop + 2, tank.w - 4, tankBottom - tankTop - 4);
-      ctx.strokeStyle = '#91a5ae'; ctx.lineWidth = 1.5;
-      ctx.strokeRect(tank.x + 0.5, tankTop + 0.5, tank.w - 1, tankBottom - tankTop - 1);
-      /* Independent floor hatch and ladder, with no connection to the central shaft. */
-      var hatchW = 20, hatchX = tank.ladderX - hatchW / 2;
-      ctx.fillStyle = '#020a10';
-      ctx.fillRect(hatchX - 2, lowerFloorY - 3, hatchW + 4, 8);
+    for (var ba = 0; ba < ballastAccess.length; ba++) {
+      var access = ballastAccess[ba], hatchW = 18;
+      /* Individual floor hatch at the edge of deck 2. */
+      ctx.fillStyle = '#07131a';
+      ctx.fillRect(access.x - hatchW / 2, deck2FloorY - 4, hatchW, 8);
       ctx.strokeStyle = '#c0d0d6'; ctx.lineWidth = 1.8;
-      ctx.strokeRect(hatchX - 2, lowerFloorY - 3, hatchW + 4, 7);
+      ctx.strokeRect(access.x - hatchW / 2, deck2FloorY - 4, hatchW, 8);
+      /* Separate ladder descends into the ballast compartment on deck 3. */
       ctx.strokeStyle = '#a9bbc3'; ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(tank.ladderX - 6, lowerFloorY + 3);
-      ctx.lineTo(tank.ladderX - 6, tankBottom - 2);
-      ctx.moveTo(tank.ladderX + 6, lowerFloorY + 3);
-      ctx.lineTo(tank.ladderX + 6, tankBottom - 2);
-      for (var step = 0; step < 3; step++) {
-        var stepY = lowerFloorY + 6 + step * 4;
-        ctx.moveTo(tank.ladderX - 6, stepY);
-        ctx.lineTo(tank.ladderX + 6, stepY);
+      ctx.moveTo(access.x - 5, deck3Y + 5);
+      ctx.lineTo(access.x - 5, deck3Y + deckH - 5);
+      ctx.moveTo(access.x + 5, deck3Y + 5);
+      ctx.lineTo(access.x + 5, deck3Y + deckH - 5);
+      for (var rung = 0; rung < 5; rung++) {
+        var rungY = deck3Y + 8 + rung * 7;
+        ctx.moveTo(access.x - 5, rungY);
+        ctx.lineTo(access.x + 5, rungY);
       }
+      ctx.stroke();
+      /* Water level stays inside the deck-3 ballast room and inside the hull. */
+      ctx.fillStyle = 'rgba(37,133,157,0.28)';
+      ctx.fillRect(access.roomX + 3, deck3Y + 25, access.roomW - 6, 19);
+      ctx.strokeStyle = 'rgba(111,190,205,0.8)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(access.roomX + 5, deck3Y + 25);
+      ctx.lineTo(access.roomX + access.roomW - 5, deck3Y + 25);
       ctx.stroke();
     }
 
