@@ -731,7 +731,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
   function hurtP(n, k) { P.hp -= n; if (k && Math.random() < (k === 't' ? 0.8 : 0.35)) { P.dis[k] = Math.min(1, P.dis[k] + (k === 't' ? 0.5 : 0.4)); toast(k === 't' ? 'Отравление! Нужен антидот (H)' : 'Рана заражена! Нужен антибиотик (H)'); } flash = Math.max(flash, 0.22); shake = Math.min(0.5, shake + 0.15); sfx.hit(); }
   function dive(dt){
-    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action='idle';D.actionT=0;if(!l){D.bodyAngle=D.bodyAngle==null?D.aim:D.bodyAngle;D.bodyFlip=false;D.backView=false;}if(l){D.action='swim';D.actionT+=dt;ax/=l;ay/=l;var swimAngle=Math.atan2(ay,ax);D.aim=Math.round(swimAngle/(Math.PI/4))*(Math.PI/4);D.bodyFlip=ax< -0.001;D.bodyAngle=swimAngle;if(D.bodyFlip)D.bodyAngle+=swimAngle>0?-Math.PI:Math.PI;D.backView=Math.abs(ax)<0.35;if(D.backView)D.bodyAngle=ay>0?Math.PI/2:-Math.PI/2;if(ax)D.face=ax>0?1:-1;}
+    var ax=K.right-K.left,ay=K.down-K.up,l=Math.hypot(ax,ay),i;D.action='idle';D.actionT=0;if(l){D.action='swim';D.actionT+=dt;ax/=l;ay/=l;var swimAngle=Math.atan2(ay,ax);D.aim=Math.round(swimAngle/(Math.PI/4))*(Math.PI/4);D.bodyFlip=ax< -0.001;D.bodyAngle=swimAngle;if(D.bodyFlip)D.bodyAngle+=swimAngle>0?-Math.PI:Math.PI;D.backView=Math.abs(ax)<0.35;if(D.backView)D.bodyAngle=ay>0?Math.PI/2:-Math.PI/2;if(ax)D.face=ax>0?1:-1;}
     D.vx+=ax*430*dt;D.vy+=ay*430*dt;var drag=Math.exp(-5.8*dt);D.vx*=drag;D.vy*=drag;
     var nx=D.x+D.vx*dt,ny=D.y+D.vy*dt,wallContact=false;
     if(!dHit(nx,D.y))D.x=nx;else{D.vx=0;wallContact=true;}
