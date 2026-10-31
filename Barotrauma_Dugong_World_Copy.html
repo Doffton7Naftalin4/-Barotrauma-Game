@@ -91,6 +91,8 @@ kbd { font-family: var(--mono); color: var(--fg); border: 1px solid var(--line);
 .act button { height: 58px; }
 .act button.wide { border-color: var(--amber); color: var(--amber); }
 .pad button:active, .pad button.down { background: #123042; border-color: var(--sonar); }
+.mobile-panels{display:none;gap:8px}.mobile-panels button{flex:1;padding:10px;background:var(--panel);border:1px solid var(--line);color:var(--fg);font:700 14px var(--mono)}
+@media(pointer:coarse){.mobile-panels{display:flex}}
 button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 </style>
 
@@ -144,9 +146,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       <button class="wide" data-k="e">Действие</button>
       <button data-k="space">Огонь</button>
       <button data-k="q">Авто</button>
-      <button data-k="h">Лечить</button>
+      <button data-k="h">Лекарство</button>
     </div>
   </div>
+</div>
+  <div class="mobile-panels"><button type="button" data-panel="inventory">Инвентарь</button><button type="button" data-panel="health">Здоровье</button></div>
 </div>
 
 <script>
@@ -253,7 +257,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function dugongStationAt(deck, lx) {
     var stations = [
       { deck: 0, x: -50.4, type: 'hatch', name: 'Шлюз' },
-      { deck: 1, x: -167, type: 'fab', name: 'Фабрикатор' },
+      { deck: 1, x: -167, type: 'fab', name: 'Технический фабрикатор' },
+      { deck: 1, x: 67, type: 'medfab', name: 'Медицинский фабрикатор' },
+      { deck: 1, x: 158, type: 'storage', name: 'Склад предметов' },
       { deck: 1, x: -104, type: 'helm', name: 'Управление лодкой' },
       { deck: 1, x: -68, type: 'gun', name: 'Управление орудиями' },
       { deck: 2, x: -93, type: 'reactor', name: 'Реактор' },
@@ -267,7 +273,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     return best;
   }
 
-  var STNAME = { fab: 'Фабрикатор', hatch: 'Шлюз', reactor: 'Реактор', pump: 'Насосы', gun: 'Орудие', helm: 'Штурвал' };
+  var STNAME = { fab: 'Технический фабрикатор', medfab: 'Медицинский фабрикатор', storage: 'Склад', hatch: 'Шлюз', reactor: 'Реактор', pump: 'Насосная', gun: 'Терминал орудий', helm: 'Терминал управления' };
   var LEVELS = [
     { name: 'Первый рейс', short: 'Дойти до станции', brief: 'Найдите станцию «Донная» и пришвартуйтесь снизу', type: 'dock', goal: 7000, ev: 1500, den: 0.3, roam: [90, 130], pk: { sw: 3, je: 3, ee: 1 } },
     { name: 'Спасательная операция', short: 'Три капсулы и станция', brief: 'Подберите 3 капсулы и пришвартуйтесь к станции', type: 'rescue', goal: 10000, pods: 3, ev: 1300, den: 0.4, roam: [75, 105], pk: { sw: 3, je: 2, ee: 2, sp: 2, br: 1 } },
@@ -568,8 +574,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function dugongAirlockOutsidePoint(){var door=dugongAirlockDoor();return {x:door.x-15,y:door.y};}
   function exitSub(){var p=dugongAirlockOutsidePoint();P.out=true;P.seat=null;D.x=p.x;D.y=p.y;D.vx=D.vy=0;D.aim=Math.PI;D.face=-1;toast('Вы вышли через левую дверь шлюза');}
   function stored() { return S.ore + S.crt * 2 + plN() + S.harp * 0.5 + S.rods + S.cyl + S.med.t + S.med.i + S.med.b + S.med.h; }
+  function packLoad() { return D.carry + D.cargo * 3 + D.bcargo * 2 + D.cyl + D.rods + D.pl.t + D.pl.i + D.pl.b + D.med.t + D.med.i + D.med.b + D.med.h + D.ammo * 0.5; }
+  function packRoom() { return Math.max(0, dCap() - packLoad()); }
   function capSub() { return SUBS[S.sub].cap; }
-  function dLoad() { return D.carry + D.cargo * 3 + D.bcargo * 2 + D.pl.t + D.pl.i + D.pl.b; }
+  function dLoad() { return packLoad(); }
   function dCap() { return SUBS[S.sub].carry + 4 * S.bp; }
   function enterSub(){P.out=false;PR.e=0;P.lx=-50.4;P.deck=0;P.face=-1;var door=dugongAirlockDoor();D.x=door.x-15;D.y=door.y;D.vx=D.vy=0;
     var free = capSub() - stored(), n, got = [];
@@ -774,7 +782,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     else if (!solidAt(m.x - dy, m.y + dx)) { m.x -= dy; m.y += dx; } else if (!solidAt(m.x + dy, m.y - dx)) { m.x += dy; m.y -= dx; }
   }
   function useMed() {
-    var d = P.dis, m = S.med;
+    var d = P.dis, m = D.med;
     if (d.t > 0.05 && m.t > 0) { m.t--; d.t = 0; toast('Антидот: отравление снято'); }
     else if (d.i > 0.05 && m.i > 0) { m.i--; d.i = 0; toast('Антибиотик: инфекция побеждена'); }
     else if (d.b > 0.05 && m.b > 0) { m.b--; d.b = 0; toast('Мазь: ожог вылечен'); }
@@ -913,6 +921,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     var k = map[e.code];
     if (k) { e.preventDefault(); initAudio(); if (!e.repeat) press(k); else K[k] = 1; if (state !== 'play' && (k === 'space' || k === 'e')) start(); }
     if (e.code === 'Enter') { initAudio(); if (state !== 'play') start(); }
+    if(state==='play'&&!e.repeat&&e.code==='KeyI')uiPanel=uiPanel==='inventory'?null:'inventory';
+    if(state==='play'&&!e.repeat&&e.code==='KeyJ')uiPanel=uiPanel==='health'?null:'health';
+    if(e.code==='Escape'&&uiPanel)uiPanel=null;
     if (e.code === 'KeyM') muted = !muted;
   });
   window.addEventListener('keyup', function (e) { var k = map[e.code]; if (k) K[k] = 0; });
@@ -964,8 +975,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     b.addEventListener('contextmenu', function (e) { e.preventDefault(); });
   });
 
+  Array.prototype.forEach.call(document.querySelectorAll('[data-panel]'),function(b){b.addEventListener('click',function(){if(state==='play')uiPanel=uiPanel===b.getAttribute('data-panel')?null:b.getAttribute('data-panel');});});
+
   /* ---------- state ---------- */
-  var state = 'menu', overT = 0, t = 0, lossText = '', cur = 0, unlocked = 1, bests = [0, 0, 0, 0, 0, 0, 0];
+  var state = 'menu', overT = 0, t = 0, lossText = '', cur = 0, unlocked = 1, bests = [0, 0, 0, 0, 0, 0, 0], uiPanel = null;
   try { var sv = JSON.parse(localStorage.getItem('pg_save') || 'null'); if (sv) { unlocked = clamp(sv.u | 0, 1, 7); if (sv.b) bests = sv.b.concat([0, 0, 0, 0, 0, 0, 0]).slice(0, 7); } } catch (e) {}
   var sx, sy, svx, svy, hull, w, doors, leaks, fires, mons, shots, parts, P, R, pw, G, G2, Gs, S, cargoGot, crates = [], sites = [], plants = [], turbo;
   var shake, flash, tcool, spawnT, bruteT, elapsed, camX, camY, alarmT, fireT, kills, hint, alarmList, pods, nest, tremorT, tremorMsg, podsGot, snow = [], dugongFlood = [];
@@ -978,7 +991,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     leaks = []; fires = []; shots = []; spits = []; parts = [];
     P = { dis: { t: 0, i: 0, b: 0 }, lx: 0, deck: 1, face: 1, hp: 100, o2: 120, seat: null, work: 0, step: 0, out: false };
     deckDoors = [[1], [1, 1, 1, 1], [1, 1, 1, 1]];
-    D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, action: 'idle', actionT: 0, pl: { t: 0, i: 0, b: 0 } }; shop = null;
+    D = { x: 0, y: 0, vx: 0, vy: 0, face: 1, aim: 0, ammo: 10, carry: 0, cargo: 0, bcargo: 0, cool: 0, action: 'idle', actionT: 0, pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 0 }, cyl: 0, rods: 0 }; shop = null;
     R = { F: 40, Ft: 40, T: 30, auto: true, fault: false, melt: 0, rod: 100 };
     pw = { prod: 0, load: 20, ratio: 1, short: false };
     G = { ang: -0.3, cool: 0, ox: -150, oy: -22, i: 0 }; G2 = { ang: 1.57, cool: 0, ox: 0, oy: 88, i: 1 }; Gs = 0; S = { pl: { t: 0, i: 0, b: 0 }, med: { t: 0, i: 0, b: 0, h: 1 }, ore: 0, harp: 20, crt: 0, sub: 0, cr: 0, bp: 0, subs: [{ own: 1, hull: 100, wp: [0, 0] }, null, null, null], fuel: 100, cyl: 1, rods: 1, hu: 0, gu: 0, tu: 0, sel: 0, pd: 0 }; cargoGot = 0;
@@ -1118,9 +1131,11 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
           
         }
       } else if (P.seat === 'fab') {
-        var fd = K.down - K.up; if (fd && fd !== S.pd) S.sel = (S.sel + fd + RC.length) % RC.length; S.pd = fd;
-        var rc = RC[S.sel]; hint = 'W/S — выбор · Пробел — изготовить · E — отойти';
-        if (PR.space) { if (rc[3] && S[rc[3]]) toast('Уже установлено'); else if (S.ore < rc[1] || !canPl(rc[4]) || S.crt < (rc[6] || 0)) toast('Не хватает ресурсов'); else if (stored() - rc[1] - plCost(rc[4]) + RCW[S.sel] > capSub()) toast('Склад лодки полон (' + Math.ceil(stored()) + '/' + capSub() + ')'); else { S.ore -= rc[1]; S.crt -= rc[6] || 0; payPl(rc[4]); rc[2](); sfx.pick(); toast('Готово: ' + rc[0]); } }
+        var fd=K.down-K.up;if(fd&&fd!==S.pd)S.sel=(S.sel+fd+7)%7;S.pd=fd;var rc=RC[S.sel];hint='ТЕХНИЧЕСКИЙ ФАБРИКАТОР · W/S — выбор · Пробел — изготовить · E — выйти';if(PR.space){if(rc[3]&&S[rc[3]])toast('Уже установлено');else if(S.ore<rc[1]||!canPl(rc[4])||S.crt<(rc[6]||0))toast('Не хватает ресурсов');else if(stored()-rc[1]-plCost(rc[4])+RCW[S.sel]>capSub())toast('На складе нет места');else{S.ore-=rc[1];S.crt-=rc[6]||0;payPl(rc[4]);rc[2]();sfx.pick();toast('Изготовлено: '+rc[0]);}}
+      } else if (P.seat === 'medfab') {
+        var mf=K.down-K.up;if(mf&&mf!==S.pd)S.sel=(S.sel+mf+MRC.length)%MRC.length;S.pd=mf;var mr=MRC[S.sel];hint='МЕДИЦИНСКИЙ ФАБРИКАТОР · W/S — выбор · Пробел — изготовить · E — выйти';if(PR.space){if(!canMakeMed(mr))toast('Не хватает нужных растений');else if(stored()+1>capSub())toast('На складе нет места');else{payMed(mr);mr[2]();sfx.pick();toast('Изготовлено: '+mr[0]);}}
+      } else if (P.seat === 'storage') {
+        var items=[['Руда',S,'ore',D,'carry'],['Гарпуны',S,'harp',D,'ammo'],['Баллоны сварки',S,'cyl',D,'cyl'],['Топливные стержни',S,'rods',D,'rods'],['Синий мох',S.pl,'t',D.pl,'t'],['Бурая водоросль',S.pl,'i',D.pl,'i'],['Алая губка',S.pl,'b',D.pl,'b'],['Антидот',S.med,'t',D.med,'t'],['Антибиотик',S.med,'i',D.med,'i'],['Мазь',S.med,'b',D.med,'b'],['Аптечки',S.med,'h',D.med,'h'],['Ящики',S,'crt',D,'bcargo']];var sd=K.down-K.up;if(sd&&sd!==S.pd)S.sel=(S.sel+sd+items.length)%items.length;S.pd=sd;hint='СКЛАД ПОДЛОДКИ · W/S — предмет · Пробел — взять · Q — положить · E — выйти';if(PR.space||PR.q){var it=items[S.sel],have=it[1][it[2]]||0,phave=it[3][it[4]]||0;if(PR.space){if(have<=0)toast('На складе этого нет');else if(packRoom()<1)toast('Рюкзак заполнен');else{it[1][it[2]]--;it[3][it[4]]=(it[3][it[4]]||0)+1;toast('Взято: '+it[0]);}}else{if(phave<=0)toast('В рюкзаке этого нет');else if(stored()+1>capSub())toast('Склад заполнен');else{it[3][it[4]]--;it[1][it[2]]=(it[1][it[2]]||0)+1;toast('Сдано на склад: '+it[0]);}}sfx.pick();}
       } else if (P.seat === 'reactor') {
         if (K.up || K.down) { R.auto = false; R.Ft = clamp(R.Ft + (K.up - K.down) * 40 * dt, 0, 100); }
         if (PR.q) { if (R.fault) { hint = 'Автоматика отказала'; } else R.auto = !R.auto; }
@@ -1176,10 +1191,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
           hint = 'E — ' + (deckDoors[deck][doorIndex] ? 'закрыть' : 'открыть') + ' переборку';
           if (PR.e && !exited) { deckDoors[deck][doorIndex] = deckDoors[deck][doorIndex] ? 0 : 1; sfx.door(); }
         } else if (station) {
-          hint = station.type === 'hatch' ? 'E — открыть левую дверь шлюза и выйти в океан' : 'E — занять пост: ' + station.name;
+          hint = station.type === 'hatch' ? 'E — открыть левую дверь шлюза и выйти в океан' : 'E — открыть панель: ' + station.name;
           if (PR.e && !exited) {
             if (station.type === 'hatch') exitSub();
-            else { P.seat = station.type; P.lx = station.x; }
+            else { P.seat = station.type; P.lx = station.x; S.sel = 0; }
           }
         } else {
           var ladderHint = (ladderX || aftHatchX || foreHatchX) ? 'W/S — подняться или спуститься по лестнице' : 'A/D — идти';
@@ -1408,7 +1423,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   }
 
   function update(dt) {
-    if (state === 'play') { if (shop) updShop(); else updatePlay(dt); }
+    if (state === 'play') { if(shop)updShop();else if(uiPanel){if(uiPanel==='health'&&PR.h)useMed();if(PR.e||(PR.h&&uiPanel!=='health'))uiPanel=null;}else updatePlay(dt); }
     updateAmbient(dt);
     PR.e = 0; PR.space = 0; PR.q = 0; PR.h = 0; PR.up = 0; PR.down = 0; PR.left = 0; PR.right = 0;
   }
@@ -1625,6 +1640,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ['Мазь (ожог)', 0, function () { S.med.b++; }, 0, { b: 1 }, 'ОЖОГ: от огня на борту. Замедляет ходьбу. Делается из алой губки. Применение: H.'],
     ['Аптечка (+60% здоровья)', 0, function () { S.med.h++; }, 0, { x: 2 }, 'Восстанавливает 60% здоровья. Делается из любых 2 растений. По H сначала используется лекарство от болезни, и только потом аптечка.'],];
   var RCW = [5, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1];
+  var MRC = [['Антидот от яда',0,function(){S.med.t++;},{t:1},'Снимает отравление от медуз и ядовитых плевков.'],['Антибиотик от инфекции',0,function(){S.med.i++;},{i:1},'Лечит инфекцию после укусов мелких существ.'],['Мазь от ожогов',0,function(){S.med.b++;},{b:1},'Устраняет ожоги, полученные от огня.'],['Аптечка первой помощи',0,function(){S.med.h++;},{x:2},'Восстанавливает до 60 единиц здоровья.']];
+  function canMakeMed(r){var c=r[3];if(c.x)return plN()>=c.x;return c.t?S.pl.t>0:c.i?S.pl.i>0:S.pl.b>0;}
+  function payMed(r){var c=r[3];if(c.x)payPl({x:c.x});else if(c.t)S.pl.t--;else if(c.i)S.pl.i--;else S.pl.b--;}
   function plCost(c) { var n = 0; if (c) for (var k in c) n += c[k]; return n; }
   function plN() { return S.pl.t + S.pl.i + S.pl.b; }
   function canPl(c) { if (!c) return true; for (var k in c) if (k === 'x' ? plN() < c[k] : S.pl[k] < c[k]) return false; return true; }
@@ -1634,9 +1652,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function drawFab() {
     ctx.fillStyle = 'rgba(2,12,18,0.94)'; ctx.fillRect(100, 22, 600, 394); ctx.strokeStyle = '#17303f'; ctx.lineWidth = 2; ctx.strokeRect(100, 22, 600, 394);
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.font = '700 17px ' + DISP; ctx.fillStyle = '#4fe0b6';
-    ctx.fillText('ФАБРИКАТОР · руда ' + S.ore + ' · ящики ' + S.crt + ' · гарпуны ' + S.harp + ' · склад ' + Math.ceil(stored()) + '/' + capSub(), 116, 46);
+    ctx.fillText('ТЕХНИЧЕСКИЙ ФАБРИКАТОР · руда ' + S.ore + ' · ящики ' + S.crt + ' · гарпуны ' + S.harp + ' · склад ' + Math.ceil(stored()) + '/' + capSub(), 116, 46);
     ctx.fillStyle = '#9ff4ff'; ctx.fillText('Растения: мох ' + S.pl.t + ' · водоросль ' + S.pl.i + ' · губка ' + S.pl.b, 116, 68); ctx.textAlign = 'right'; ctx.fillStyle = '#f0a73c'; ctx.fillText('стержень ' + Math.round(R.rod) + '% · запас ' + S.rods, 684, 68); ctx.textAlign = 'left';
-    for (var i = 0; i < RC.length; i++) {
+    for (var i = 0; i < 7; i++) {
       var r = RC[i], own = r[3] && S[r[3]], y = 76 + i * 20;
       if (i === S.sel) { ctx.fillStyle = '#123042'; ctx.fillRect(108, y, 584, 19); }
       ctx.font = '700 14px ' + DISP; ctx.fillStyle = own ? '#7a97a3' : S.ore >= r[1] && canPl(r[4]) && S.crt >= (r[6] || 0) ? '#cfe4ea' : '#ff5a47';
@@ -1646,6 +1664,10 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.font = '500 15px ' + DISP; ctx.fillStyle = '#f0a73c'; var dl = wrapTxt(RC[S.sel][5] || '', 570);
     for (var q = 0; q < dl.length && q < 3; q++) ctx.fillText(dl[q], 116, 373 + q * 17);
   }
+  function drawMedFab(){ctx.fillStyle='rgba(2,12,18,0.96)';ctx.fillRect(100,22,600,394);ctx.strokeStyle='#17303f';ctx.lineWidth=2;ctx.strokeRect(100,22,600,394);ctx.textAlign='left';ctx.font='700 19px '+DISP;ctx.fillStyle='#4fe0b6';ctx.fillText('МЕДИЦИНСКИЙ ФАБРИКАТОР',116,48);ctx.font='500 13px '+DISP;ctx.fillStyle='#9ff4ff';ctx.fillText('Растения на складе: мох '+S.pl.t+' · водоросль '+S.pl.i+' · губка '+S.pl.b,116,70);for(var i=0;i<MRC.length;i++){var r=MRC[i],y=104+i*48;if(i===S.sel){ctx.fillStyle='#123042';ctx.fillRect(108,y-18,584,38);}ctx.font='700 16px '+DISP;ctx.fillStyle=canMakeMed(r)?'#cfe4ea':'#ff8a78';ctx.fillText(r[0],120,y);ctx.font='500 13px '+DISP;ctx.fillStyle='#7a97a3';ctx.fillText(r[4],120,y+17);ctx.textAlign='right';ctx.fillStyle='#f0a73c';ctx.fillText(r[3].x?'2 любых растения':(r[3].t?'1 синий мох':r[3].i?'1 бурая водоросль':'1 алая губка'),680,y);ctx.textAlign='left';}ctx.font='500 13px '+DISP;ctx.fillStyle='#f0a73c';ctx.fillText('W/S — выбор · Пробел — изготовить · E — выйти',116,392);}
+  function drawStorage(){var items=[['Руда',S.ore],['Гарпуны',S.harp],['Баллоны сварки',S.cyl],['Топливные стержни',S.rods],['Синий мох',S.pl.t],['Бурая водоросль',S.pl.i],['Алая губка',S.pl.b],['Антидот',S.med.t],['Антибиотик',S.med.i],['Мазь',S.med.b],['Аптечки',S.med.h],['Ящики',S.crt]];ctx.fillStyle='rgba(2,12,18,0.96)';ctx.fillRect(100,22,600,394);ctx.strokeStyle='#17303f';ctx.lineWidth=2;ctx.strokeRect(100,22,600,394);ctx.textAlign='left';ctx.font='700 19px '+DISP;ctx.fillStyle='#4fe0b6';ctx.fillText('СКЛАД ПОДЛОДКИ',116,47);ctx.font='500 13px '+DISP;ctx.fillStyle='#9ff4ff';ctx.fillText('Вместимость '+Math.ceil(stored())+'/'+capSub()+' · рюкзак '+Math.ceil(packLoad())+'/'+dCap(),116,68);for(var i=0;i<items.length;i++){var y=91+i*23;if(i===S.sel){ctx.fillStyle='#123042';ctx.fillRect(108,y-15,584,21);}ctx.font='500 14px '+DISP;ctx.fillStyle='#cfe4ea';ctx.fillText(items[i][0],120,y);ctx.textAlign='right';ctx.fillStyle='#f0a73c';ctx.fillText(items[i][1],680,y);ctx.textAlign='left';}ctx.font='500 13px '+DISP;ctx.fillStyle='#f0a73c';ctx.fillText('W/S — выбор · Пробел — взять · Q — положить · E — выйти',116,392);}
+  function drawTerminalPanel(){var cfg={helm:['УПРАВЛЕНИЕ ПОДЛОДКОЙ','W/S — вертикальный курс · A/D — горизонтальный курс','Контролируйте энергию реактора и целостность корпуса.'],gun:['ТЕРМИНАЛ ОРУДИЙ','A/D — наводка · Q — выбрать пушку · Пробел — огонь','Верхняя пушка прикрывает верхний сектор, нижняя — нижний.'],reactor:['ТЕРМИНАЛ РЕАКТОРА','W/S — мощность · Q — автоматика','Температура '+Math.round(R.T)+'° · мощность '+Math.round(R.F)+'% · стержень '+Math.round(R.rod)+'% · запас '+S.rods],pump:['НАСОСНАЯ','Пробел — форсаж откачки','Насосы откачивают воду из отсеков подлодки.']}[P.seat];ctx.fillStyle='rgba(2,12,18,0.94)';ctx.fillRect(100,22,600,394);ctx.strokeStyle='#17303f';ctx.lineWidth=2;ctx.strokeRect(100,22,600,394);ctx.textAlign='left';ctx.font='700 21px '+DISP;ctx.fillStyle='#4fe0b6';ctx.fillText(cfg[0],118,55);ctx.font='500 16px '+DISP;ctx.fillStyle='#cfe4ea';ctx.fillText(cfg[1],120,105);ctx.fillStyle='#9ff4ff';ctx.fillText(cfg[2],120,145);ctx.fillStyle='#f0a73c';ctx.fillText('E — покинуть терминал',120,365);}
+  function drawPlayerPanel(){var health=uiPanel==='health';ctx.fillStyle='rgba(2,12,18,0.96)';ctx.fillRect(100,22,600,394);ctx.strokeStyle='#17303f';ctx.lineWidth=2;ctx.strokeRect(100,22,600,394);ctx.textAlign='left';ctx.font='700 21px '+DISP;ctx.fillStyle=health?'#ff8a78':'#4fe0b6';ctx.fillText(health?'СОСТОЯНИЕ ЗДОРОВЬЯ':'ИНВЕНТАРЬ ВОДОЛАЗА',118,52);ctx.font='700 16px '+DISP;ctx.fillStyle='#cfe4ea';ctx.fillText('Здоровье: '+Math.round(P.hp)+' / 100',120,92);ctx.fillStyle='#17303f';ctx.fillRect(120,105,540,12);ctx.fillStyle=P.hp<30?'#ff5a47':'#4fe0b6';ctx.fillRect(120,105,540*clamp(P.hp/100,0,1),12);ctx.font='500 15px '+DISP;ctx.fillStyle=P.dis.t>0.05?'#ff8a78':'#7a97a3';ctx.fillText('Отравление: '+(P.dis.t>0.05?'активно':'нет'),120,150);ctx.fillStyle=P.dis.i>0.05?'#ff8a78':'#7a97a3';ctx.fillText('Инфекция: '+(P.dis.i>0.05?'активна':'нет'),120,178);ctx.fillStyle=P.dis.b>0.05?'#ff8a78':'#7a97a3';ctx.fillText('Ожоги: '+(P.dis.b>0.05?'есть':'нет'),120,206);ctx.fillStyle='#9ff4ff';ctx.fillText('Аптечки: '+D.med.h+' · Антидоты: '+D.med.t+' · Антибиотики: '+D.med.i+' · Мази: '+D.med.b,120,250);ctx.fillStyle='#cfe4ea';ctx.fillText('Руда: '+D.carry+' · Растения: '+(D.pl.t+D.pl.i+D.pl.b)+' · Гарпуны: '+D.ammo,120,280);ctx.fillStyle='#7a97a3';ctx.fillText('I — инвентарь · J — здоровье · H — применить лекарство · Esc — закрыть',120,350);if(health){ctx.fillStyle='#f0a73c';ctx.fillText('H — применить подходящее средство из рюкзака',120,315);}}
   function drawPlants() {
     for (var i = 0; i < plants.length; i++) {
       var p = plants[i]; if (p.got || Math.abs(p.x - camX - W / 2) > 460 || Math.abs(p.y - camY - H / 2) > 270) continue;
@@ -2373,7 +2395,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     if (flash > 0) { ctx.fillStyle = 'rgba(255,90,71,' + (flash * 1.2).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
 
-    if (state !== 'menu') drawRadar(); if (state === 'play' && P.seat === 'fab') drawFab(); if (state === 'play' && shop) drawShop();
+    if(state!=='menu')drawRadar();if(state==='play'&&P.seat==='fab')drawFab();if(state==='play'&&P.seat==='medfab')drawMedFab();if(state==='play'&&P.seat==='storage')drawStorage();if(state==='play'&&P.seat&&['helm','gun','reactor','pump'].indexOf(P.seat)>=0)drawTerminalPanel();if(state==='play'&&shop)drawShop();if(state==='play'&&uiPanel)drawPlayerPanel();
     if (state === 'play') {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(2,8,14,0.85)'; ctx.font = '700 22px ' + DISP;
       ctx.textAlign = 'left'; ctx.font = '700 15px ' + DISP; ctx.fillStyle = '#f0a73c'; var ob = 'ЗАДАНИЕ: ' + LEVELS[cur].brief; ctx.strokeText(ob, 10, 16); ctx.fillText(ob, 10, 16);
@@ -2418,7 +2440,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     el.o2Bar.style.transform = 'scaleX(' + o2.toFixed(3) + ')'; el.o2Bar.style.background = col(o2);
     var ph = clamp(P.hp / 100, 0, 1); el.phBar.style.transform = 'scaleX(' + ph.toFixed(3) + ')'; el.phBar.style.background = col(ph);
     el.phLab.textContent = 'Здоровье ' + Math.round(P.hp) + (P.dis.t > 0.05 ? ' · яд' : '') + (P.dis.i > 0.05 ? ' · инф.' : '') + (P.dis.b > 0.05 ? ' · ожог' : '');
-    el.med.textContent = 'акт ' + S.med.h + ' · яд ' + S.med.t + ' · инф ' + S.med.i + ' · ож ' + S.med.b;
+    el.med.textContent = 'апт. ' + D.med.h + ' · антидот ' + D.med.t + ' · антиб. ' + D.med.i + ' · мазь ' + D.med.b;
     el.st.textContent = Math.ceil(stored()) + '/' + capSub() + ' · ' + dLoad() + '/' + dCap(); el.crd.textContent = S.cr;
     el.dp.textContent = Math.round(1200 + sy * 0.12) + ' м'; el.ore.textContent = (S.ore + D.carry) + ' · ' + (D.ammo + S.harp);
     var LVh = LEVELS[cur], dd = Math.round(Math.hypot(gx - sx, gy - sy) / 10), AR = ['→', '↘', '↓', '↙', '←', '↖', '↑', '↗'][(Math.round(Math.atan2(gy - sy, gx - sx) / 0.7854) + 8) % 8];
