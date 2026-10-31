@@ -1179,7 +1179,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     if (inHull(mx, my)) return;
     for (var q = 0; q < wp.pel; q++) {
       var a = T.ang + (auto ? rand(-0.28, 0.28) : 0) + (wp.spr ? rand(-wp.spr, wp.spr) : 0);
-      shots.push({ x: mx, y: my, vx: Math.cos(a) * wp.sp + svx, vy: Math.sin(a) * wp.sp + svy, life: wp.life, dmg: wp.dmg, r: wp.r, c: wp.c, own: 1 });
+      shots.push({ x: sx + (mx - sx) * 1.25, y: sy + (my - sy) * 1.25, vx: Math.cos(a) * wp.sp + svx, vy: Math.sin(a) * wp.sp + svy, life: wp.life, dmg: wp.dmg, r: wp.r, c: wp.c, own: 1 });
     }
     T.cool = wp.cd * (1 - 0.27 * S.gu) * SUBS[S.sub].fr * (auto ? 2.5 : 1); sfx.shot();
   }
@@ -1718,16 +1718,17 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     ctx.strokeStyle = '#91a29e';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(x0 + 18, mainTop + 8);
-    ctx.lineTo(x1 - 72, mainTop + 8);
-    ctx.quadraticCurveTo(x1 + 2, mainTop + 8, x1 + 20, sy - 8);
-    ctx.quadraticCurveTo(x1 + 38, sy + 12, x1 + 18, sy + 38);
-    ctx.quadraticCurveTo(x1 + 4, bottom - 2, x1 - 42, bottom - 2);
-    ctx.lineTo(x0 + 62, bottom - 2);
-    ctx.quadraticCurveTo(x0 + 14, bottom - 2, x0 + 5, sy + 54);
-    ctx.quadraticCurveTo(x0 - 7, sy + 32, x0 - 7, sy + 8);
-    ctx.lineTo(x0 - 7, sy - 4);
-    ctx.quadraticCurveTo(x0 - 5, mainTop + 8, x0 + 18, mainTop + 8);
+    /* The hull is deliberately wider than the deck rectangles at both ends:
+       the entire middle and lower compartments remain behind the pressure hull. */
+    ctx.moveTo(x0 - 14, mainTop + 8);
+    ctx.lineTo(x1 + 10, mainTop + 8);
+    ctx.quadraticCurveTo(x1 + 40, mainTop + 8, x1 + 42, sy - 2);
+    ctx.quadraticCurveTo(x1 + 46, sy + 24, x1 + 22, sy + 48);
+    ctx.quadraticCurveTo(x1 + 8, bottom - 2, x1 + 12, bottom - 2);
+    ctx.lineTo(x0 - 10, bottom - 2);
+    ctx.quadraticCurveTo(x0 - 38, bottom - 2, x0 - 38, sy + 48);
+    ctx.quadraticCurveTo(x0 - 40, sy + 22, x0 - 22, sy - 2);
+    ctx.quadraticCurveTo(x0 - 18, mainTop + 8, x0 - 14, mainTop + 8);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
@@ -1769,12 +1770,12 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     for (var d = -1; d <= 1; d += 2) {
       var ny = sy + d * 48;
       ctx.fillStyle = '#263940';
-      rr(x0 - 25, ny - 7, 29, 14, 5); ctx.fill();
+      rr(x0 - 55, ny - 8, 40, 16, 5); ctx.fill();
       ctx.strokeStyle = '#82949a'; ctx.lineWidth = 1.4; ctx.stroke();
       ctx.strokeStyle = '#aab8b9'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(x0 - 28, ny - pa);
-      ctx.lineTo(x0 - 28, ny + pa);
+      ctx.moveTo(x0 - 58, ny - pa);
+      ctx.lineTo(x0 - 58, ny + pa);
       ctx.stroke();
     }
 
@@ -1789,9 +1790,9 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
 
     /* Empty upper starboard hardpoint sits on the main hull roof near the bow. */
     ctx.fillStyle = '#526a70';
-    rr(x1 - 104, mainTop - 2, 30, 7, 3); ctx.fill();
+    rr(x1 - 104, mainTop + 8, 30, 7, 3); ctx.fill();
     ctx.strokeStyle = '#b0bfbd'; ctx.lineWidth = 1.2;
-    ctx.strokeRect(x1 - 98, mainTop - 8, 18, 6);
+    ctx.strokeRect(x1 - 98, mainTop + 2, 18, 6);
   }
 
   function drawInterior() {
@@ -1950,7 +1951,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
   function drawPlayer() {
     if (P.out) return;
     var x = sx + P.lx, y = sy + RH / 2 - 6;
-    ctx.save(); ctx.translate(x, y); ctx.scale(P.face * 0.82, 0.82);
+    ctx.save(); ctx.translate(x, y); ctx.scale(P.face * 0.656, 0.656);
     var sw = P.seat ? 0 : Math.sin(P.step) * 4;
     ctx.strokeStyle = '#243746'; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
     if (P.seat) { ctx.beginPath(); ctx.moveTo(-1, -9); ctx.lineTo(5, -8); ctx.lineTo(5, -1); ctx.stroke(); }
@@ -2065,12 +2066,14 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     drawCave(); if (!sonarOn()) drawIce(ctx, 0); drawGoal(); drawPods(); drawSites(); drawWrecks(); drawBeacons(); drawOutposts(); drawThals(); if (!sonarOn()) { drawCrates(); drawPlants(); drawBCrates(); } drawNest(); if (!sonarOn()) drawOres();
     var i;
     for (i = 0; i < mons.length; i++) if (!mons[i].att && !sonarOn()) drawMon(mons[i]);
-    /* Enlarge the Dugong hull and all three deck visuals together, keeping the diver at the original screen scale. */
+    /* One shared transform keeps hull, decks, mounted guns, player position,
+       flooding, leaks, fire and electrical sparks in the same submarine space. */
     ctx.save(); ctx.translate(sx, sy); ctx.scale(1.25, 1.25); ctx.translate(-sx, -sy);
     drawSubShell(); drawInterior(); drawDoors();
     if (S.sub) { ctx.font = '700 12px ' + DISP; ctx.textAlign = 'center'; ctx.fillStyle = '#9ff4ff'; ctx.fillText(SUBS[S.sub].n.toUpperCase(), sx + 6, sy - SH - 12); ctx.textAlign = 'left'; }
+    drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights();
     ctx.restore();
-    drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights(); drawDiver();
+    drawDiver();
     for (i = 0; i < mons.length; i++) if (mons[i].att && !sonarOn()) drawMon(mons[i]);
     for (i = 0; i < shots.length; i++) {
       var sh = shots[i]; ctx.fillStyle = sh.c || '#ffd27a'; ctx.beginPath(); ctx.arc(sh.x, sh.y, sh.r || 3, 0, 6.283); ctx.fill();
