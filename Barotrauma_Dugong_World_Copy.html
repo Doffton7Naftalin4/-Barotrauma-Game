@@ -1736,7 +1736,7 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
        A single continuous ladder shaft sits at the exact centre of all three. */
     var x0 = sx - HL, fullW = HL * 2, centerX = sx;
     var upperW = fullW * 0.58, upperX = centerX - upperW / 2;
-    var top = sy - 68, upperH = 34, deckH = 48;
+    var top = sy - 68, deckH = 48, upperH = deckH;
     var decks = [
       { x: upperX, y: top, w: upperW, h: upperH, rooms: [
         { n: 'ВОЗДУШНЫЙ ШЛЮЗ', w: upperW * 0.38, c: '#24414c' },
@@ -1816,8 +1816,8 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
       ctx.lineTo(access.x - 5, deck3Y + deckH - 5);
       ctx.moveTo(access.x + 5, deck3Y + 5);
       ctx.lineTo(access.x + 5, deck3Y + deckH - 5);
-      for (var rung = 0; rung < 5; rung++) {
-        var rungY = deck3Y + 8 + rung * 7;
+      for (var rung = 0; rung < 7; rung++) {
+        var rungY = deck3Y + 8 + rung * ((deckH - 16) / 6);
         ctx.moveTo(access.x - 5, rungY);
         ctx.lineTo(access.x + 5, rungY);
       }
