@@ -2270,7 +2270,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     castLight(d, sx - 125, sy, hr, 0, 6.2832, 64, hp, so); castLight(d, sx + 10, sy, hr, 0, 6.2832, 64, hp, so); castLight(d, sx + 145, sy, hr, 0, 6.2832, 64, hp, so);
     if (pOn) castLight(d, sx + 206, sy, 620, -0.5, 0.5, 40, 0.92, so);
     if (pOn) [G, G2].forEach(function (T) { var lx_ = sx + T.ox + Math.cos(T.ang) * 30, ly_ = sy + T.oy + Math.sin(T.ang) * 30; castLight(d, lx_, ly_, 540, T.ang - 0.3, T.ang + 0.3, 24, 0.9, so); });
-    if (state === 'play' && P.out) { castLight(d,D.x,D.y,diverLampOn?72:105,0,6.2832,48,diverLampOn?0.38:0.62); if(diverLampOn)castLight(d,D.x,D.y,430,D.aim-0.31,D.aim+0.31,52,0.98); }
+    if (state === 'play' && P.out) { /* У водолаза нет широкого обзора подлодки: только небольшой ореол вокруг шлема. */ castLight(d,D.x,D.y,diverLampOn?38:42,0,6.2832,48,diverLampOn?0.34:0.24); /* Персональный фонарь слабее и короче прожекторов лодки. */ if(diverLampOn)castLight(d,D.x,D.y,300,D.aim-0.24,D.aim+0.24,52,0.94); }
     for (i = 0; i < ores.length; i++) if (!ores[i].got) blob(d, ores[i].x, ores[i].y, 38, 0.9);
     for (i = 0; i < plants.length; i++) if (!plants[i].got) blob(d, plants[i].x, plants[i].y, 38, 0.9);
     for (i = 0; i < crates.length; i++) if (!crates[i].got) blob(d, crates[i].x, crates[i].y, 50, 0.9);
