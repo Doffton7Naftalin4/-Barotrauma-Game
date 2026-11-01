@@ -1457,11 +1457,19 @@ if (e.code === 'KeyM') muted = !muted;
         }
       }
     }
-    /* The central ladder shaft is open between each pair of decks in both directions. */
+    /* The central ladder shaft is open between each pair of decks in both directions.
+       Water drains down much faster than it rises, while conserving the same transfer
+       between rooms and keeping the upward rate unchanged. */
     for(var vd=0;vd<2;vd++){
       var upperRoom=dugongFloodIndex(vd,dugongRoomAt(vd,0));
       var lowerRoom=dugongFloodIndex(vd+1,dugongRoomAt(vd+1,0));
-      queueWaterFlow(upperRoom,lowerRoom,0.70);
+      if(upperRoom>=0&&lowerRoom>=0&&upperRoom!==lowerRoom){
+        var ladderDiff=floodBefore[upperRoom]-floodBefore[lowerRoom];
+        var ladderRate=ladderDiff>0?3.5:0.70;
+        var ladderFlow=clamp(ladderDiff*ladderRate*dt,-Math.abs(ladderDiff)*0.5,Math.abs(ladderDiff)*0.5);
+        floodDelta[upperRoom]-=ladderFlow;
+        floodDelta[lowerRoom]+=ladderFlow;
+      }
     }
     for(var wi=0;wi<dugongFlood.length;wi++){
       dugongFlood[wi]=clamp(floodBefore[wi]+floodDelta[wi],0,1);
