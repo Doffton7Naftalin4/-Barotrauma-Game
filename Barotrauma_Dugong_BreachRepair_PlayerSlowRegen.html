@@ -2997,7 +2997,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights();
     ctx.restore();
     drawDiver();
-    for (i = 0; i < mons.length; i++) if (mons[i].att && !sonarOn()) drawMon(mons[i]);
+    for (i = 0; i < mons.length; i++) if (P.out && mons[i].att && !sonarOn()) drawMon(mons[i]);
     for (i = 0; i < shots.length; i++) {
       var sh = shots[i]; ctx.fillStyle = sh.c || '#ffd27a'; ctx.beginPath(); ctx.arc(sh.x, sh.y, sh.r || 3, 0, 6.283); ctx.fill();
       ctx.strokeStyle = 'rgba(255,210,122,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(sh.x - sh.vx * 0.03, sh.y - sh.vy * 0.03); ctx.stroke();
