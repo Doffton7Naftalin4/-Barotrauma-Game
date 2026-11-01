@@ -2699,11 +2699,11 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
       for (var k = 0; k < deck.widths.length - 1; k++) {
         var bx = sx + dugongDoorX(d, k), gapY = sy + deck.y + 14, gapH = 22;
         if (!dugongHasDoor(d, k)) {
-          ctx.strokeStyle = '#81949a'; ctx.lineWidth = 3;
+          ctx.strokeStyle = '#b9c9ce'; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.moveTo(bx, sy + deck.y + 2); ctx.lineTo(bx, sy + deck.y + deck.h - 2); ctx.stroke();
           continue;
         }
-        ctx.strokeStyle = '#81949a'; ctx.lineWidth = 3;
+        ctx.strokeStyle = '#b9c9ce'; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(bx, sy + deck.y + 2); ctx.lineTo(bx, gapY);
         ctx.moveTo(bx, gapY + gapH); ctx.lineTo(bx, sy + deck.y + deck.h - 2); ctx.stroke();
         ctx.fillStyle = '#9aadb2';
