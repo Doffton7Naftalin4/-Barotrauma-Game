@@ -26,3 +26,8 @@ Updated `Barotrauma_Dugong_BreachRepair_PlayerSlowRegen.html`:
 - Current build: `Barotrauma_Dugong_BreachRepair_PlayerSlowRegen.html`
 - Commit: `98f39f1dfbb159369e603f4c210cad502d542d2e`
 - New blob: `88f3971729580a0ad747a217444c895171500b00`
+
+
+## User verification — passed
+After testing the updated build in the browser, the user confirmed: "Все нормально течет вода" (water now flows normally).
+This confirms the reported downward-flow issue is resolved in the user's test. No further code changes were made in this confirmation update.
