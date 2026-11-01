@@ -2850,28 +2850,6 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     }
   }
 
-  function drawBulkheadOcclusion() {
-    /* Opaque inner bulkheads are painted over sprites so a character cannot see
-       through a partition. Doorways remain open; closed doors remain opaque. */
-    for (var d = 0; d < DUGONG_DECK_LAYOUT.length; d++) {
-      var deck = DUGONG_DECK_LAYOUT[d], top = sy + deck.y + 1, bottom = sy + deck.y + deck.h - 1;
-      for (var k = 0; k < deck.widths.length - 1; k++) {
-        var bx = sx + dugongDoorX(d, k), hasDoor = dugongHasDoor(d, k);
-        ctx.fillStyle = '#1a2b34';
-        if (!hasDoor || !deckDoors[d][k]) {
-          ctx.fillRect(bx - 3, top, 6, bottom - top);
-        } else {
-          var gapY = sy + deck.y + 14, gapH = 22;
-          ctx.fillRect(bx - 3, top, 6, gapY - top);
-          ctx.fillRect(bx - 3, gapY + gapH, 6, bottom - gapY - gapH);
-          ctx.strokeStyle = '#81949a'; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(bx - 3, gapY); ctx.lineTo(bx - 3, gapY + gapH);
-          ctx.moveTo(bx + 3, gapY); ctx.lineTo(bx + 3, gapY + gapH); ctx.stroke();
-        }
-      }
-    }
-  }
-
   function drawDoors() {
     /* Door leaves are rendered by drawInterior at each deck's real bulkhead. */
   }
@@ -3017,7 +2995,6 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     drawSubShell(); drawInterior(); drawDoors(); drawSubDrops();
     if (S.sub) { ctx.font = '700 12px ' + DISP; ctx.textAlign = 'center'; ctx.fillStyle = '#9ff4ff'; ctx.fillText(SUBS[S.sub].n.toUpperCase(), sx + 6, sy - DUGONG_HULL_TOP - 12); ctx.textAlign = 'left'; }
     drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights();
-    drawBulkheadOcclusion();
     ctx.restore();
     drawDiver();
     for (i = 0; i < mons.length; i++) if (mons[i].att && !sonarOn()) drawMon(mons[i]);
