@@ -1809,6 +1809,18 @@ if (e.code === 'KeyM') muted = !muted;
   function drawBCrates() {
     for (var i = 0; i < bcrates.length; i++) { var c = bcrates[i]; if (c.got) continue; ctx.fillStyle = '#2f6f8f'; ctx.fillRect(c.x - 11, c.y - 8, 22, 16); ctx.strokeStyle = '#9ff4ff'; ctx.lineWidth = 2; ctx.strokeRect(c.x - 11, c.y - 8, 22, 16); ctx.beginPath(); ctx.moveTo(c.x - 11, c.y); ctx.lineTo(c.x + 11, c.y); ctx.stroke(); }
   }
+  function drawExteriorForeground(shx, shy) {
+    if (!(state === 'play' && P.out)) return;
+    var wz = viewZoom;
+    ctx.save();
+    ctx.translate(W / 2, H / 2); ctx.scale(wz, wz); ctx.translate(-W / 2, -H / 2);
+    ctx.translate(-camX + shx, -camY + shy);
+    /* Redraw only the pressure-hull silhouette and diver over the black/sonar layers. */
+    drawSubShell();
+    drawDiver(true);
+    ctx.restore();
+  }
+
   function drawBeaconCover(shx, shy) {
     if (!beaconBlind()) return; var b = beaconAt(D.x, D.y);
     var wz = state === 'play' ? viewZoom : 1;
@@ -1835,13 +1847,16 @@ if (e.code === 'KeyM') muted = !muted;
     }
   }
 
-  function drawDiver() {
+  function drawDiver(darkOnly) {
     if (!P.out) return;
     var bodyAngle=D.bodyAngle==null?D.aim:D.bodyAngle,backView=!!D.backView;
-    /* Flashlight cone is attached to the diver's helmet and follows the body turn. */
-    ctx.save();ctx.translate(D.x,D.y);ctx.rotate(bodyAngle);var beam=ctx.createRadialGradient(12,0,5,92,0,155);beam.addColorStop(0,'rgba(255,239,174,0.18)');beam.addColorStop(1,'rgba(255,239,174,0)');ctx.fillStyle=beam;ctx.beginPath();ctx.moveTo(8,-3);ctx.lineTo(155,-57);ctx.quadraticCurveTo(174,0,155,57);ctx.closePath();ctx.fill();ctx.restore();
-    var g = ctx.createRadialGradient(D.x, D.y, 4, D.x, D.y, 110); g.addColorStop(0, 'rgba(255,246,207,0.18)'); g.addColorStop(1, 'rgba(255,246,207,0)');
-    ctx.fillStyle = g; ctx.fillRect(D.x - 110, D.y - 110, 220, 220);
+    /* In exterior blackout mode, draw only the diver silhouette, not light spilling into the water. */
+    if (!darkOnly) {
+      /* Flashlight cone is attached to the diver's helmet and follows the body turn. */
+      ctx.save();ctx.translate(D.x,D.y);ctx.rotate(bodyAngle);var beam=ctx.createRadialGradient(12,0,5,92,0,155);beam.addColorStop(0,'rgba(255,239,174,0.18)');beam.addColorStop(1,'rgba(255,239,174,0)');ctx.fillStyle=beam;ctx.beginPath();ctx.moveTo(8,-3);ctx.lineTo(155,-57);ctx.quadraticCurveTo(174,0,155,57);ctx.closePath();ctx.fill();ctx.restore();
+      var g = ctx.createRadialGradient(D.x, D.y, 4, D.x, D.y, 110); g.addColorStop(0, 'rgba(255,246,207,0.18)'); g.addColorStop(1, 'rgba(255,246,207,0)');
+      ctx.fillStyle = g; ctx.fillRect(D.x - 110, D.y - 110, 220, 220);
+    }
     ctx.save();ctx.translate(D.x,D.y);ctx.rotate(bodyAngle);var action=D.action||'idle',phase=action==='swim'?Math.sin(t*11):Math.sin((D.actionT||t)*18),sw=action==='swim'?phase*3.8:action==='idle'?Math.sin(t*2)*0.5:phase*1.8;
     // Баллон и рама снаряжения
     ctx.fillStyle = '#263d49'; rr(-11, -5, 7, 10, 2); ctx.fill();
@@ -1873,8 +1888,10 @@ if (e.code === 'KeyM') muted = !muted;
     ctx.fillStyle = '#d8e1e3'; ctx.beginPath(); ctx.arc(5, 5, 2, 0, 6.283); ctx.fill();
     ctx.fillStyle = '#f4d77b'; ctx.beginPath(); ctx.arc(1, -5, 1.5, 0, 6.283); ctx.fill();
     ctx.restore();
-    ctx.save(); ctx.translate(D.x, D.y); ctx.rotate(bodyAngle); ctx.fillStyle = '#8fa1ad'; ctx.fillRect(5, -1.5, 15, 3);
-    ctx.strokeStyle = 'rgba(255,210,122,0.25)'; ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(120, 0); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    if (!darkOnly) {
+      ctx.save(); ctx.translate(D.x, D.y); ctx.rotate(bodyAngle); ctx.fillStyle = '#8fa1ad'; ctx.fillRect(5, -1.5, 15, 3);
+      ctx.strokeStyle = 'rgba(255,210,122,0.25)'; ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(120, 0); ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+    }
   }
 
   var RC = [['Гарпуны ×10', 2, function () { S.harp += 10; }, 0, 0, 'Пополняют запас гарпунов. На борту водолаз сам берёт до 10 штук перед выходом.'],
@@ -2350,7 +2367,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
   }
   function drawDark(shx, shy) {
     var d = dk.getContext('2d'), i, so = echoViewOn();
-    d.setTransform(1, 0, 0, 1, 0, 0); d.globalCompositeOperation = 'source-over'; d.fillStyle = 'rgba(1,5,9,0.95)'; d.fillRect(0, 0, dk.width, dk.height);
+    d.setTransform(1, 0, 0, 1, 0, 0); d.globalCompositeOperation = 'source-over'; d.fillStyle = (state === 'play' && P.out) ? '#000' : 'rgba(1,5,9,0.95)'; d.fillRect(0, 0, dk.width, dk.height);
     var wz = state === 'play' ? viewZoom : 1;
     d.setTransform(scale * wz, 0, 0, scale * wz,
       scale * (W / 2 * (1 - wz) + (-camX + shx) * wz),
@@ -2362,7 +2379,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
       if (pOn) castLight(d, sx + 206, sy, 620, -0.5, 0.5, 40, 0.92, so);
       if (pOn) [G, G2].forEach(function (T) { var lx_ = sx + T.ox + Math.cos(T.ang) * 30, ly_ = sy + T.oy + Math.sin(T.ang) * 30; castLight(d, lx_, ly_, 540, T.ang - 0.3, T.ang + 0.3, 24, 0.9, so); });
     }
-    if (state === 'play' && P.out) { castLight(d,D.x,D.y,diverLampOn?72:105,0,6.2832,48,diverLampOn?0.38:0.62); if(diverLampOn)castLight(d,D.x,D.y,430,D.aim-0.31,D.aim+0.31,52,0.98); }
+    /* Exterior: no light punches holes in the black water layer. drawSonar() supplies the only terrain visibility. */
     if (!(state === 'play' && P.out)) {
     for (i = 0; i < ores.length; i++) if (!ores[i].got) blob(d, ores[i].x, ores[i].y, 38, 0.9);
     for (i = 0; i < plants.length; i++) if (!plants[i].got) blob(d, plants[i].x, plants[i].y, 38, 0.9);
@@ -2539,17 +2556,19 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     var mainTop = sy - 30, top = sy - 88, bottom = sy + 88;
     var pa = Math.cos(t * 18 * (0.3 + pw.ratio * (dugongFlood[1] < 0.5 ? 1 : 0))) * 8;
 
-    /* Soft sonar/spotlight cone beyond the bow. */
-    var lg = ctx.createLinearGradient(x1 + 4, 0, x1 + 250, 0);
-    lg.addColorStop(0, 'rgba(255,246,207,0.16)');
-    lg.addColorStop(1, 'rgba(255,246,207,0)');
-    ctx.fillStyle = lg;
-    ctx.beginPath();
-    ctx.moveTo(x1 + 8, sy - 2);
-    ctx.lineTo(x1 + 250, sy - 70);
-    ctx.lineTo(x1 + 250, sy + 70);
-    ctx.closePath();
-    ctx.fill();
+    /* The bow spotlight is disabled outside; terrain is shown only by sonar echoes. */
+    if (!(state === 'play' && P.out)) {
+      var lg = ctx.createLinearGradient(x1 + 4, 0, x1 + 250, 0);
+      lg.addColorStop(0, 'rgba(255,246,207,0.16)');
+      lg.addColorStop(1, 'rgba(255,246,207,0)');
+      ctx.fillStyle = lg;
+      ctx.beginPath();
+      ctx.moveTo(x1 + 8, sy - 2);
+      ctx.lineTo(x1 + 250, sy - 70);
+      ctx.lineTo(x1 + 250, sy + 70);
+      ctx.closePath();
+      ctx.fill();
+    }
 
     /* Main hull is almost one continuous elongated capsule. Its bow is fuller
        and rounded; the stern is shorter and carries the two small drive pods. */
@@ -3019,7 +3038,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     }
     ctx.globalAlpha = 1;
     ctx.restore();
-    drawDark(shx, shy); drawSonar(shx, shy); drawBeaconCover(shx, shy);
+    drawDark(shx, shy); drawSonar(shx, shy); drawExteriorForeground(shx, shy); drawBeaconCover(shx, shy);
 
     var vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.4, W / 2, H / 2, H * 0.95);
     vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,4,8,0.55)');
