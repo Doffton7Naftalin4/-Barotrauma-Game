@@ -1671,6 +1671,8 @@ if (e.code === 'KeyM') muted = !muted;
 
   /* ---------- drawing ---------- */
   function sonarOn() { return !(state === 'play' && P.out); }
+  /* Exterior view reuses the low-resolution triangular echo renderer, centred on the diver. */
+  function echoViewOn() { return sonarOn() || (state === 'play' && P.out); }
   function drawIce(c, soft) {
     var x0 = camX - 80, x1 = camX + W + 80, y0 = camY - 80, y1 = camY + H + 80, n, k, i, j, p, cl;
     for (n = 0; n < icePlugs.length; n++) {
@@ -1686,7 +1688,7 @@ if (e.code === 'KeyM') muted = !muted;
     }
   }
   function drawSonar(shx, shy) {
-    if (!sonarOn()) return;
+    if (!echoViewOn()) return;
     /* low-poly sonar: the coarse echo image is re-drawn as flat-shaded triangles */
     var im = scx.getImageData(0, 0, sc.width, sc.height).data, sw = sc.width, nx = Math.floor((sw - 1) / TS), ny = Math.floor((sc.height - 1) / TS), ci, cj;
     function tri(i1, i2, i3, ax, ay, bx_, by_, cx_, cy_) {
@@ -1708,7 +1710,7 @@ if (e.code === 'KeyM') muted = !muted;
     ctx.restore();
   }
   function drawCave() {
-    var son = sonarOn(), c = ctx;
+    var son = echoViewOn(), c = ctx;
     var wz = state === 'play' ? viewZoom : 1, vx0 = camX + W / 2 - W / (2 * wz), vx1 = camX + W / 2 + W / (2 * wz), vy0 = camY + H / 2 - H / (2 * wz), vy1 = camY + H / 2 + H / (2 * wz), i0 = Math.max(0, Math.floor((vx0 - wx0) / CS) - 1), i1 = Math.min(GW - 2, Math.ceil((vx1 - wx0) / CS) + 1), j0 = Math.max(0, Math.floor((vy0 - wy0) / CS) - 1), j1 = Math.min(GH - 2, Math.ceil((vy1 - wy0) / CS) + 1), i, j, k, ln = [];
     if (son) { sbx = Math.floor(camX / GQ) * GQ; sby = Math.floor(camY / GQ) * GQ; c = scx; c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, sc.width, sc.height); c.setTransform(1 / SK, 0, 0, 1 / SK, -sbx / SK, -sby / SK); }
     c.fillStyle = son ? '#04121b' : '#08161e'; c.beginPath();
@@ -1735,8 +1737,8 @@ if (e.code === 'KeyM') muted = !muted;
       for (i = 0; i < plants.length; i++) if (!plants[i].got) { c.fillStyle = PLC[plants[i].k]; c.beginPath(); c.arc(plants[i].x, plants[i].y, 14, 0, 6.283); c.fill(); }
       for (i = 0; i < crates.length; i++) if (!crates[i].got) { c.fillStyle = '#f0a73c'; c.beginPath(); c.arc(crates[i].x, crates[i].y, 17, 0, 6.283); c.fill(); }
       for (i = 0; i < bcrates.length; i++) if (!bcrates[i].got) { c.fillStyle = '#5fd0ff'; c.beginPath(); c.arc(bcrates[i].x, bcrates[i].y, 17, 0, 6.283); c.fill(); }
-      for (i = 0; i < mons.length; i++) { var mo = mons[i]; if (Math.hypot(mo.x - sx - 6, mo.y - sy) > (beaconUp ? 1100 : 520)) continue; c.fillStyle = '#ff4a3a'; c.beginPath(); c.arc(mo.x, mo.y, MT[mo.type].r * 0.9 + 4, 0, 6.283); c.fill(); }
-      c.globalCompositeOperation = 'destination-in'; var mg = c.createRadialGradient(sx + 6, sy, 150, sx + 6, sy, beaconUp ? 1300 : 650); mg.addColorStop(0, 'rgba(0,0,0,1)'); mg.addColorStop(1, 'rgba(0,0,0,0)');
+      for (i = 0; i < mons.length; i++) { var mo = mons[i], echoX = P.out ? D.x : sx + 6, echoY = P.out ? D.y : sy; if (Math.hypot(mo.x - echoX, mo.y - echoY) > (P.out ? 620 : (beaconUp ? 1100 : 520))) continue; c.fillStyle = '#ff4a3a'; c.beginPath(); c.arc(mo.x, mo.y, MT[mo.type].r * 0.9 + 4, 0, 6.283); c.fill(); }
+      var echoCX = P.out ? D.x : sx + 6, echoCY = P.out ? D.y : sy, echoR = P.out ? 720 : (beaconUp ? 1300 : 650); c.globalCompositeOperation = 'destination-in'; var mg = c.createRadialGradient(echoCX, echoCY, 100, echoCX, echoCY, echoR); mg.addColorStop(0, 'rgba(0,0,0,1)'); mg.addColorStop(1, 'rgba(0,0,0,0)');
       c.fillStyle = mg; c.fillRect(sbx - 20, sby - 20, W + 100, H + 100); c.globalCompositeOperation = 'source-over';
     } else {
       ctx.strokeStyle = 'rgba(79,224,182,0.1)'; ctx.lineWidth = 10; ctx.stroke(pth);
@@ -2347,7 +2349,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     d.fillStyle = g; d.fillRect(x - R, y - R, 2 * R, 2 * R);
   }
   function drawDark(shx, shy) {
-    var d = dk.getContext('2d'), i, so = sonarOn();
+    var d = dk.getContext('2d'), i, so = echoViewOn();
     d.setTransform(1, 0, 0, 1, 0, 0); d.globalCompositeOperation = 'source-over'; d.fillStyle = 'rgba(1,5,9,0.95)'; d.fillRect(0, 0, dk.width, dk.height);
     var wz = state === 'play' ? viewZoom : 1;
     d.setTransform(scale * wz, 0, 0, scale * wz,
@@ -2355,10 +2357,13 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
       scale * (H / 2 * (1 - wz) + (-camY + shy) * wz));
     d.globalCompositeOperation = 'destination-out';
     var pOn = pw.ratio > 0.3 && !pw.short, hr = pOn ? 270 : 150, hp = pOn ? 0.94 : 0.5;
-    castLight(d, sx - 125, sy, hr, 0, 6.2832, 64, hp, so); castLight(d, sx + 10, sy, hr, 0, 6.2832, 64, hp, so); castLight(d, sx + 145, sy, hr, 0, 6.2832, 64, hp, so);
-    if (pOn) castLight(d, sx + 206, sy, 620, -0.5, 0.5, 40, 0.92, so);
-    if (pOn) [G, G2].forEach(function (T) { var lx_ = sx + T.ox + Math.cos(T.ang) * 30, ly_ = sy + T.oy + Math.sin(T.ang) * 30; castLight(d, lx_, ly_, 540, T.ang - 0.3, T.ang + 0.3, 24, 0.9, so); });
+    if (!(state === 'play' && P.out)) {
+      castLight(d, sx - 125, sy, hr, 0, 6.2832, 64, hp, so); castLight(d, sx + 10, sy, hr, 0, 6.2832, 64, hp, so); castLight(d, sx + 145, sy, hr, 0, 6.2832, 64, hp, so);
+      if (pOn) castLight(d, sx + 206, sy, 620, -0.5, 0.5, 40, 0.92, so);
+      if (pOn) [G, G2].forEach(function (T) { var lx_ = sx + T.ox + Math.cos(T.ang) * 30, ly_ = sy + T.oy + Math.sin(T.ang) * 30; castLight(d, lx_, ly_, 540, T.ang - 0.3, T.ang + 0.3, 24, 0.9, so); });
+    }
     if (state === 'play' && P.out) { castLight(d,D.x,D.y,diverLampOn?72:105,0,6.2832,48,diverLampOn?0.38:0.62); if(diverLampOn)castLight(d,D.x,D.y,430,D.aim-0.31,D.aim+0.31,52,0.98); }
+    if (!(state === 'play' && P.out)) {
     for (i = 0; i < ores.length; i++) if (!ores[i].got) blob(d, ores[i].x, ores[i].y, 38, 0.9);
     for (i = 0; i < plants.length; i++) if (!plants[i].got) blob(d, plants[i].x, plants[i].y, 38, 0.9);
     for (i = 0; i < crates.length; i++) if (!crates[i].got) blob(d, crates[i].x, crates[i].y, 50, 0.9);
@@ -2373,6 +2378,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     if (LEVELS[cur].type === 'nest') { if (nest) blob(d, gx, gy, 190, 0.55); }
     else { blob(d, gx - 90, (stT + stB) / 2, 230, 0.85); blob(d, gx + 90, (stT + stB) / 2, 230, 0.85); blob(d, gx, stB + 30, 150, 0.7); }
     for (i = 0; i < parts.length; i += 2) if (!parts[i].b && parts[i].r > 2.4) blob(d, parts[i].x, parts[i].y, 30, 0.6 * clamp(parts[i].life / parts[i].max, 0, 1));
+    }
     d.globalCompositeOperation = 'source-over';
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
     if (so && 'filter' in ctx) { ctx.filter = 'blur(' + Math.round(5 * scale) + 'px)'; ctx.drawImage(dk, -12, -12, dk.width + 24, dk.height + 24); } else ctx.drawImage(dk, 0, 0);
@@ -2980,21 +2986,24 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
   function draw() {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0b3a4b'); g.addColorStop(1, '#03111a');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = 'rgba(190,233,242,0.5)';
-    for (var s = 0; s < snow.length; s++) { var f = snow[s]; ctx.globalAlpha = 0.15 + f.z * 0.3; ctx.fillRect(f.x, f.y, 1 + f.z, 1 + f.z); }
-    ctx.globalAlpha = 1;
+    if (state === 'play' && P.out) { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+    else {
+      var g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#0b3a4b'); g.addColorStop(1, '#03111a');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(190,233,242,0.5)';
+      for (var s = 0; s < snow.length; s++) { var f = snow[s]; ctx.globalAlpha = 0.15 + f.z * 0.3; ctx.fillRect(f.x, f.y, 1 + f.z, 1 + f.z); }
+      ctx.globalAlpha = 1;
+    }
 
     ctx.save();
     var shx = shake > 0 ? rand(-1, 1) * shake * 12 : 0, shy = shake > 0 ? rand(-1, 1) * shake * 12 : 0;
     var worldZoom = state === 'play' ? viewZoom : 1;
     ctx.translate(W / 2, H / 2); ctx.scale(worldZoom, worldZoom); ctx.translate(-W / 2, -H / 2);
     ctx.translate(-camX + shx, -camY + shy);
-    drawCave(); if (!sonarOn()) drawIce(ctx, 0); drawGoal(); drawPods(); drawSites(); drawWrecks(); drawBeacons(); drawOutposts(); drawThals(); if (!sonarOn()) { drawCrates(); drawPlants(); drawBCrates(); } drawNest(); if (!sonarOn()) drawOres(); drawDroppedItems();
+    drawCave(); if (!echoViewOn()) drawIce(ctx, 0); drawGoal(); if (!echoViewOn()) { drawPods(); drawSites(); drawWrecks(); drawBeacons(); drawOutposts(); drawThals(); drawCrates(); drawPlants(); drawBCrates(); drawNest(); drawOres(); drawDroppedItems(); }
     var i;
-    for (i = 0; i < mons.length; i++) if (!mons[i].att && !sonarOn()) drawMon(mons[i]);
+    for (i = 0; i < mons.length; i++) if (!mons[i].att && !echoViewOn()) drawMon(mons[i]);
     /* Hull, decks, mounted guns, player, flooding and damage now use one unscaled coordinate system. */
     ctx.save();
     drawSubShell(); drawInterior(); drawDoors(); drawSubDrops();
@@ -3002,7 +3011,7 @@ function drawPlayerPanel() { if (uiPanel === 'inventory') drawInventory(); else 
     drawPlayer(); drawFires(); drawLeaks(); drawWater(); drawLights();
     ctx.restore();
     drawDiver();
-    for (i = 0; i < mons.length; i++) if (P.out && mons[i].att && !sonarOn()) drawMon(mons[i]);
+    for (i = 0; i < mons.length; i++) if (P.out && mons[i].att && !echoViewOn()) drawMon(mons[i]);
     for (i = 0; i < shots.length; i++) {
       var sh = shots[i]; ctx.fillStyle = sh.c || '#ffd27a'; ctx.beginPath(); ctx.arc(sh.x, sh.y, sh.r || 3, 0, 6.283); ctx.fill();
       ctx.strokeStyle = 'rgba(255,210,122,0.4)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sh.x, sh.y); ctx.lineTo(sh.x - sh.vx * 0.03, sh.y - sh.vy * 0.03); ctx.stroke();
