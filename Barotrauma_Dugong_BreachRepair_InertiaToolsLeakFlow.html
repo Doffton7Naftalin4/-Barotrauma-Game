@@ -662,17 +662,6 @@ button:focus-visible { outline: 2px solid var(--sonar); outline-offset: 2px; }
     }
     return count?sum/count:null;
   }
-  /* Return the average local point where terrain overlaps the sub hull. Used to place side-impact breaches in the deck that was actually struck. */
-  function subHitPoint(x,y){
-    var i0=Math.floor((x-DUGONG_HULL_LEFT-wx0)/CS),i1=Math.ceil((x+DUGONG_HULL_RIGHT-wx0)/CS);
-    var j0=Math.floor((y-DUGONG_HULL_TOP-wy0)/CS),j1=Math.ceil((y+DUGONG_HULL_BOTTOM-wy0)/CS),sumX=0,sumY=0,count=0;
-    for(var j=j0;j<=j1;j++)for(var i=i0;i<=i1;i++)if(cell(i,j)>0){
-      var tx=wx0+i*CS,ty=wy0+j*CS,hit=dugongPointInPolygon(tx-x,ty-y,DUGONG_MAIN_HULL_POLY)||dugongPointInPolygon(tx-x,ty-y,DUGONG_BRIDGE_HULL_POLY);
-      if(!hit){var corners=[[-CS/2,-CS/2],[CS/2,-CS/2],[-CS/2,CS/2],[CS/2,CS/2]];for(var c=0;c<corners.length&&!hit;c++)hit=dugongPointInPolygon(tx+corners[c][0]-x,ty+corners[c][1]-y,DUGONG_MAIN_HULL_POLY)||dugongPointInPolygon(tx+corners[c][0]-x,ty+corners[c][1]-y,DUGONG_BRIDGE_HULL_POLY);}
-      if(hit){sumX+=tx-x;sumY+=ty-y;count++;}
-    }
-    return count?{x:sumX/count,y:sumY/count}:null;
-  }
   function dHit(x, y) { return solidAt(x, y) || solidAt(x + 7, y) || solidAt(x - 7, y) || solidAt(x, y + 8) || solidAt(x, y - 8); }
   function postX(r) { return r === 0 ? -HL + 16 : roomCx(r); }
   function toast(s) { msg = s; msgT = 3.5; }
@@ -1429,7 +1418,7 @@ if (e.code === 'KeyM') muted = !muted;
     var sM = SUBS[S.sub].spd, tvx = hIn.x * 140 * sM * pw.ratio * (engOK ? 1 : 0), tvy = hIn.y * 110 * sM * pw.ratio * (engOK ? 1 : 0) + totalW * 26;
     svx += (tvx - svx) * 1.2 * dt; svy += (tvy - svy) * 1.2 * dt;
     var nx2 = sx + svx * dt;
-    if (subHit(nx2, sy) === null) sx = nx2; else { var sideImpact = subHitPoint(nx2, sy); crash(Math.abs(svx), sideImpact ? sideImpact.x : (svx > 0 ? DUGONG_HULL_RIGHT - 10 : -DUGONG_HULL_LEFT + 10), sideImpact ? sideImpact.y < 0 : false, sideImpact ? sideImpact.y : 0); svx *= -0.25; }
+    if (subHit(nx2, sy) === null) sx = nx2; else { crash(Math.abs(svx), svx > 0 ? DUGONG_HULL_RIGHT - 10 : -DUGONG_HULL_LEFT + 10, Math.random() < 0.5, 0); svx *= -0.25; }
     var ny2 = sy + svy * dt, hh2 = subHit(sx, ny2);
     if (hh2 === null) sy = ny2; else { crash(Math.abs(svy), clamp(hh2, -DUGONG_HULL_LEFT + 10, DUGONG_HULL_RIGHT - 10), svy < 0, svy < 0 ? -DUGONG_HULL_TOP : DUGONG_HULL_BOTTOM); svy *= -0.25; }
     tcool -= dt;
