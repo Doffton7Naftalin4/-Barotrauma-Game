@@ -73,8 +73,9 @@
     "After the next action, Riley surfaced in the Safe Shallows; oxygen refilled to the standard 45-second base capacity. Exact in-game clock was not advanced.",
     "One Creepvine seed cluster was collected from a glowing seed cluster on Creepvine. Oxygen remaining is an approximate roleplay value; no exact timer was measured.",
     "Two more Creepvine seed clusters collected. Oxygen estimate reduced to approximately 25 seconds; roleplay estimate only.",
-    "Riley surfaced after collecting three Creepvine seed clusters. Oxygen replenished to the standard 45-second base capacity; this is the roleplay state, not a measured game timer."
+    "Riley surfaced after collecting three Creepvine seed clusters. Oxygen replenished to the standard 45-second base capacity; this is the roleplay state, not a measured game timer.",
+    "Action confirmation and description: Riley chose to surface. He stopped gathering Creepvine seeds, turned upward, swam toward the surface with kicks, and broke the waterline to breathe. The action was completed; oxygen replenished to 45 seconds. No movement beyond surfacing is implied."
   ],
-  "last_action": "Riley surfaced from the Kelp Forest edge; oxygen replenished at the surface to the standard base capacity of 45 seconds.",
+  "last_action": "Riley surfaced after swimming upward from the Kelp Forest edge: he stopped gathering, turned toward the surface, kicked upward through the water, and raised his head above the waterline to breathe. Oxygen replenished to 45 seconds.",
   "last_action_status": "Recorded"
 }
