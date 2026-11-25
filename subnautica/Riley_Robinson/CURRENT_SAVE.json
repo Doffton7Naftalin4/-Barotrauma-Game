@@ -3,12 +3,12 @@
   "campaign": "4546B / Riley Robinson",
   "save_version": 1,
   "branch": "subnautica-save",
-  "location": "Surface of the Safe Shallows, near Lifepod 5",
+  "location": "Safe Shallows, at the edge of the Kelp Forest",
   "day": 1,
   "in_game_time": "09:28 (approximate; roleplay clock)",
   "player": {
     "health_percent": 100,
-    "oxygen_seconds": 45,
+    "oxygen_seconds": 35,
     "hunger_percent": 59,
     "thirst_percent": 49,
     "inventory_capacity_slots": 24,
@@ -27,6 +27,10 @@
       },
       {
         "item": "Titanium",
+        "quantity": 1
+      },
+      {
+        "item": "Creepvine seed cluster",
         "quantity": 1
       }
     ],
@@ -55,7 +59,9 @@
   },
   "discoveries": [
     "Safe Shallows",
-    "Limestone outcrops"
+    "Limestone outcrops",
+    "Kelp Forest",
+    "Creepvine seed cluster"
   ],
   "unlocked_blueprints": [
     "Starting PDA recipes only; exact unlock state not verified"
@@ -64,8 +70,9 @@
     "This is a roleplay continuity save, not an actual Subnautica game save file.",
     "Some earlier narrated values and events were improvised and may not match the original game's exact mechanics.",
     "Inventory capacity was previously narrated as 24 slots; current item stack slot usage is not fully verified.",
-    "After the next action, Riley surfaced in the Safe Shallows; oxygen refilled to the standard 45-second base capacity. Exact in-game clock was not advanced."
+    "After the next action, Riley surfaced in the Safe Shallows; oxygen refilled to the standard 45-second base capacity. Exact in-game clock was not advanced.",
+    "One Creepvine seed cluster was collected from a glowing seed cluster on Creepvine. Oxygen remaining is an approximate roleplay value; no exact timer was measured."
   ],
-  "last_action": "Swam up from the limestone outcrops and surfaced in the Safe Shallows; oxygen refilled.",
+  "last_action": "Swam to the nearby Kelp Forest edge and collected one Creepvine seed cluster.",
   "last_action_status": "Recorded"
 }
