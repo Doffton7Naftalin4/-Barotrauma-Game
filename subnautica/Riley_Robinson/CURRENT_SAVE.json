@@ -65,7 +65,13 @@
     "Creepvine seed cluster"
   ],
   "unlocked_blueprints": [
-    "Starting PDA recipes only; exact unlock state not verified"
+    "Стартовые чертежи: титан; титановый слиток; силиконовая резина; стекло; отбеливатель.",
+    "Инструменты: сканер; фонарик; нож выживания; сигнальная ракета; строитель; ремонтный инструмент.",
+    "Электроника: медный провод; батарея; компьютерный чип; комплект проводов.",
+    "Снаряжение: стандартный баллон; ласты; аптечка.",
+    "Вода: обеззараженная вода.",
+    "Оборудование и предметы капсулы: огнетушитель; труба; радио; изготовитель; аквариум; шкаф; настенный шкаф; изготовитель аптечек; лестница; табличка.",
+    "Начальные строительные элементы: люк; отсек; окно; укрепление; фундамент; стеклянный отсек; солнечная панель; вертикальный соединитель."
   ],
   "notes": [
     "This is a roleplay continuity save, not an actual Subnautica game save file.",
@@ -81,9 +87,10 @@
     "Riley checked the PDA for the time. No exact clock is displayed by the PDA in the original game; campaign time remains an approximate roleplay estimate of 09:28, Day 1.",
     "Player instructed that the starting values (food 50%, hydration 60%) should be applied as the current values now. Current PDA readings are therefore food 50% and hydration 60%; these are user-directed campaign values, not elapsed-time calculations.",
     "Riley inspected the PDA's main tabs. The original Subnautica PDA has Inventory, Blueprints, and Databank as its main sections; do not present Journal as a separate main tab. Current known discoveries recorded for this campaign include Safe Shallows, Limestone Outcrops, Kelp Forest, and Creepvine seed clusters. Blueprint unlock state remains only partially verified.",
-    "Райли осмотрел вкладку «Чертежи». Не следует приписывать ему чертежи, требующие сканирования фрагментов, пока соответствующие фрагменты не найдены. Точный перечень доступных стартовых рецептов в этой кампании не подтверждён."
+    "Райли осмотрел вкладку «Чертежи». Не следует приписывать ему чертежи, требующие сканирования фрагментов, пока соответствующие фрагменты не найдены. Точный перечень доступных стартовых рецептов в этой кампании не подтверждён.",
+    "Уточнение стартового списка чертежей: по справочнику оригинальной Subnautica в КПК заранее установлены базовые рецепты материалов, инструментов, электроники, снаряжения, предметов капсулы и начальных строительных элементов. Список записан по-русски; рецепты, требующие сканирования фрагментов или получения данных, в него не включены."
   ],
-  "last_action": "Райли открыл вкладку «Чертежи» в КПК и просмотрел доступные рецепты. Точный перечень уже открытых рецептов в этой кампании пока не подтверждён; новые чертежи по фрагментам ещё не получены. Для некоторых базовых изготовлений не хватает материалов.",
+  "last_action": "Райли просмотрел стартовые чертежи в КПК. Отображён перечень начальных рецептов, доступных без сканирования новых фрагментов; чертежи более сложного оборудования ещё предстоит открыть.",
   "last_action_status": "Recorded",
   "initial_survival_status": {
     "hydration_percent": 60,
