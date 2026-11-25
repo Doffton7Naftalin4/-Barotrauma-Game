@@ -9,8 +9,8 @@
   "player": {
     "health_percent": 100,
     "oxygen_seconds": 45,
-    "hunger_percent": null,
-    "thirst_percent": null,
+    "hunger_percent": 50,
+    "thirst_percent": 60,
     "inventory_capacity_slots": 24,
     "inventory": [
       {
@@ -78,13 +78,14 @@
     "Action confirmation and description: Riley chose to surface. He stopped gathering Creepvine seeds, turned upward, swam toward the surface with kicks, and broke the waterline to breathe. The action was completed; oxygen replenished to 45 seconds. No movement beyond surfacing is implied.",
     "Riley opened the PDA. From now on, exact survival percentages are shown only while the PDA is open. Health is 100%; oxygen is full at 45/45 seconds (100% of base capacity). Earlier hunger/thirst values (59%/49%) were unverified and have been cleared; current values are unknown rather than invented.",
     "User clarified the starting survival values: hydration 60%, food 50%. These are the values at the beginning of the survival campaign, not necessarily the current values. Current hunger/thirst remain unknown until their progression is reliably established.",
-    "Riley checked the PDA for the time. No exact clock is displayed by the PDA in the original game; campaign time remains an approximate roleplay estimate of 09:28, Day 1."
+    "Riley checked the PDA for the time. No exact clock is displayed by the PDA in the original game; campaign time remains an approximate roleplay estimate of 09:28, Day 1.",
+    "Player instructed that the starting values (food 50%, hydration 60%) should be applied as the current values now. Current PDA readings are therefore food 50% and hydration 60%; these are user-directed campaign values, not elapsed-time calculations."
   ],
-  "last_action": "Riley checked the PDA for the current time. The PDA does not provide an exact clock display; the campaign's roleplay clock remains approximately 09:28 on Day 1.",
+  "last_action": "Campaign state correction: current food is set to 50% and current hydration to 60%, as instructed by the player.",
   "last_action_status": "Recorded",
   "initial_survival_status": {
     "hydration_percent": 60,
     "food_percent": 50,
-    "source": "User correction: values at the beginning of survival"
+    "source": "User confirmed these should also be applied as the current values at this point in the campaign."
   }
 }
