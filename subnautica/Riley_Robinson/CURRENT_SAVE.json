@@ -3,12 +3,12 @@
   "campaign": "4546B / Riley Robinson",
   "save_version": 1,
   "branch": "subnautica-save",
-  "location": "Safe Shallows, near Lifepod 5, beside limestone outcrops",
+  "location": "Surface of the Safe Shallows, near Lifepod 5",
   "day": 1,
   "in_game_time": "09:28 (approximate; roleplay clock)",
   "player": {
     "health_percent": 100,
-    "oxygen_seconds": 29,
+    "oxygen_seconds": 45,
     "hunger_percent": 59,
     "thirst_percent": 49,
     "inventory_capacity_slots": 24,
@@ -63,9 +63,9 @@
   "notes": [
     "This is a roleplay continuity save, not an actual Subnautica game save file.",
     "Some earlier narrated values and events were improvised and may not match the original game's exact mechanics.",
-    "Oxygen is recorded as last narrated: 29 seconds underwater. Player has not yet surfaced after the last narrated dive.",
-    "Inventory capacity was previously narrated as 24 slots; current item stack slot usage is not fully verified."
+    "Inventory capacity was previously narrated as 24 slots; current item stack slot usage is not fully verified.",
+    "After the next action, Riley surfaced in the Safe Shallows; oxygen refilled to the standard 45-second base capacity. Exact in-game clock was not advanced."
   ],
-  "last_action": "Broke nearby limestone outcrops and collected copper ore x2 and titanium x1; paused underwater.",
+  "last_action": "Swam up from the limestone outcrops and surfaced in the Safe Shallows; oxygen refilled.",
   "last_action_status": "Recorded"
 }
