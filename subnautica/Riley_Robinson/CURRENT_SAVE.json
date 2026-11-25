@@ -1,0 +1,71 @@
+{
+  "game": "Subnautica",
+  "campaign": "4546B / Riley Robinson",
+  "save_version": 1,
+  "branch": "subnautica-save",
+  "location": "Safe Shallows, near Lifepod 5, beside limestone outcrops",
+  "day": 1,
+  "in_game_time": "09:28 (approximate; roleplay clock)",
+  "player": {
+    "health_percent": 100,
+    "oxygen_seconds": 29,
+    "hunger_percent": 59,
+    "thirst_percent": 49,
+    "inventory_capacity_slots": 24,
+    "inventory": [
+      {
+        "item": "Bladderfish",
+        "quantity": 2
+      },
+      {
+        "item": "Boomerang",
+        "quantity": 2
+      },
+      {
+        "item": "Copper ore",
+        "quantity": 2
+      },
+      {
+        "item": "Titanium",
+        "quantity": 1
+      }
+    ],
+    "equipment": [
+      "PDA"
+    ],
+    "stored_items": [
+      {
+        "item": "Fire extinguisher",
+        "quantity": 1,
+        "charge_percent": null,
+        "note": "Stored in Lifepod 5; exact remaining contents not measured"
+      }
+    ]
+  },
+  "lifepod_5": {
+    "status": "Partially damaged; fire extinguished",
+    "storage": [
+      "Fire extinguisher x1"
+    ],
+    "known_facilities": [
+      "Fabricator",
+      "Radio (damaged)",
+      "Medkit fabricator (not functioning in current roleplay state)"
+    ]
+  },
+  "discoveries": [
+    "Safe Shallows",
+    "Limestone outcrops"
+  ],
+  "unlocked_blueprints": [
+    "Starting PDA recipes only; exact unlock state not verified"
+  ],
+  "notes": [
+    "This is a roleplay continuity save, not an actual Subnautica game save file.",
+    "Some earlier narrated values and events were improvised and may not match the original game's exact mechanics.",
+    "Oxygen is recorded as last narrated: 29 seconds underwater. Player has not yet surfaced after the last narrated dive.",
+    "Inventory capacity was previously narrated as 24 slots; current item stack slot usage is not fully verified."
+  ],
+  "last_action": "Broke nearby limestone outcrops and collected copper ore x2 and titanium x1; paused underwater.",
+  "last_action_status": "Recorded"
+}
